@@ -13,9 +13,9 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [x] Categorize repositories by domain
 
 ### High-Level Architecture
-- [ ] Create architecture overview document
-- [ ] Pull existing diagrams from Confluence Architecture space
-- [ ] Document global platform topology (6 AWS regions)
+- [x] Create architecture overview document
+- [x] Pull existing diagrams from Confluence Architecture space
+- [x] Document global platform topology (6 AWS regions)
 - [ ] Create service dependency map
 
 ---
@@ -23,11 +23,11 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 2: Core Platform
 
 ### Voice Routing Subsystem
-- [ ] FreeSWITCH overview and role
-- [ ] Call flow documentation (inbound/outbound)
+- [x] FreeSWITCH overview and role
+- [x] Call flow documentation (inbound/outbound)
 - [ ] Dialplan structure and logic
 - [ ] PBX component documentation
-- [ ] fsxinetd service documentation
+- [x] fsxinetd service documentation
 - [ ] tts-gateway service documentation
 - [ ] Routing policies documentation
 

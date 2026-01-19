@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-19  
 **Current Phase:** Phase 1 - Discovery & Inventory  
-**Overall Progress:** ██░░░░░░░░ 20%
+**Overall Progress:** ███░░░░░░░ 30%
 
 ---
 
@@ -13,8 +13,9 @@ Completing repository inventory and establishing baseline understanding of the p
 ## 🔄 Currently In Progress
 
 - [x] Repository inventory and categorization ✅ COMPLETE
-- [ ] Pull existing architecture content from Confluence
-- [ ] Document high-level platform architecture
+- [x] Pull existing architecture content from Confluence ✅ COMPLETE
+- [x] Document high-level platform architecture ✅ COMPLETE
+- [ ] Complete remaining subsystem documentation
 
 ## 🚧 Blocked On
 
@@ -23,6 +24,9 @@ Completing repository inventory and establishing baseline understanding of the p
 ## ✅ Ready for Review
 
 - `/services/repository-inventory.md` - Comprehensive inventory of ~450+ repositories organized by domain
+- `/architecture/global-architecture.md` - Platform architecture overview with diagrams
+- `/architecture/voice-routing/overview.md` - Voice routing subsystem documentation
+- `/architecture/voice-routing/fsxinetd.md` - fsxinetd service documentation
 
 ## ⏭️ Next Up
 
@@ -57,8 +61,8 @@ Completing repository inventory and establishing baseline understanding of the p
 | Metric | Count |
 |--------|-------|
 | Repos Inventoried | ~450 / ~450 ✅ |
-| Services Documented | 0 |
-| Architecture Diagrams | 0 |
+| Architecture Docs | 3 |
+| Services Documented | 1 (fsxinetd) |
 | Runbooks Created | 0 |
 
 ## 🗓️ Recent Sessions

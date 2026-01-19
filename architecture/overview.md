@@ -1,6 +1,7 @@
 # Platform Architecture Overview
 
-> ⚠️ **Status:** Draft - In Progress
+> **Last Updated:** 2026-01-19  
+> **Status:** ✅ Complete
 
 ## Introduction
 
@@ -12,13 +13,28 @@ Natterbox is a cloud-based enterprise telephony platform that integrates voice c
 - **AI/CAI** - Conversational AI capabilities
 - **Analytics** - Call analytics, reporting, observability (Lumina)
 
+## Documentation Index
+
+### Global Architecture
+- **[Global Platform Architecture](./global-architecture.md)** - Complete platform overview including environment types (RT, SDC, GDC, Hybrid), technology stack, and AWS infrastructure layout
+
+### Subsystem Documentation
+
+| Subsystem | Status | Documentation |
+|-----------|--------|---------------|
+| Voice Routing | ✅ Complete | [Overview](./voice-routing/overview.md), [fsxinetd](./voice-routing/fsxinetd.md) |
+| Omnichannel | 🔲 Planned | [Folder](./omnichannel/) |
+| Salesforce Integration | 🔲 Planned | [Folder](./salesforce-integration/) |
+| AI/CAI | 🔲 Planned | [Folder](./ai-cai/) |
+| Infrastructure | 🔲 Planned | [Folder](./infrastructure/) |
+
 ## Global Infrastructure
 
 ```mermaid
 graph TB
     subgraph "North America"
         US_WEST[US West - Oregon]
-        US_EAST[US East - Ohio]
+        US_EAST[US East - N. Virginia]
     end
     
     subgraph "EMEA"
@@ -28,10 +44,12 @@ graph TB
     
     subgraph "APAC"
         SINGAPORE[Singapore]
+        SYDNEY[Sydney]
     end
     
     US_WEST ---|Redundancy| US_EAST
     LONDON ---|Redundancy| FRANKFURT
+    SINGAPORE ---|Redundancy| SYDNEY
 ```
 
 Each region operates with:
@@ -39,21 +57,7 @@ Each region operates with:
 - 99.99% uptime target
 - ISO 27001 and GDPR compliance
 
-## High-Level Architecture
-
-*TODO: Pull block diagrams from Confluence Architecture space*
-
-## Core Subsystems
-
-| Subsystem | Description | Key Components |
-|-----------|-------------|----------------|
-| [Voice Routing](voice-routing/) | Core telephony, call handling | FreeSWITCH, dialplan, fsxinetd |
-| [Omnichannel](omnichannel/) | Multi-channel communication | Omniservice, chat widget |
-| [Salesforce Integration](salesforce-integration/) | CRM integration | AVS, SCV connector |
-| [Infrastructure](infrastructure/) | Cloud infrastructure | AWS, Terraform, Salt |
-| [AI/CAI](ai-cai/) | Conversational AI | CAI service, Bedrock |
-
-## Technology Stack
+## Technology Stack Summary
 
 ### Backend
 - **PHP** - Legacy platform services (Kohana framework)
@@ -62,23 +66,40 @@ Each region operates with:
 - **C/C++** - FreeSWITCH, low-level components
 
 ### Infrastructure
-- **AWS** - Primary cloud provider
-- **Terraform** - Infrastructure as code
+- **AWS** - Primary cloud provider (6 regions)
+- **Terraform** - Infrastructure as code (~120 modules)
 - **Salt Stack** - Configuration management
 
 ### Databases
 - **MariaDB/MySQL** - Primary relational data
+- **DynamoDB** - NoSQL, global tables
 - **Redis** - Caching
 - **Elasticsearch** - Search and analytics
 
 ### Frontend
 - **React** - Modern web applications
 - **Svelte** - Some newer applications
+- **Swift/Kotlin** - Native mobile apps
+
+## Diagram Sources
+
+Original diagrams are maintained in Google Drive (draw.io):
+
+| Diagram | Link |
+|---------|------|
+| Technology Stack | [View](https://app.diagrams.net/#G1_IwiTdsl51VoPQpqlhzxkdZF7cGYcUeg) |
+| Global Architecture | [View](https://app.diagrams.net/#G1DCanRWtvPIaOKtYly74I5piHdp_ylGbU) |
+| Voice Subsystem | [View](https://app.diagrams.net/#G1RoRjZ47B-2tjcBAXY9K8AXY6zgyFmEz4) |
 
 ## Related Documentation
 
 - [Service Inventory](../services/inventory.md)
+- [Repository Inventory](../services/repository-inventory.md)
 - [Terraform Module Catalog](../terraform-modules/catalog.md)
+
+## Source
+
+This documentation was migrated from and supplements the [Confluence Architecture Space](https://natterbox.atlassian.net/wiki/spaces/A).
 
 ---
 
