@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-20  
 **Current Phase:** Phase 2 - Documentation Creation  
-**Overall Progress:** ████████████████░░░░ 82%
+**Overall Progress:** ██████████████████░░ 85%
 
 ---
 
@@ -24,7 +24,8 @@ Platform core services documentation in progress. Starting deep-dive documentati
 - [x] Onboarding guides ✅
 - [x] Terraform module catalog ✅
 - [x] Documentation agent tooling ✅
-- [x] **Platform API (Core API) documentation** ✅ (NEW)
+- [x] **Platform API (Core API) documentation** ✅
+- [x] **Platform Sapien (Public API) documentation** ✅ (NEW)
 
 ## 🚧 Blocked On
 
@@ -42,10 +43,11 @@ Platform core services documentation in progress. Starting deep-dive documentati
 - `/architecture/ai-cai/overview.md` - Conversational AI
 - `/architecture/infrastructure/overview.md` - Infrastructure & deployment
 
-### Services (3 docs)
+### Services (4 docs)
 - `/services/inventory.md` - Service inventory
 - `/services/repository-inventory.md` - Comprehensive inventory of ~450+ repositories
-- `/services/platform-core/platform-api.md` - **Platform API documentation** (NEW)
+- `/services/platform-core/platform-api.md` - Platform API documentation
+- `/services/platform-core/platform-sapien.md` - **Platform Sapien documentation** (NEW)
 
 ### Terraform (1 doc)
 - `/terraform-modules/catalog.md` - Module catalog
@@ -68,7 +70,7 @@ Platform core services documentation in progress. Starting deep-dive documentati
 
 1. **Platform core services** (in progress):
    - ~~platform-api documentation~~ ✅ DONE
-   - platform-sapien documentation
+   - ~~platform-sapien documentation~~ ✅ DONE
    - Database architecture
    - CDR processing (cdrmunch)
 
@@ -87,6 +89,17 @@ Platform core services documentation in progress. Starting deep-dive documentati
    - Support team onboarding guide
 
 ## 💡 Recent Updates
+
+### 2026-01-20 (Session 3)
+- **Platform Sapien documentation created:**
+  - Comprehensive service documentation (~500 lines)
+  - Architecture diagrams showing system position
+  - API endpoint reference with authentication details
+  - Component breakdown (bundles, ESL listener, MQ)
+  - Sapien Proxy (AWS API Gateway) documentation
+  - Development and testing procedures
+  - Monitoring and runbook references
+  - Integration points mapping
 
 ### 2026-01-20 (Session 2)
 - **Platform API documentation created:**
@@ -122,17 +135,17 @@ Platform core services documentation in progress. Starting deep-dive documentati
 |--------|-------|
 | Repos Inventoried | ~450 ✅ |
 | Architecture Docs | 8 ✅ |
-| Services Documented | 3 ✅ |
+| Services Documented | 4 ✅ |
 | Terraform Docs | 1 ✅ |
 | Runbooks Created | 4 ✅ |
 | Onboarding Guides | 3 ✅ |
-| **Total Docs** | **~26** |
+| **Total Docs** | **~27** |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
-| 2026-01-20 | Platform API documentation, domain overviews, runbooks, onboarding, documentation agent |
+| 2026-01-20 | Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
 
 ---

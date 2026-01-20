@@ -33,7 +33,7 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 
 ### Platform Core Services 🔄
 - [x] **platform-api documentation** ✅ DONE
-- [ ] platform-sapien documentation
+- [x] **platform-sapien documentation** ✅ DONE (NEW)
 - [ ] Database architecture overview
 - [ ] CDR processing pipeline (cdrmunch)
 
