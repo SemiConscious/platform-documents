@@ -78,6 +78,207 @@ class Config:
 
 
 # =============================================================================
+# File Store - Caches large results to prevent context overflow
+# =============================================================================
+
+class FileStore:
+    """
+    A file-based cache for storing large tool results.
+    
+    When a tool returns data too large for the context window, it's saved here
+    and the agent can read it in chunks using the store access tool.
+    """
+    
+    STORE_DIR = ".agent-store"
+    
+    def __init__(self, work_dir: Path):
+        self.work_dir = Path(work_dir).resolve()
+        self.store_path = self.work_dir / self.STORE_DIR
+        self.store_path.mkdir(parents=True, exist_ok=True)
+        self._index: dict[str, dict] = {}  # file_id -> metadata
+        self._load_index()
+    
+    def _index_path(self) -> Path:
+        return self.store_path / "index.json"
+    
+    def _load_index(self):
+        """Load the store index from disk."""
+        try:
+            if self._index_path().exists():
+                self._index = json.loads(self._index_path().read_text())
+        except Exception as e:
+            logger.warning(f"Failed to load file store index: {e}")
+            self._index = {}
+    
+    def _save_index(self):
+        """Save the store index to disk."""
+        try:
+            self._index_path().write_text(json.dumps(self._index, indent=2))
+        except Exception as e:
+            logger.warning(f"Failed to save file store index: {e}")
+    
+    def store(self, content: str, source: str, content_type: str = "text") -> dict:
+        """
+        Store content and return a reference.
+        
+        Args:
+            content: The content to store
+            source: Description of where this came from (tool name, etc.)
+            content_type: Type of content (text, json, etc.)
+            
+        Returns:
+            Dict with file_id, size, and info message
+        """
+        import uuid
+        
+        file_id = str(uuid.uuid4())[:8]
+        file_path = self.store_path / f"{file_id}.txt"
+        
+        # Write content
+        file_path.write_text(content)
+        size = len(content)
+        
+        # Update index
+        self._index[file_id] = {
+            "source": source,
+            "content_type": content_type,
+            "size": size,
+            "lines": content.count('\n') + 1,
+            "created": datetime.now().isoformat(),
+            "path": str(file_path.relative_to(self.work_dir)),
+        }
+        self._save_index()
+        
+        logger.info(f"📦 Stored large result: {file_id} ({size:,} bytes from {source})")
+        
+        return {
+            "file_id": file_id,
+            "size": size,
+            "lines": self._index[file_id]["lines"],
+            "source": source,
+        }
+    
+    def read(self, file_id: str, offset: int = 0, limit: Optional[int] = None) -> dict:
+        """
+        Read content from the store.
+        
+        Args:
+            file_id: The file ID returned from store()
+            offset: Line number to start from (0-based)
+            limit: Maximum number of lines to return
+            
+        Returns:
+            Dict with content, metadata, and whether there's more
+        """
+        if file_id not in self._index:
+            return {"error": f"File ID '{file_id}' not found in store"}
+        
+        metadata = self._index[file_id]
+        file_path = self.work_dir / metadata["path"]
+        
+        if not file_path.exists():
+            return {"error": f"File for ID '{file_id}' no longer exists"}
+        
+        try:
+            lines = file_path.read_text().split('\n')
+            total_lines = len(lines)
+            
+            # Apply offset and limit
+            if offset >= total_lines:
+                return {
+                    "content": "",
+                    "file_id": file_id,
+                    "offset": offset,
+                    "lines_returned": 0,
+                    "total_lines": total_lines,
+                    "has_more": False,
+                }
+            
+            end = total_lines if limit is None else min(offset + limit, total_lines)
+            selected_lines = lines[offset:end]
+            
+            return {
+                "content": '\n'.join(selected_lines),
+                "file_id": file_id,
+                "offset": offset,
+                "lines_returned": len(selected_lines),
+                "total_lines": total_lines,
+                "has_more": end < total_lines,
+                "source": metadata["source"],
+            }
+            
+        except Exception as e:
+            return {"error": f"Failed to read file: {e}"}
+    
+    def list_files(self) -> dict:
+        """List all files in the store."""
+        return {
+            "files": [
+                {
+                    "file_id": fid,
+                    "source": meta["source"],
+                    "size": meta["size"],
+                    "lines": meta["lines"],
+                    "created": meta["created"],
+                }
+                for fid, meta in self._index.items()
+            ]
+        }
+    
+    def clear(self):
+        """Clear old files from the store."""
+        for file_id in list(self._index.keys()):
+            try:
+                file_path = self.work_dir / self._index[file_id]["path"]
+                if file_path.exists():
+                    file_path.unlink()
+                del self._index[file_id]
+            except Exception as e:
+                logger.warning(f"Failed to delete {file_id}: {e}")
+        self._save_index()
+        logger.info("🗑️  Cleared file store")
+    
+    def get_tool_definitions(self) -> list[dict]:
+        """Return tool definitions for Claude."""
+        return [
+            {
+                "name": "read_from_store",
+                "description": (
+                    "Read content from the file store. Use this to access large results "
+                    "that were too big to return directly. You can read in chunks using "
+                    "offset and limit parameters to avoid loading too much at once."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "file_id": {
+                            "type": "string",
+                            "description": "The file ID returned when the result was stored"
+                        },
+                        "offset": {
+                            "type": "integer",
+                            "description": "Line number to start reading from (0-based). Default: 0"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of lines to return. Default: 200 lines"
+                        }
+                    },
+                    "required": ["file_id"]
+                }
+            },
+            {
+                "name": "list_store_files",
+                "description": "List all files currently in the file store with their IDs and metadata.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        ]
+
+
+# =============================================================================
 # Shell Tool
 # =============================================================================
 
@@ -705,12 +906,32 @@ class MCPClient:
 class BedrockClient:
     """Client for AWS Bedrock Claude API with tool use support."""
     
+    # Context limits (approximate - characters, not tokens)
+    # Opus has 200K token context, ~4 chars per token = ~800K chars
+    CONTEXT_WARNING_CHARS = 400000  # Warn at ~100K tokens
+    CONTEXT_LIMIT_CHARS = 700000    # Hard limit at ~175K tokens
+    
     def __init__(self, config: Config):
         self.config = config
+        # Add read timeout to prevent hanging
+        from botocore.config import Config as BotoConfig
+        boto_config = BotoConfig(
+            read_timeout=300,  # 5 minute timeout for long generations
+            connect_timeout=30,
+            retries={'max_attempts': 2}
+        )
         self.client = boto3.client(
             "bedrock-runtime",
-            region_name=config.aws_region
+            region_name=config.aws_region,
+            config=boto_config
         )
+    
+    def estimate_context_size(self, messages: list[dict], system: str, tools: list[dict]) -> int:
+        """Estimate the context size in characters."""
+        size = len(system)
+        size += len(json.dumps(tools))
+        size += len(json.dumps(messages))
+        return size
         
     def create_message(
         self,
@@ -728,7 +949,28 @@ class BedrockClient:
             
         Returns:
             Claude's response
+            
+        Raises:
+            Exception: If context is too large or API call fails
         """
+        # Check context size
+        context_size = self.estimate_context_size(messages, system, tools)
+        estimated_tokens = context_size // 4
+        
+        if context_size > self.CONTEXT_LIMIT_CHARS:
+            raise Exception(
+                f"Context too large: ~{estimated_tokens:,} tokens "
+                f"(~{context_size:,} chars). Limit is ~{self.CONTEXT_LIMIT_CHARS // 4:,} tokens."
+            )
+        
+        if context_size > self.CONTEXT_WARNING_CHARS:
+            logger.warning(
+                f"⚠️  Large context: ~{estimated_tokens:,} tokens "
+                f"({context_size:,} chars) - approaching limit"
+            )
+        else:
+            logger.info(f"📊 Context size: ~{estimated_tokens:,} tokens")
+        
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": self.config.max_tokens,
@@ -737,15 +979,23 @@ class BedrockClient:
             "tools": tools,
         }
         
-        response = self.client.invoke_model(
-            modelId=self.config.bedrock_model_id,
-            body=json.dumps(request_body),
-            contentType="application/json",
-            accept="application/json",
-        )
-        
-        response_body = json.loads(response["body"].read())
-        return response_body
+        try:
+            response = self.client.invoke_model(
+                modelId=self.config.bedrock_model_id,
+                body=json.dumps(request_body),
+                contentType="application/json",
+                accept="application/json",
+            )
+            
+            response_body = json.loads(response["body"].read())
+            return response_body
+            
+        except self.client.exceptions.ModelTimeoutException as e:
+            raise Exception(f"Bedrock timeout after 5 minutes: {e}")
+        except Exception as e:
+            # Log the error with context info
+            logger.error(f"Bedrock API error (context: ~{estimated_tokens:,} tokens): {e}")
+            raise
 
 
 # =============================================================================
@@ -768,6 +1018,10 @@ class DocumentationAgent:
     MAX_REPEATED_PATTERNS = 3  # Exit if same pattern repeats this many times
     PATTERN_WINDOW_SIZE = 5   # Look at last N tool calls for pattern detection
     
+    # Context management
+    MAX_TOOL_RESULT_CHARS = 50000  # Store results larger than this (~12K tokens)
+    CONTEXT_SOFT_RESET_THRESHOLD = 0.75  # Trigger soft reset at 75% of context limit
+    
     SYSTEM_PROMPT = """You are an expert documentation engineer helping to create and maintain platform documentation for Natterbox.
 
 You have access to the following tool categories:
@@ -777,7 +1031,13 @@ You have access to the following tool categories:
    - Create and edit documentation files
    - Manage the file system
 
-2. **MCP Tools** (prefixed with mcp_):
+2. **File Store Tools** (read_from_store, list_store_files):
+   - Large tool results are automatically stored here to save context space
+   - Use read_from_store with the file_id to retrieve stored content
+   - You can read in chunks using offset and limit to avoid loading too much
+   - Use list_store_files to see what's available
+
+3. **MCP Tools** (prefixed with mcp_):
    - mcp_confluence: Search and read Confluence wiki pages
    - mcp_github: Access GitHub repositories and files
    - mcp_docs360_search: Search Document360 knowledge base
@@ -837,6 +1097,7 @@ If you encounter issues that prevent completion:
         self.shell = ShellTool(config.work_dir, config.shell_timeout)
         self.mcp = MCPClient(config.natterbox_mcp_url)
         self.bedrock = BedrockClient(config)
+        self.file_store = FileStore(config.work_dir)  # For caching large results
         self.messages: list[dict] = []
         self.tools: list[dict] = []
         
@@ -947,6 +1208,81 @@ The previous run used {turns_used} turns. Please review the project status files
             
         except Exception as e:
             logger.error(f"Failed to save continuation: {e}")
+    
+    def _should_soft_reset(self) -> bool:
+        """Check if context is large enough to warrant a soft reset."""
+        context_size = self.bedrock.estimate_context_size(
+            self.messages, 
+            self._get_system_prompt(), 
+            self.tools
+        )
+        threshold = int(self.bedrock.CONTEXT_LIMIT_CHARS * self.CONTEXT_SOFT_RESET_THRESHOLD)
+        return context_size > threshold
+    
+    def _perform_soft_reset(self, original_task: str, turns_used: int) -> str:
+        """
+        Perform a soft reset: ask Claude to summarize progress, then clear context.
+        Returns the continuation prompt to use for the fresh context.
+        """
+        logger.info("🔄 Context getting large - performing soft reset...")
+        print(f"\n{'='*60}")
+        print("SOFT RESET - Context approaching limit")
+        print(f"{'='*60}\n")
+        
+        # Ask Claude to summarize what's been done and what's next
+        reset_request = """
+CONTEXT MANAGEMENT: The conversation context is getting too large and needs to be reset.
+
+Please provide a CONTINUATION SUMMARY so we can continue with a fresh context.
+Include:
+
+1. **COMPLETED**: What has been accomplished so far (files created, research done)
+2. **IN PROGRESS**: What you were in the middle of doing
+3. **NEXT STEPS**: What should be done next
+4. **KEY CONTEXT**: Any important decisions, findings, or information that must be preserved
+
+Format as a clear, actionable prompt that will let you continue seamlessly after the context reset.
+Start with "CONTINUATION:" followed by the summary.
+"""
+        
+        self.messages.append({
+            "role": "user",
+            "content": reset_request
+        })
+        
+        try:
+            # Use a simple call without tools
+            response = self.bedrock.create_message(
+                messages=self.messages,
+                system=self._get_system_prompt(),
+                tools=[],  # No tools for this summary request
+            )
+            
+            # Extract the continuation
+            continuation = ""
+            for block in response.get("content", []):
+                if block.get("type") == "text":
+                    text = block.get("text", "")
+                    if "CONTINUATION:" in text:
+                        continuation = text.split("CONTINUATION:", 1)[1].strip()
+                    else:
+                        continuation = text
+            
+            if continuation:
+                logger.info("✅ Got continuation prompt for soft reset")
+                print(f"📋 Continuation summary received ({len(continuation)} chars)")
+                return continuation
+                
+        except Exception as e:
+            logger.error(f"Failed to get soft reset summary: {e}")
+        
+        # Fallback continuation
+        return f"""Continue the documentation task. Previous progress:
+- Files created: {list(self._files_written)}
+- Turns used: {turns_used}
+- Original task: {original_task}
+
+Review the project status (.project/STATUS.md) and continue with the next logical step."""
         
     async def initialize(self) -> bool:
         """Initialize the agent and connect to services."""
@@ -955,6 +1291,10 @@ The previous run used {turns_used} turns. Please review the project status files
         # Initialize shell tools
         self.tools.extend(self.shell.get_tool_definitions())
         logger.info(f"Loaded {len(self.shell.get_tool_definitions())} shell tools")
+        
+        # Initialize file store tools
+        self.tools.extend(self.file_store.get_tool_definitions())
+        logger.info(f"Loaded {len(self.file_store.get_tool_definitions())} file store tools")
         
         # Connect to MCP server
         if await self.mcp.connect():
@@ -1025,6 +1365,56 @@ The previous run used {turns_used} turns. Please review the project status files
         
         text_lower = response_text.lower()
         return any(indicator in text_lower for indicator in completion_indicators)
+    
+    def _truncate_result(self, result: dict, source: str = "unknown") -> dict:
+        """
+        Handle large tool results by storing them in the file store.
+        Returns a reference if too large, or the original result if small enough.
+        
+        Args:
+            result: The tool result dict
+            source: Description of the source (tool name)
+        """
+        result_str = json.dumps(result)
+        if len(result_str) <= self.MAX_TOOL_RESULT_CHARS:
+            return result
+        
+        # Result is too large - store it and return a reference
+        logger.info(f"📦 Result too large ({len(result_str):,} chars), storing in file store...")
+        
+        # Determine what content to store
+        if "content" in result and isinstance(result["content"], str):
+            content = result["content"]
+            content_type = "text"
+        elif "result" in result:
+            content = json.dumps(result["result"], indent=2)
+            content_type = "json"
+        else:
+            content = json.dumps(result, indent=2)
+            content_type = "json"
+        
+        # Store it
+        store_info = self.file_store.store(content, source, content_type)
+        
+        # Return a reference instead of the content
+        return {
+            "stored_in_file_store": True,
+            "file_id": store_info["file_id"],
+            "size_bytes": store_info["size"],
+            "lines": store_info["lines"],
+            "source": source,
+            "message": (
+                f"This result was too large ({store_info['size']:,} bytes, {store_info['lines']:,} lines) "
+                f"to include directly. Use the 'read_from_store' tool with file_id='{store_info['file_id']}' "
+                f"to read the content. You can specify offset and limit to read in chunks."
+            ),
+            "example_usage": {
+                "tool": "read_from_store",
+                "file_id": store_info["file_id"],
+                "offset": 0,
+                "limit": 100
+            }
+        }
     
     def _format_mcp_call_details(self, tool_name: str, tool_input: dict) -> str:
         """Format MCP tool call details for human-readable logging."""
@@ -1114,6 +1504,18 @@ The previous run used {turns_used} turns. Please review the project status files
             logger.info(f"📁 list_directory: {path}")
             result = self.shell.list_directory(path)
         
+        # Handle file store tools
+        elif tool_name == "read_from_store":
+            file_id = tool_input.get("file_id", "")
+            offset = tool_input.get("offset", 0)
+            limit = tool_input.get("limit", 200)  # Default to 200 lines
+            logger.info(f"📦 read_from_store: {file_id} (offset={offset}, limit={limit})")
+            result = self.file_store.read(file_id, offset, limit)
+            
+        elif tool_name == "list_store_files":
+            logger.info(f"📦 list_store_files")
+            result = self.file_store.list_files()
+        
         # Handle MCP tools
         elif tool_name.startswith("mcp_"):
             mcp_tool_name = tool_name[4:]  # Remove "mcp_" prefix
@@ -1188,9 +1590,36 @@ If the task appears to be complete based on the progress summary, verify this an
         })
         
         turns = 0
+        soft_resets = 0
+        max_soft_resets = 3  # Limit soft resets to prevent infinite loops
+        
         while turns < self.config.max_turns:
             turns += 1
             logger.info(f"Turn {turns}/{self.config.max_turns}")
+            
+            # Check if context is getting too large and needs a soft reset
+            if soft_resets < max_soft_resets and self._should_soft_reset():
+                soft_resets += 1
+                logger.warning(f"⚠️ Context size threshold reached - performing soft reset ({soft_resets}/{max_soft_resets})")
+                
+                # Get continuation prompt before clearing
+                continuation_prompt = self._perform_soft_reset(original_task, turns)
+                
+                # Clear messages and start fresh with continuation
+                self.messages = [{
+                    "role": "user",
+                    "content": f"""SOFT RESET - continuing task with fresh context.
+
+Previous task: {original_task}
+
+CONTINUATION:
+{continuation_prompt}
+
+Please continue from where you left off. Files in the file store are still accessible using read_from_store."""
+                }]
+                
+                logger.info(f"🔄 Soft reset complete - context cleared, continuing with {len(continuation_prompt)} char summary")
+                print(f"\n✅ Soft reset complete - continuing with fresh context\n")
             
             try:
                 # Get Claude's response
@@ -1286,6 +1715,9 @@ If the task appears to be complete based on the progress summary, verify this an
                         # Count errors
                         if not result.get("success", True) or result.get("error"):
                             tool_errors += 1
+                        
+                        # Store large results in file store to prevent context overflow
+                        result = self._truncate_result(result, source=tool_name)
                         
                         tool_results.append({
                             "type": "tool_result",
