@@ -1344,7 +1344,8 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
             }
             return result
 
-        # Silent truncation - context management happens automatically
+        # Log truncation
+        logger.info(f"[{self.agent_id}] ✂️  Truncating: {result_size:,} → {available:,} chars")
 
         return self._truncate_to_fit(result, available, store_info)
 
@@ -2654,8 +2655,8 @@ Original task: {original_task}"""
             }
             return result
 
-        # Result too big for context - need to truncate
-        # Silent truncation - context management happens automatically
+        # Log truncation
+        logger.info(f"✂️  Truncating: {result_size:,} → {available:,} chars")
 
         return self._truncate_to_fit(result, available, store_info)
 
