@@ -9,7 +9,7 @@ from typing import Any, Optional
 import aiofiles
 
 from ..base import BaseAgent, AgentResult, AgentContext
-from ...knowledge import Service, Document, EntityType
+from ...knowledge import Service, Document, Repository, EntityType
 from ...knowledge.store import compute_entity_hash
 from ...templates.renderer import TemplateRenderer
 
@@ -115,6 +115,9 @@ class TechnicalWriterAgent(BaseAgent):
         dependents = self.graph.get_service_dependents(service.id)
         apis = self.graph.get_service_apis(service.id)
         
+        # Get repository info for bidirectional linking
+        repo_info = self._get_repository_info(service)
+        
         # Enhance service data using Claude
         enhanced_data = await self._enhance_service_description(service)
         
@@ -125,6 +128,7 @@ class TechnicalWriterAgent(BaseAgent):
             "purpose": enhanced_data.get("purpose"),
             "repository": service.repository,
             "repository_url": f"https://github.com/{service.repository}" if service.repository else None,
+            "repository_doc_url": repo_info.get("doc_url") if repo_info else None,
             "language": service.language,
             "framework": service.framework,
             "team": service.team,
@@ -151,6 +155,30 @@ class TechnicalWriterAgent(BaseAgent):
         )
         
         return str(path)
+    
+    def _get_repository_info(self, service: Service) -> Optional[dict]:
+        """Get repository information for bidirectional linking."""
+        if not service.repository:
+            return None
+        
+        # Try to find the repository entity
+        for entity in self.graph.get_entities_by_type(EntityType.REPOSITORY):
+            if isinstance(entity, Repository):
+                if service.repository in entity.name or (entity.url and service.repository in entity.url):
+                    repo_slug = entity.name.replace("/", "-")
+                    return {
+                        "name": entity.name,
+                        "url": entity.url,
+                        "doc_url": f"../../repositories/repos/{repo_slug}/README.md",
+                    }
+        
+        # Fallback: generate doc URL from repo name
+        repo_slug = service.repository.replace("/", "-")
+        return {
+            "name": service.repository,
+            "url": f"https://github.com/{service.repository}",
+            "doc_url": f"../../repositories/repos/{repo_slug}/README.md",
+        }
     
     async def _generate_service_architecture(
         self,

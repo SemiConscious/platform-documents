@@ -76,6 +76,14 @@ sources:
       - "Cargo.toml"
       - "pom.xml"
       
+  # Docs360 - Natterbox's public documentation portal
+  docs360:
+    enabled: true
+    priority: authoritative  # Official public documentation
+    trust_level: high        # Customer-facing docs should be accurate
+    categories: []           # Empty = all categories
+    exclude_categories: []   # Categories to skip
+      
   # Confluence is reference only - may be outdated
   confluence:
     enabled: true

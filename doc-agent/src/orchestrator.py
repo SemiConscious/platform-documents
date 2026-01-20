@@ -284,17 +284,19 @@ class Orchestrator:
             ConfluenceHarvesterAgent,
             JiraAnalyzerAgent,
             CodeAnalyzerAgent,
+            Docs360HarvesterAgent,
         )
         
         logger.info("Starting discovery phase")
         start_time = datetime.utcnow()
         
         # Phase 1: Scan sources in parallel
-        # GitHub is authoritative, Confluence is reference, Jira is typically disabled
+        # Priority: GitHub (authoritative) > Docs360 (authoritative public) > Confluence (reference) > Jira (disabled)
         source_agents = [
             RepositoryScannerAgent(context),
-            ConfluenceHarvesterAgent(context),
-            JiraAnalyzerAgent(context),
+            Docs360HarvesterAgent(context),  # Public documentation - high trust
+            ConfluenceHarvesterAgent(context),  # Internal docs - reference only
+            JiraAnalyzerAgent(context),  # Typically disabled
         ]
         
         parallelism = self.config.get("agents", {}).get("discovery", {}).get("parallelism", 5)
@@ -394,6 +396,7 @@ class Orchestrator:
             TechnicalWriterAgent,
             APIDocumenterAgent,
             SchemaDocumenterAgent,
+            RepositoryDocumenterAgent,
         )
         
         logger.info("Starting generation phase")
@@ -413,6 +416,7 @@ class Orchestrator:
         # Create generation agents
         agents = [
             OverviewWriterAgent(context),  # High-level docs
+            RepositoryDocumenterAgent(context),  # All repos with drill-down
         ]
         
         # Add per-service agents

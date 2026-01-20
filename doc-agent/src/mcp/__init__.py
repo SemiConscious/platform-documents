@@ -4,6 +4,7 @@ from .client import MCPClient, MCPOAuthConfig, MCPResponse
 from .github import GitHubClient
 from .confluence import ConfluenceClient
 from .jira import JiraClient
+from .docs360 import Docs360Client
 
 __all__ = [
     "MCPClient",
@@ -12,4 +13,5 @@ __all__ = [
     "GitHubClient",
     "ConfluenceClient",
     "JiraClient",
+    "Docs360Client",
 ]

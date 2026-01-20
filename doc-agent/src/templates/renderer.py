@@ -220,12 +220,19 @@ This service is part of the Natterbox platform.
 
 | Property | Value |
 |----------|-------|
-| **Repository** | {{ service.repository or 'N/A' }} |
+| **Repository** | {% if service.repository %}{% if service.repository_doc_url %}[{{ service.repository }}]({{ service.repository_doc_url }}){% else %}{{ service.repository }}{% endif %}{% else %}N/A{% endif %} |
+| **GitHub** | {% if service.repository_url %}[View on GitHub]({{ service.repository_url }}){% else %}N/A{% endif %} |
 | **Language** | {{ service.language or 'N/A' }} |
 | **Framework** | {{ service.framework or 'N/A' }} |
 | **Team** | {{ service.team or 'N/A' }} |
 | **Status** | {{ service.status or 'Active' }} |
 
+{% if service.repository_doc_url %}
+## Source Code
+
+For detailed repository information, structure, and setup instructions, see the [Repository Documentation]({{ service.repository_doc_url }}).
+
+{% endif %}
 {% if service.dependencies %}
 ## Dependencies
 
@@ -242,7 +249,8 @@ This service depends on:
 This service exposes the following APIs:
 
 {% for api in service.apis %}
-- [{{ api }}](./api/overview.md)
+- [{{ api.name }}](./api/overview.md) - {{ api.api_type or 'REST' }}{% if api.description %}: {{ api.description }}{% endif %}
+
 {% endfor %}
 {% endif %}
 
@@ -351,6 +359,7 @@ auto_generated: true
 - [Architecture Overview](./architecture/overview.md)
 - [System Landscape](./architecture/system-landscape.md)
 - [Service Catalog](#services)
+- [Repository Index](./repositories/index.md)
 
 ## Architecture
 
@@ -378,6 +387,12 @@ Explore the platform architecture:
 | [{{ service.name }}](./services/{{ service.id }}/README.md) | {{ service.domain or 'N/A' }} | {{ service.description or 'N/A' }} |
 {% endfor %}
 {% endif %}
+
+## Repositories
+
+Browse all repositories with detailed documentation:
+
+- [Repository Index](./repositories/index.md) - Complete listing of all repositories
 
 ## Reference
 
