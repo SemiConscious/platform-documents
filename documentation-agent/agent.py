@@ -1185,12 +1185,57 @@ If you encounter issues:
         except Exception as e:
             logger.warning(f"Failed to clear continuation file: {e}")
 
+    def _has_incomplete_tool_use(self) -> bool:
+        """Check if the message history has tool_use blocks without corresponding tool_result."""
+        if not self.messages:
+            return False
+        
+        # Check the last assistant message
+        for msg in reversed(self.messages):
+            if msg.get("role") == "assistant":
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    for block in content:
+                        if block.get("type") == "tool_use":
+                            # Found a tool_use - check if there's a tool_result after
+                            return True  # If we're here, there's no tool_result yet
+                break
+            elif msg.get("role") == "user":
+                # If user message comes first (going backwards), check if it has tool_result
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    for block in content:
+                        if block.get("type") == "tool_result":
+                            return False  # Tool results exist, we're good
+                break
+        
+        return False
+
+    def _get_fallback_continuation(self, original_task: str, turns_used: int) -> str:
+        """Generate a fallback continuation without calling Claude."""
+        files_list = ", ".join(self._files_written) if self._files_written else "none yet"
+        return f"""CONTINUATION: Resuming documentation task after interruption.
+
+Task was interrupted after {turns_used} turns (context limit reached).
+
+Files created so far: {files_list}
+
+Original task: {original_task}
+
+Please read .project/STATUS.md and .project/BACKLOG.md to understand current progress,
+then continue with the next highest priority item."""
+
     def _generate_continuation_prompt(self, original_task: str, turns_used: int) -> str:
         """
         Ask Claude to generate a continuation prompt capturing current progress.
         This is called when we run out of turns.
         """
         logger.info("📝 Generating continuation prompt for next run...")
+
+        # Check if we have incomplete tool_use blocks - if so, use fallback
+        if self._has_incomplete_tool_use():
+            logger.warning("⚠️  Cannot ask Claude for continuation - incomplete tool_use in history. Using fallback.")
+            return self._get_fallback_continuation(original_task, turns_used)
 
         # Add a special message asking for a continuation summary
         continuation_request = """
@@ -1273,14 +1318,20 @@ The previous run used {turns_used} turns. Please review the project status files
         Returns the continuation prompt to use for the fresh context.
 
         Strategy:
-        1. FIRST aggressively truncate messages to make room for summary request
-        2. Ask for summary with the reduced context
-        3. Fallback to state-based continuation if summary fails
+        1. Check for incomplete tool_use - use fallback if found
+        2. Aggressively truncate messages to make room for summary request
+        3. Ask for summary with the reduced context
+        4. Fallback to state-based continuation if summary fails
         """
         logger.info("🔄 Context getting large - performing soft reset...")
         print(f"\n{'=' * 60}")
         print("SOFT RESET - Context approaching limit")
         print(f"{'=' * 60}\n")
+
+        # Check for incomplete tool_use - if so, use fallback immediately
+        if self._has_incomplete_tool_use():
+            logger.warning("⚠️  Incomplete tool_use in history - using fallback continuation")
+            return self._get_fallback_continuation(original_task, turns_used)
 
         # STEP 1: Aggressively truncate to make room for summary
         # Keep only first message (task) and last 3 exchanges
