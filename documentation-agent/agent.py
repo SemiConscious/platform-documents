@@ -196,16 +196,18 @@ class FileStore:
     
     def read(self, file_id: str, offset: int = 0, limit: Optional[int] = None) -> dict:
         """
-        Read content from the store.
+        Read content from the store using CHARACTER-based offsets.
         
         Args:
             file_id: The file ID returned from store()
-            offset: Line number to start from (0-based)
-            limit: Maximum number of lines to return
+            offset: Character position to start from (0-based)
+            limit: Maximum number of characters to return (default: 10000 ≈ 2500 tokens)
             
         Returns:
             Dict with content, metadata, and whether there's more
         """
+        DEFAULT_LIMIT = 10000  # ~2500 tokens worth
+        
         if file_id not in self._index:
             return {"error": f"File ID '{file_id}' not found in store"}
         
@@ -216,41 +218,43 @@ class FileStore:
             return {"error": f"File for ID '{file_id}' no longer exists"}
         
         try:
-            lines = file_path.read_text().split('\n')
-            total_lines = len(lines)
+            content = file_path.read_text()
+            total_chars = len(content)
             
-            # Apply offset and limit
-            if offset >= total_lines:
+            # Apply offset and limit (character-based)
+            if offset >= total_chars:
                 return {
                     "content": "",
                     "file_id": file_id,
-                    "offset": offset,
-                    "lines_returned": 0,
-                    "total_lines": total_lines,
+                    "offset_chars": offset,
+                    "chars_returned": 0,
+                    "total_chars": total_chars,
                     "has_more": False,
+                    "status": "COMPLETE - offset past end of file"
                 }
             
-            end = total_lines if limit is None else min(offset + limit, total_lines)
-            selected_lines = lines[offset:end]
-            remaining_lines = total_lines - end
+            actual_limit = limit if limit is not None else DEFAULT_LIMIT
+            end = min(offset + actual_limit, total_chars)
+            selected_content = content[offset:end]
+            remaining_chars = total_chars - end
             
             result = {
                 "file_id": file_id,
-                "offset": offset,
-                "lines_returned": len(selected_lines),
-                "total_lines": total_lines,
-                "total_size_bytes": metadata["size"],
+                "offset_chars": offset,
+                "chars_returned": len(selected_content),
+                "total_chars": total_chars,
                 "source": metadata.get("source", "unknown"),
-                "content": '\n'.join(selected_lines),
+                "content": selected_content,
             }
             
-            if remaining_lines > 0:
+            if remaining_chars > 0:
                 # Make it VERY clear there's more data
-                result["⚠️_WARNING"] = f"INCOMPLETE DATA: Only showing {len(selected_lines)} of {total_lines} lines ({remaining_lines} lines remaining)"
+                pct_shown = int((end / total_chars) * 100)
+                result["⚠️_WARNING"] = f"INCOMPLETE: Showing {pct_shown}% ({len(selected_content):,} of {total_chars:,} chars). {remaining_chars:,} chars remaining!"
                 result["has_more"] = True
-                result["remaining_lines"] = remaining_lines
+                result["remaining_chars"] = remaining_chars
                 result["next_offset"] = end
-                result["to_continue"] = f"read_from_store(file_id='{file_id}', offset={end}, limit=200)"
+                result["to_continue"] = f"read_from_store(file_id='{file_id}', offset={end}, limit={actual_limit})"
             else:
                 result["has_more"] = False
                 result["status"] = "COMPLETE - all data returned"
@@ -294,9 +298,10 @@ class FileStore:
             {
                 "name": "read_from_store",
                 "description": (
-                    "Read content from the file store. Use this to access large results "
-                    "that were too big to return directly. You can read in chunks using "
-                    "offset and limit parameters to avoid loading too much at once."
+                    "Read content from the file store using CHARACTER-based offsets. "
+                    "Use this to access large results that were too big to return directly. "
+                    "ALWAYS check 'has_more' in the response - if true, call again with "
+                    "the 'next_offset' value to get the remaining content."
                 ),
                 "input_schema": {
                     "type": "object",
@@ -307,11 +312,11 @@ class FileStore:
                         },
                         "offset": {
                             "type": "integer",
-                            "description": "Line number to start reading from (0-based). Default: 0"
+                            "description": "Character position to start from (0-based). Use next_offset from previous response to continue. Default: 0"
                         },
                         "limit": {
                             "type": "integer",
-                            "description": "Maximum number of lines to return. Default: 200 lines"
+                            "description": "Maximum characters to return. Default: 10000 chars (~2500 tokens)"
                         }
                     },
                     "required": ["file_id"]
@@ -1070,7 +1075,7 @@ class DocumentationAgent:
     
     # Context management
     MAX_TOOL_RESULT_CHARS = 50000  # Store results larger than this (~12K tokens)
-    CONTEXT_SOFT_RESET_THRESHOLD = 0.75  # Trigger soft reset at 75% of context limit
+    CONTEXT_SOFT_RESET_THRESHOLD = 0.50  # Trigger soft reset at 50% - need room for summary!
     
     SYSTEM_PROMPT = """You are an expert documentation engineer helping to create and maintain platform documentation for Natterbox.
 
@@ -1083,13 +1088,14 @@ You have access to the following tool categories:
 
 2. **File Store Tools** (read_from_store, list_store_files):
    - Large tool results are automatically stored here to save context space
-   - Use read_from_store(file_id, offset, limit) to retrieve stored content
-   - **IMPORTANT**: When reading from store, ALWAYS check `has_more` and `remaining_lines`
-   - If `has_more` is true, you have NOT seen all the data - use `next_offset` to continue
+   - Use read_from_store(file_id, offset, limit) - offsets are in CHARACTERS not lines!
+   - **CRITICAL**: ALWAYS check `has_more` in the response!
+   - If `has_more` is true, you have NOT seen all the data
+   - Use `next_offset` from the response to continue reading
    - Keep reading until `has_more` is false to get complete information
-   - Example: First call returns 200 lines with has_more=true, next_offset=200
-     -> Call read_from_store(file_id, offset=200, limit=200) to get next chunk
-   - Use list_store_files to see what's available
+   - Example: First call returns 10000 chars with has_more=true, next_offset=10000
+     -> Call read_from_store(file_id, offset=10000) to get the next chunk
+   - Default limit is 10000 chars (~2500 tokens)
 
 3. **MCP Tools** (prefixed with mcp_):
    - mcp_confluence: Search and read Confluence wiki pages
@@ -1283,26 +1289,37 @@ The previous run used {turns_used} turns. Please review the project status files
         """
         Perform a soft reset: ask Claude to summarize progress, then clear context.
         Returns the continuation prompt to use for the fresh context.
+        
+        Strategy: 
+        1. FIRST aggressively truncate messages to make room for summary request
+        2. Ask for summary with the reduced context
+        3. Fallback to state-based continuation if summary fails
         """
         logger.info("🔄 Context getting large - performing soft reset...")
         print(f"\n{'='*60}")
         print("SOFT RESET - Context approaching limit")
         print(f"{'='*60}\n")
         
-        # Ask Claude to summarize what's been done and what's next
-        reset_request = """
-CONTEXT MANAGEMENT: The conversation context is getting too large and needs to be reset.
+        # STEP 1: Aggressively truncate to make room for summary
+        # Keep only first message (task) and last 3 exchanges
+        original_message_count = len(self.messages)
+        if len(self.messages) > 7:
+            first_message = self.messages[0]  # Keep original task
+            last_messages = self.messages[-6:]  # Keep last 3 exchanges (6 messages)
+            self.messages = [first_message] + last_messages
+            logger.info(f"📦 Truncated messages: {original_message_count} → {len(self.messages)} for summary request")
+        
+        # Also compress any remaining tool results
+        self._compress_historical_messages(keep_recent=1)
+        
+        # STEP 2: Ask Claude for summary (with reduced context)
+        reset_request = """CONTEXT RESET NEEDED. Provide a brief CONTINUATION summary:
 
-Please provide a CONTINUATION SUMMARY so we can continue with a fresh context.
-Include:
+1. DONE: Files created this task
+2. CURRENT: What you were working on  
+3. NEXT: Immediate next step
 
-1. **COMPLETED**: What has been accomplished so far (files created, research done)
-2. **IN PROGRESS**: What you were in the middle of doing
-3. **NEXT STEPS**: What should be done next
-4. **KEY CONTEXT**: Any important decisions, findings, or information that must be preserved
-
-Format as a clear, actionable prompt that will let you continue seamlessly after the context reset.
-Start with "CONTINUATION:" followed by the summary.
+Keep it SHORT (under 500 words). Start with "CONTINUATION:"
 """
         
         self.messages.append({
@@ -1311,14 +1328,12 @@ Start with "CONTINUATION:" followed by the summary.
         })
         
         try:
-            # Use a simple call without tools
             response = self.bedrock.create_message(
                 messages=self.messages,
-                system=self._get_system_prompt(),
-                tools=[],  # No tools for this summary request
+                system="You are summarizing your progress. Be concise.",
+                tools=[],
             )
             
-            # Extract the continuation
             continuation = ""
             for block in response.get("content", []):
                 if block.get("type") == "text":
@@ -1336,13 +1351,36 @@ Start with "CONTINUATION:" followed by the summary.
         except Exception as e:
             logger.error(f"Failed to get soft reset summary: {e}")
         
-        # Fallback continuation
-        return f"""Continue the documentation task. Previous progress:
-- Files created: {list(self._files_written)}
-- Turns used: {turns_used}
-- Original task: {original_task}
+        # STEP 3: Fallback - build continuation from saved state
+        logger.info("Using state-based fallback for continuation")
+        
+        # Read current status from file if possible
+        status_hint = ""
+        try:
+            status_path = self.config.work_dir / ".project" / "STATUS.md"
+            if status_path.exists():
+                status_content = status_path.read_text()
+                # Extract just the "Next Up" section if present
+                if "## Next Up" in status_content:
+                    next_up = status_content.split("## Next Up")[1].split("##")[0].strip()
+                    status_hint = f"\nFrom STATUS.md Next Up:\n{next_up[:500]}"
+        except:
+            pass
+        
+        files_list = ", ".join(self._files_written) if self._files_written else "none yet"
+        
+        return f"""CONTINUATION: Resuming documentation task after context reset.
 
-Review the project status (.project/STATUS.md) and continue with the next logical step."""
+**Files created this session**: {files_list}
+**Turns completed**: {turns_used}
+{status_hint}
+
+**NEXT STEPS**:
+1. Read .project/STATUS.md and .project/BACKLOG.md to understand current state
+2. Continue with the next incomplete documentation item
+3. Use the file store (list_store_files) if you need data from earlier research
+
+Original task: {original_task}"""
         
     async def initialize(self) -> bool:
         """Initialize the agent and connect to services."""
