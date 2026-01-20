@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-20  
 **Current Phase:** Phase 2 - Documentation Creation  
-**Overall Progress:** ██████████████████░░ 82%
+**Overall Progress:** ██████████████████░░ 85%
 
 ---
 
@@ -24,7 +24,8 @@ Core platform service documentation. Continuing with deep-dive documentation on 
 - [x] Onboarding guides ✅
 - [x] Terraform module catalog ✅
 - [x] Documentation agent tooling ✅
-- [x] **Platform-API (CoreAPI) documentation** ✅ NEW
+- [x] **Platform-API (CoreAPI) documentation** ✅
+- [x] **Platform-Sapien (Public API) documentation** ✅ NEW
 
 ## 🚧 Blocked On
 
@@ -42,10 +43,11 @@ Core platform service documentation. Continuing with deep-dive documentation on 
 - `/architecture/ai-cai/overview.md` - Conversational AI
 - `/architecture/infrastructure/overview.md` - Infrastructure & deployment
 
-### Services (3 docs)
+### Services (4 docs)
 - `/services/inventory.md` - Service inventory
 - `/services/repository-inventory.md` - Comprehensive inventory of ~450+ repositories
-- `/services/platform-api.md` - **NEW** Core API service documentation (comprehensive)
+- `/services/platform-api.md` - Core API service documentation (comprehensive)
+- `/services/platform-sapien.md` - **NEW** Public API service documentation (comprehensive)
 
 ### Terraform (1 doc)
 - `/terraform-modules/catalog.md` - Module catalog
@@ -67,7 +69,6 @@ Core platform service documentation. Continuing with deep-dive documentation on 
 ## ⏭️ Next Up
 
 1. **Platform core services** (continuing):
-   - platform-sapien documentation
    - Database architecture overview
    - CDR processing (cdrmunch)
 
@@ -86,6 +87,20 @@ Core platform service documentation. Continuing with deep-dive documentation on 
    - Support team onboarding guide
 
 ## 💡 Recent Updates
+
+### 2026-01-20 (Session 3)
+- **Platform-Sapien documentation completed:**
+  - Comprehensive 900+ line documentation
+  - Architecture diagrams (ASCII)
+  - All 6 Symfony bundles documented
+  - AWS API Gateway infrastructure documented
+  - Terraform configuration reference
+  - API endpoint examples with request/response
+  - Configuration reference (env vars, Symfony config)
+  - Docker deployment setup
+  - Troubleshooting guide
+  - Security considerations
+  - Source code verified against actual repository
 
 ### 2026-01-20 (Session 2)
 - **Platform-API documentation completed:**
@@ -124,16 +139,17 @@ Core platform service documentation. Continuing with deep-dive documentation on 
 |--------|-------|
 | Repos Inventoried | ~450 ✅ |
 | Architecture Docs | 8 ✅ |
-| Services Documented | 3 (was 2) |
+| Services Documented | 4 (was 3) |
 | Terraform Docs | 1 ✅ |
 | Runbooks Created | 4 ✅ |
 | Onboarding Guides | 3 ✅ |
-| **Total Docs** | **~26** |
+| **Total Docs** | **~27** |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
+| 2026-01-20 | Platform-Sapien comprehensive documentation |
 | 2026-01-20 | Platform-API comprehensive documentation |
 | 2026-01-20 | Completed all domain overviews, runbooks, onboarding, documentation agent |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
