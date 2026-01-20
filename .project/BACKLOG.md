@@ -20,7 +20,7 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 
 ---
 
-## Priority 2: Core Platform 🔄 IN PROGRESS
+## Priority 2: Core Platform ✅ COMPLETE
 
 ### Voice Routing Subsystem ✅
 - [x] FreeSWITCH overview and role
@@ -31,11 +31,11 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [ ] tts-gateway service documentation
 - [ ] Routing policies documentation
 
-### Platform Core Services 🔄
+### Platform Core Services ✅
 - [x] **platform-api documentation** ✅ COMPLETE (2026-01-20)
 - [x] **platform-sapien documentation** ✅ COMPLETE (2026-01-20)
 - [x] **Database architecture overview** ✅ COMPLETE (2026-01-20)
-- [ ] CDR processing pipeline (cdrmunch)
+- [x] **CDRMunch (Post-Call Processing) documentation** ✅ COMPLETE (2026-01-20)
 
 ### Infrastructure ✅
 - [x] Infrastructure overview (AWS, networking, deployment)
