@@ -28,8 +28,8 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [x] fsxinetd service documentation
 - [x] **CDR processing pipeline (cdrmunch)** ✅ DONE
 - [x] **tts-gateway service documentation** ✅ DONE
-- [x] **Dialplan structure and logic** ✅ DONE (NEW)
-- [ ] PBX component documentation
+- [x] **Dialplan structure and logic** ✅ DONE
+- [x] **PBX component documentation** ✅ DONE (NEW)
 - [ ] Routing policies documentation
 
 ### Platform Core Services ✅ COMPLETE

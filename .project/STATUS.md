@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-20  
 **Current Phase:** Phase 2 - Documentation Creation  
-**Overall Progress:** ██████████████████░░ 94%
+**Overall Progress:** ██████████████████░░ 95%
 
 ---
 
@@ -29,7 +29,8 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 - [x] **Database architecture overview** ✅
 - [x] **CDR processing pipeline (cdrmunch)** ✅
 - [x] **TTS Gateway service documentation** ✅
-- [x] **Dialplan structure and logic** ✅ (NEW)
+- [x] **Dialplan structure and logic** ✅
+- [x] **PBX component documentation** ✅ (NEW)
 
 ## 🚧 Blocked On
 
@@ -37,14 +38,15 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 
 ## ✅ Ready for Review
 
-### Architecture (12 docs)
+### Architecture (13 docs)
 - `/architecture/overview.md` - Architecture index
 - `/architecture/global-architecture.md` - Platform architecture overview
 - `/architecture/voice-routing/overview.md` - Voice routing subsystem
 - `/architecture/voice-routing/fsxinetd.md` - fsxinetd service documentation
 - `/architecture/voice-routing/cdr-processing.md` - CDR processing pipeline
 - `/architecture/voice-routing/tts-gateway.md` - TTS Gateway service
-- `/architecture/voice-routing/dialplan.md` - **Dialplan structure and logic** (NEW)
+- `/architecture/voice-routing/dialplan.md` - Dialplan structure and logic
+- `/architecture/voice-routing/pbx.md` - **PBX component documentation** (NEW)
 - `/architecture/salesforce-integration/overview.md` - Salesforce integration
 - `/architecture/omnichannel/overview.md` - Omnichannel architecture
 - `/architecture/ai-cai/overview.md` - Conversational AI
@@ -77,7 +79,6 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 ## ⏭️ Next Up
 
 1. **Voice routing deep-dive** (remaining items):
-   - PBX component documentation
    - Routing policies documentation
 
 2. **Deep-dive documentation** (detailed docs beyond overviews):
@@ -94,6 +95,28 @@ Platform core services documentation in progress. Continuing deep-dive documenta
    - Support team onboarding guide
 
 ## 💡 Recent Updates
+
+### 2026-01-20 (Session 8)
+- **PBX component documentation created:**
+  - Comprehensive PBX architecture (~450 lines)
+  - OpenSIPS (SIP Proxy) documentation:
+    - Network configuration (ports 5050, 5060, 5080, 5090)
+    - Database tables (dialog, load_balancer, location)
+    - Redmatter module and exported functions
+    - dstcheck API for routing decisions
+    - MNO prefix handling
+    - Monitoring commands (opensipsctl)
+  - FreeSWITCH (PBX) documentation:
+    - Network configuration (ports, RTP range)
+    - Custom modules (mod_rmAPI, mod_rmvoicemail, mod_rmremoterec)
+    - Monitoring commands (fs_cli)
+  - High Availability configuration
+  - PCI Pal integration details:
+    - Tromboning architecture
+    - Inbound/outbound call flows
+    - Secure mode for payment processing
+  - Integration points with CoreAPI
+  - Troubleshooting guidance
 
 ### 2026-01-20 (Session 7)
 - **Dialplan documentation created:**
@@ -189,18 +212,18 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 | Metric | Count |
 |--------|-------|
 | Repos Inventoried | ~450 ✅ |
-| Architecture Docs | 12 ✅ |
+| Architecture Docs | 13 ✅ |
 | Services Documented | 4 ✅ |
 | Terraform Docs | 1 ✅ |
 | Runbooks Created | 4 ✅ |
 | Onboarding Guides | 3 ✅ |
-| **Total Docs** | **~31** |
+| **Total Docs** | **~32** |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
-| 2026-01-20 | Dialplan docs, TTS Gateway docs, CDR processing docs, Database architecture, Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
+| 2026-01-20 | PBX docs, Dialplan docs, TTS Gateway docs, CDR processing docs, Database architecture, Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
 
 ---
