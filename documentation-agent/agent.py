@@ -629,8 +629,6 @@ class MCPClient:
     
     async def call_tool(self, name: str, arguments: dict) -> dict[str, Any]:
         """Call an MCP tool with the given arguments."""
-        logger.info(f"MCP tool call: {name}")
-        
         # Proactively refresh token if needed
         await self._ensure_valid_token()
         
@@ -922,6 +920,66 @@ If you encounter issues that prevent completion:
         text_lower = response_text.lower()
         return any(indicator in text_lower for indicator in completion_indicators)
     
+    def _format_mcp_call_details(self, tool_name: str, tool_input: dict) -> str:
+        """Format MCP tool call details for human-readable logging."""
+        details = []
+        
+        # Handle specific MCP tools with meaningful summaries
+        if tool_name == "confluence":
+            op = tool_input.get("operation", "unknown")
+            if op == "search_pages":
+                details.append(f"searching for: '{tool_input.get('query', '')}'")
+            elif op == "get_page":
+                details.append(f"reading page ID: {tool_input.get('pageId', 'unknown')}")
+            else:
+                details.append(f"operation: {op}")
+                
+        elif tool_name == "github":
+            op = tool_input.get("operation", "unknown")
+            owner = tool_input.get("owner", "")
+            repo = tool_input.get("repo", "")
+            if owner and repo:
+                details.append(f"repo: {owner}/{repo}")
+            if op == "list_contents":
+                path = tool_input.get("path", "/")
+                details.append(f"listing: {path}")
+            elif op == "get_file_content":
+                path = tool_input.get("path", "")
+                details.append(f"reading: {path}")
+            elif op == "list_repos":
+                details.append("listing repositories")
+            elif op == "get_tree":
+                details.append("getting repo tree")
+            else:
+                details.append(f"operation: {op}")
+                
+        elif tool_name == "docs360_search":
+            details.append(f"searching: '{tool_input.get('query', '')}'")
+            
+        elif tool_name == "slack":
+            op = tool_input.get("operation", "unknown")
+            details.append(f"operation: {op}")
+            if tool_input.get("query"):
+                details.append(f"query: '{tool_input.get('query')}'")
+                
+        elif tool_name == "salesforce":
+            obj = tool_input.get("object", "")
+            if obj:
+                details.append(f"querying: {obj}")
+            if tool_input.get("soql"):
+                details.append(f"SOQL: {tool_input.get('soql')[:50]}...")
+                
+        else:
+            # Generic formatting for other tools
+            for key in ["query", "operation", "path", "name"]:
+                if key in tool_input:
+                    val = str(tool_input[key])
+                    if len(val) > 60:
+                        val = val[:60] + "..."
+                    details.append(f"{key}: {val}")
+        
+        return " | ".join(details) if details else json.dumps(tool_input)[:100]
+    
     async def _handle_tool_use(self, tool_use: dict) -> dict:
         """Execute a tool and return the result."""
         tool_name = tool_use["name"]
@@ -929,26 +987,36 @@ If you encounter issues that prevent completion:
         
         # Handle shell tools
         if tool_name == "bash":
-            result = self.shell.execute(
-                tool_input.get("command", ""),
-                tool_input.get("description", "")
-            )
+            cmd = tool_input.get("command", "")
+            desc = tool_input.get("description", "")
+            logger.info(f"🔧 bash: {desc or cmd[:80]}")
+            result = self.shell.execute(cmd, desc)
+            
         elif tool_name == "read_file":
-            result = self.shell.read_file(tool_input.get("path", ""))
+            path = tool_input.get("path", "")
+            logger.info(f"📖 read_file: {path}")
+            result = self.shell.read_file(path)
+            
         elif tool_name == "write_file":
-            result = self.shell.write_file(
-                tool_input.get("path", ""),
-                tool_input.get("content", "")
-            )
+            path = tool_input.get("path", "")
+            content_len = len(tool_input.get("content", ""))
+            logger.info(f"📝 write_file: {path} ({content_len} chars)")
+            result = self.shell.write_file(path, tool_input.get("content", ""))
+            
         elif tool_name == "list_directory":
-            result = self.shell.list_directory(tool_input.get("path", "."))
+            path = tool_input.get("path", ".")
+            logger.info(f"📁 list_directory: {path}")
+            result = self.shell.list_directory(path)
         
         # Handle MCP tools
         elif tool_name.startswith("mcp_"):
             mcp_tool_name = tool_name[4:]  # Remove "mcp_" prefix
+            details = self._format_mcp_call_details(mcp_tool_name, tool_input)
+            logger.info(f"🌐 mcp_{mcp_tool_name}: {details}")
             result = await self.mcp.call_tool(mcp_tool_name, tool_input)
         
         else:
+            logger.warning(f"❓ Unknown tool: {tool_name}")
             result = {"error": f"Unknown tool: {tool_name}"}
         
         return result
@@ -1020,15 +1088,30 @@ If you encounter issues that prevent completion:
                 "content": content
             })
             
-            # Extract text from response
+            # Extract and display text from response (Claude's thinking/reasoning)
             response_text = ""
             for block in content:
                 if block.get("type") == "text":
-                    response_text += block.get("text", "")
+                    text = block.get("text", "")
+                    response_text += text
+                    
+                    # Print Claude's thinking/reasoning (truncated if very long)
+                    if text.strip():
+                        # Show first part of thinking for context
+                        display_text = text.strip()
+                        if len(display_text) > 500:
+                            # For long text, show beginning and note it's truncated
+                            lines = display_text.split('\n')
+                            if len(lines) > 10:
+                                display_text = '\n'.join(lines[:10]) + f"\n... ({len(lines) - 10} more lines)"
+                            else:
+                                display_text = display_text[:500] + "..."
+                        
+                        print(f"\n💭 Claude's thinking:\n{display_text}\n")
             
             # If no more tool use, we're done
             if stop_reason == "end_turn":
-                logger.info("Task completed (end_turn)")
+                logger.info("✅ Task completed (end_turn)")
                 
                 # Print summary if files were created
                 if self._files_written:
