@@ -396,7 +396,7 @@ def auth_login(ctx: click.Context, service: str):
     
     if service == "aws":
         aws_config = config.get("auth", {}).get("aws", {})
-        profile = aws_config.get("profile", "ssh-dev03-admin")
+        profile = aws_config.get("profile", "sso-dev03-admin")
         
         aws_sso = AWSSSOAuth(
             profile=profile,

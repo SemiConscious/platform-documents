@@ -151,7 +151,7 @@ class Orchestrator:
                     logger.info(f"AWS SSO credentials valid until {creds.expiration}")
             except Exception as e:
                 logger.warning(f"AWS SSO credentials not available: {e}")
-                logger.info("Run 'aws-vault login ssh-dev03-admin' to authenticate.")
+                logger.info("Run 'aws-vault login sso-dev03-admin' to authenticate.")
     
     async def _setup_anthropic_client(self) -> None:
         """Set up the Anthropic client, using Bedrock if configured."""

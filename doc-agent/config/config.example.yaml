@@ -28,8 +28,8 @@ auth:
   # AWS SSO (for Bedrock API)
   aws:
     enabled: true
-    profile: "ssh-dev03-admin"  # AWS profile with SSO configured
-    region: us-east-1
+    profile: "sso-dev03-admin"  # AWS profile with SSO configured
+    region: eu-west-1
     use_aws_vault: true  # Use aws-vault for credential management
 
 sources:
