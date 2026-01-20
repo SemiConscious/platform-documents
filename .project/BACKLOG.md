@@ -7,15 +7,15 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 1: Foundation ✅ COMPLETE
 
 ### Project Setup ✅
-- [x] Create repository structure
-- [x] Set up project tracking files
-- [x] Create initial repository inventory
-- [x] Categorize repositories by domain
+- [ ] Create repository structure
+- [ ] Set up project tracking files
+- [ ] Create initial repository inventory
+- [ ] Categorize repositories by domain
 
 ### High-Level Architecture ✅
-- [x] Create architecture overview document
-- [x] Pull existing diagrams from Confluence Architecture space
-- [x] Document global platform topology (6 AWS regions)
+- [ ] Create architecture overview document
+- [ ] Pull existing diagrams from Confluence Architecture space
+- [ ] Document global platform topology (6 AWS regions)
 - [ ] Create service dependency map (deferred - complex)
 
 ---
@@ -23,9 +23,9 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 2: Core Platform ✅ MOSTLY COMPLETE
 
 ### Voice Routing Subsystem ✅
-- [x] FreeSWITCH overview and role
-- [x] Call flow documentation (inbound/outbound)
-- [x] fsxinetd service documentation
+- [ ] FreeSWITCH overview and role
+- [ ] Call flow documentation (inbound/outbound)
+- [ ] fsxinetd service documentation
 - [ ] Dialplan structure and logic
 - [ ] PBX component documentation
 - [ ] tts-gateway service documentation
@@ -38,7 +38,7 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [ ] CDR processing pipeline (cdrmunch)
 
 ### Infrastructure ✅
-- [x] Infrastructure overview (AWS, networking, deployment)
+- [ ] Infrastructure overview (AWS, networking, deployment)
 - [ ] Salt Stack configuration management details
 - [ ] Guardian system documentation
 - [ ] Networking architecture deep-dive
@@ -48,14 +48,14 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 3: Key Integrations ✅ OVERVIEW COMPLETE
 
 ### Salesforce Integration ✅
-- [x] Salesforce integration overview (AVS, SCV, architecture)
+- [ ] Salesforce integration overview (AVS, SCV, architecture)
 - [ ] AVS package deep-dive
 - [ ] SCV BYOT connector details
 - [ ] Omni-Channel integration details
 - [ ] Voice Call object usage
 
 ### Omnichannel ✅
-- [x] Omnichannel overview (architecture, components, flows)
+- [ ] Omnichannel overview (architecture, components, flows)
 - [ ] Omniservice deep-dive
 - [ ] Chat widget integration details
 - [ ] Message templates service
@@ -66,7 +66,7 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 4: Modern Services ✅ OVERVIEW COMPLETE
 
 ### AI/CAI (Conversational AI) ✅
-- [x] CAI overview (architecture, components, integration)
+- [ ] CAI overview (architecture, components, integration)
 - [ ] Bedrock integration deep-dive
 - [ ] Prompt pipeline documentation
 - [ ] WebSocket service details
@@ -87,7 +87,7 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 5: Infrastructure as Code (Partial)
 
 ### Terraform Module Catalog ✅
-- [x] Create module inventory (catalog.md)
+- [ ] Create module inventory (catalog.md)
 - [ ] Document module dependencies
 - [ ] Standardize module documentation format
 - [ ] Key modules deep-dive:
@@ -103,10 +103,10 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 6: Operations ✅ COMPLETE
 
 ### Runbooks ✅
-- [x] Consolidate existing runbooks from Confluence
-- [x] Incident response procedures (emergency-response.md)
-- [x] Deployment procedures
-- [x] Monitoring and alerting procedures
+- [ ] Consolidate existing runbooks from Confluence
+- [ ] Incident response procedures (emergency-response.md)
+- [ ] Deployment procedures
+- [ ] Monitoring and alerting procedures
 
 ### CI/CD
 - [ ] GitHub Actions workflows documentation
@@ -118,10 +118,10 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ## Priority 7: Onboarding ✅ COMPLETE
 
 ### Developer Onboarding ✅
-- [x] Development environment setup
-- [x] Repository navigation guide
-- [x] Key technologies overview
-- [x] Common development tasks
+- [ ] Development environment setup
+- [ ] Repository navigation guide
+- [ ] Key technologies overview
+- [ ] Common development tasks
 
 ### Support Onboarding
 - [ ] Platform overview for support
@@ -129,18 +129,18 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [ ] Escalation procedures
 
 ### Platform Engineer Onboarding ✅
-- [x] Training plan overview
-- [x] Tools and access
-- [x] Operational procedures
+- [ ] Training plan overview
+- [ ] Tools and access
+- [ ] Operational procedures
 
 ---
 
 ## Priority 8: Tooling ✅ COMPLETE
 
 ### Documentation Agent ✅
-- [x] Agent framework for autonomous documentation updates
-- [x] Task configuration (tasks.yaml)
-- [x] Docker deployment setup
+- [ ] Agent framework for autonomous documentation updates
+- [ ] Task configuration (tasks.yaml)
+- [ ] Docker deployment setup
 
 ---
 
