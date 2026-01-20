@@ -34,7 +34,7 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ### Platform Core Services 🔄
 - [x] **platform-api documentation** ✅ COMPLETE (2026-01-20)
 - [x] **platform-sapien documentation** ✅ COMPLETE (2026-01-20)
-- [ ] Database architecture overview
+- [x] **Database architecture overview** ✅ COMPLETE (2026-01-20)
 - [ ] CDR processing pipeline (cdrmunch)
 
 ### Infrastructure ✅
