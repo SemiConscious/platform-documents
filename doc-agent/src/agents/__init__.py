@@ -4,6 +4,6 @@ from .base import BaseAgent, AgentResult, AgentContext
 
 __all__ = [
     "BaseAgent",
-    "AgentResult", 
+    "AgentResult",
     "AgentContext",
 ]

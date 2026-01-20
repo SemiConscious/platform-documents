@@ -12,6 +12,7 @@ from .agents.base import AgentContext, AgentResult, ParallelAgentRunner
 from .knowledge import KnowledgeGraph, KnowledgeStore
 from .mcp import MCPClient
 from .context import FileStore, FileStoreTool
+from .auth import OAuthManager, OAuthConfig, TokenCache, AWSSSOAuth
 from .utils.logging import get_logger
 
 logger = get_logger("orchestrator")
@@ -73,6 +74,12 @@ class Orchestrator:
         # Initialize components
         self.store = KnowledgeStore(self.store_dir)
         
+        # Initialize authentication
+        self.token_cache = TokenCache()
+        self.oauth_manager = OAuthManager(token_cache=self.token_cache)
+        self.aws_sso: Optional[AWSSSOAuth] = None
+        self._setup_auth(config.get("auth", {}))
+        
         # Configure MCP client for Natterbox server
         mcp_config = config.get("mcp", {})
         self.mcp_client = MCPClient(
@@ -81,6 +88,7 @@ class Orchestrator:
             server_args=mcp_config.get("args"),
             server_env=mcp_config.get("env"),
             timeout=mcp_config.get("timeout", 60),
+            oauth_manager=self.oauth_manager,
         )
         
         # Initialize file store for context management (session-only)
@@ -92,6 +100,41 @@ class Orchestrator:
         
         # Phase results
         self.phase_results: dict[str, PhaseResult] = {}
+    
+    def _setup_auth(self, auth_config: dict[str, Any]) -> None:
+        """Set up authentication from config."""
+        # GitHub OAuth
+        github_config = auth_config.get("github", {})
+        if github_config.get("enabled") and github_config.get("client_id"):
+            self.oauth_manager.add_config(OAuthConfig.github(
+                client_id=github_config["client_id"],
+                client_secret=github_config.get("client_secret"),
+            ))
+            logger.info("GitHub OAuth configured")
+        
+        # Atlassian OAuth (Confluence/Jira)
+        atlassian_config = auth_config.get("atlassian", {})
+        if atlassian_config.get("enabled") and atlassian_config.get("client_id"):
+            config = OAuthConfig.atlassian(
+                client_id=atlassian_config["client_id"],
+                client_secret=atlassian_config.get("client_secret"),
+            )
+            # Override scopes if specified
+            if atlassian_config.get("scopes"):
+                config.scopes = atlassian_config["scopes"]
+            self.oauth_manager.add_config(config)
+            logger.info("Atlassian OAuth configured")
+        
+        # AWS SSO for Bedrock
+        aws_config = auth_config.get("aws", {})
+        if aws_config.get("enabled"):
+            self.aws_sso = AWSSSOAuth(
+                profile=aws_config.get("profile", "default"),
+                region=aws_config.get("region", "us-east-1"),
+                token_cache=self.token_cache,
+                use_aws_vault=aws_config.get("use_aws_vault", True),
+            )
+            logger.info(f"AWS SSO configured for profile: {aws_config.get('profile', 'default')}")
         
     async def initialize(self) -> None:
         """Initialize the orchestrator and load existing state."""
@@ -103,14 +146,71 @@ class Orchestrator:
         # Load existing knowledge
         await self.store.load()
         
-        # Connect to MCP
+        # Validate/refresh authentication
+        await self._ensure_authentication()
+        
+        # Connect to MCP (will use OAuth tokens from manager)
         await self.mcp_client.connect()
         
         # Initialize Anthropic client and set up summary generator
-        self.anthropic = AsyncAnthropic()
+        await self._setup_anthropic_client()
         self.file_store.set_summary_generator(self._generate_summary)
         
         logger.info(f"Initialized with {self.store.graph.node_count} existing entities")
+    
+    async def _ensure_authentication(self) -> None:
+        """Ensure all required authentication is in place."""
+        auth_config = self.config.get("auth", {})
+        
+        # Check GitHub auth
+        if auth_config.get("github", {}).get("enabled"):
+            token = await self.oauth_manager.get_token("github")
+            if not token:
+                logger.warning("GitHub token not available. Some features may be limited.")
+                logger.info("Run 'doc-agent auth github' to authenticate.")
+        
+        # Check Atlassian auth
+        if auth_config.get("atlassian", {}).get("enabled"):
+            token = await self.oauth_manager.get_token("atlassian")
+            if not token:
+                logger.warning("Atlassian token not available. Confluence/Jira access may be limited.")
+                logger.info("Run 'doc-agent auth atlassian' to authenticate.")
+        
+        # Check AWS SSO for Bedrock
+        if self.aws_sso:
+            try:
+                creds = await self.aws_sso.get_credentials()
+                if creds:
+                    logger.info(f"AWS SSO credentials valid until {creds.expiration}")
+            except Exception as e:
+                logger.warning(f"AWS SSO credentials not available: {e}")
+                logger.info("Run 'aws sso login' or 'aws-vault login' to authenticate.")
+    
+    async def _setup_anthropic_client(self) -> None:
+        """Set up the Anthropic client, using Bedrock if configured."""
+        llm_config = self.config.get("llm", {})
+        provider = llm_config.get("provider", "anthropic")
+        
+        if provider == "bedrock" and self.aws_sso:
+            # Use Anthropic via AWS Bedrock
+            try:
+                creds = await self.aws_sso.get_credentials()
+                if creds:
+                    from anthropic import AsyncAnthropicBedrock
+                    self.anthropic = AsyncAnthropicBedrock(
+                        aws_access_key=creds.access_key_id,
+                        aws_secret_key=creds.secret_access_key,
+                        aws_session_token=creds.session_token,
+                        aws_region=creds.region,
+                    )
+                    logger.info(f"Using Anthropic via AWS Bedrock in {creds.region}")
+                    return
+            except Exception as e:
+                logger.warning(f"Failed to initialize Bedrock client: {e}")
+                logger.info("Falling back to direct Anthropic API")
+        
+        # Default: direct Anthropic API
+        self.anthropic = AsyncAnthropic()
     
     async def _generate_summary(self, content: str) -> str:
         """
@@ -153,6 +253,9 @@ class Orchestrator:
     async def shutdown(self) -> None:
         """Shutdown the orchestrator and save state."""
         logger.info("Shutting down orchestrator")
+        
+        # Close OAuth manager
+        await self.oauth_manager.close()
         
         # Save knowledge graph
         await self.store.save()

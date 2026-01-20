@@ -19,10 +19,47 @@ mcp:
     - "@natterbox/mcp-server"
   
   # Additional environment variables for the server
+  # Tokens are automatically added from OAuth if configured
   # env:
   #   GITHUB_TOKEN: "your-token"
   #   CONFLUENCE_TOKEN: "your-token"
   #   JIRA_TOKEN: "your-token"
+
+# Authentication configuration
+auth:
+  # Token cache directory (default: ~/.doc-agent/tokens)
+  # cache_dir: ~/.doc-agent/tokens
+  
+  # GitHub OAuth (for API access via MCP)
+  github:
+    enabled: true
+    # Get these from GitHub Settings > Developer settings > OAuth Apps
+    client_id: "your-github-oauth-client-id"
+    # client_secret: "your-github-oauth-client-secret"  # Optional for public clients
+    scopes:
+      - repo
+      - read:org
+      - read:user
+  
+  # Atlassian OAuth (for Confluence & Jira via MCP)
+  atlassian:
+    enabled: true
+    # Get these from https://developer.atlassian.com/console/myapps/
+    client_id: "your-atlassian-oauth-client-id"
+    client_secret: "your-atlassian-oauth-client-secret"
+    scopes:
+      - read:jira-work
+      - read:jira-user
+      - read:confluence-content.all
+      - read:confluence-space.summary
+      - offline_access
+  
+  # AWS SSO (for Bedrock API)
+  aws:
+    enabled: true
+    profile: "your-sso-profile"  # AWS profile with SSO configured
+    region: us-east-1
+    use_aws_vault: true  # Use aws-vault for credential management
 
 sources:
   github:

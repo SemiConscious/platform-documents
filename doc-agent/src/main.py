@@ -368,6 +368,212 @@ def list_entities(ctx: click.Context, store: Path, entity_type: str):
                 console.print(f"  ... and {len(entities) - 20} more")
 
 
+# ============================================================================
+# Authentication Commands
+# ============================================================================
+
+@cli.group()
+def auth():
+    """Manage authentication for external services."""
+    pass
+
+
+@auth.command("login")
+@click.argument("service", type=click.Choice(["github", "atlassian", "aws"]))
+@click.pass_context
+def auth_login(ctx: click.Context, service: str):
+    """
+    Authenticate with an external service.
+    
+    Opens browser for OAuth flow (GitHub, Atlassian) or initiates
+    AWS SSO login.
+    """
+    config = ctx.obj["config"]
+    
+    from .auth import OAuthManager, OAuthConfig, TokenCache, AWSSSOAuth
+    
+    token_cache = TokenCache()
+    
+    if service == "github":
+        github_config = config.get("auth", {}).get("github", {})
+        if not github_config.get("client_id"):
+            console.print("[red]GitHub OAuth not configured. Add client_id to config.[/red]")
+            return
+        
+        oauth = OAuthManager(token_cache=token_cache)
+        oauth.add_config(OAuthConfig.github(
+            client_id=github_config["client_id"],
+            client_secret=github_config.get("client_secret"),
+        ))
+        
+        async def login():
+            return await oauth.authenticate("github", interactive=True)
+        
+        console.print("[blue]Authenticating with GitHub...[/blue]")
+        token = asyncio.run(login())
+        
+        if token:
+            console.print("[green]Successfully authenticated with GitHub![/green]")
+        else:
+            console.print("[red]GitHub authentication failed[/red]")
+    
+    elif service == "atlassian":
+        atlassian_config = config.get("auth", {}).get("atlassian", {})
+        if not atlassian_config.get("client_id"):
+            console.print("[red]Atlassian OAuth not configured. Add client_id to config.[/red]")
+            return
+        
+        oauth = OAuthManager(token_cache=token_cache)
+        oauth_config = OAuthConfig.atlassian(
+            client_id=atlassian_config["client_id"],
+            client_secret=atlassian_config.get("client_secret"),
+        )
+        if atlassian_config.get("scopes"):
+            oauth_config.scopes = atlassian_config["scopes"]
+        oauth.add_config(oauth_config)
+        
+        async def login():
+            return await oauth.authenticate("atlassian", interactive=True)
+        
+        console.print("[blue]Authenticating with Atlassian...[/blue]")
+        token = asyncio.run(login())
+        
+        if token:
+            console.print("[green]Successfully authenticated with Atlassian![/green]")
+        else:
+            console.print("[red]Atlassian authentication failed[/red]")
+    
+    elif service == "aws":
+        aws_config = config.get("auth", {}).get("aws", {})
+        profile = aws_config.get("profile", "default")
+        
+        aws_sso = AWSSSOAuth(
+            profile=profile,
+            region=aws_config.get("region", "us-east-1"),
+            token_cache=token_cache,
+            use_aws_vault=aws_config.get("use_aws_vault", True),
+        )
+        
+        async def login():
+            return await aws_sso.get_credentials()
+        
+        console.print(f"[blue]Authenticating with AWS SSO (profile: {profile})...[/blue]")
+        creds = asyncio.run(login())
+        
+        if creds:
+            console.print(f"[green]Successfully authenticated with AWS![/green]")
+            console.print(f"Credentials valid until: {creds.expiration}")
+        else:
+            console.print("[red]AWS SSO authentication failed[/red]")
+
+
+@auth.command("status")
+@click.pass_context
+def auth_status(ctx: click.Context):
+    """Show authentication status for all services."""
+    from .auth import TokenCache
+    
+    console.print("[bold blue]Authentication Status[/bold blue]\n")
+    
+    token_cache = TokenCache()
+    tokens = token_cache.list_tokens()
+    
+    if not tokens:
+        console.print("[yellow]No cached tokens found.[/yellow]")
+        console.print("Run 'doc-agent auth login <service>' to authenticate.")
+        return
+    
+    table = Table(title="Cached Tokens")
+    table.add_column("Service", style="cyan")
+    table.add_column("Type", style="green")
+    table.add_column("Status", style="yellow")
+    table.add_column("Expires", style="magenta")
+    table.add_column("Refresh", style="blue")
+    
+    for token in tokens:
+        status = "[red]Expired[/red]" if token["is_expired"] else "[green]Valid[/green]"
+        expires = token.get("expires_at", "Never")[:19] if token.get("expires_at") else "Never"
+        refresh = "[green]Yes[/green]" if token.get("has_refresh_token") else "[red]No[/red]"
+        
+        table.add_row(
+            token["service"],
+            token["token_type"],
+            status,
+            expires,
+            refresh,
+        )
+    
+    console.print(table)
+
+
+@auth.command("logout")
+@click.argument("service", type=click.Choice(["github", "atlassian", "aws", "all"]))
+@click.pass_context
+def auth_logout(ctx: click.Context, service: str):
+    """Clear cached tokens for a service."""
+    from .auth import TokenCache
+    
+    token_cache = TokenCache()
+    
+    if service == "all":
+        token_cache.clear_all()
+        console.print("[green]Cleared all cached tokens[/green]")
+    else:
+        count = token_cache.clear_service(service)
+        if count > 0:
+            console.print(f"[green]Cleared {count} token(s) for {service}[/green]")
+        else:
+            console.print(f"[yellow]No tokens found for {service}[/yellow]")
+
+
+@auth.command("refresh")
+@click.argument("service", type=click.Choice(["github", "atlassian"]))
+@click.pass_context
+def auth_refresh(ctx: click.Context, service: str):
+    """Manually refresh token for a service."""
+    config = ctx.obj["config"]
+    
+    from .auth import OAuthManager, OAuthConfig, TokenCache
+    
+    token_cache = TokenCache()
+    oauth = OAuthManager(token_cache=token_cache)
+    
+    # Get cached token
+    cached = token_cache.get(service, "access_token")
+    if not cached:
+        console.print(f"[yellow]No cached token for {service}. Run 'doc-agent auth login {service}' first.[/yellow]")
+        return
+    
+    if not cached.refresh_token:
+        console.print(f"[red]No refresh token available for {service}. Re-authenticate.[/red]")
+        return
+    
+    # Configure OAuth
+    if service == "github":
+        github_config = config.get("auth", {}).get("github", {})
+        oauth.add_config(OAuthConfig.github(
+            client_id=github_config.get("client_id", ""),
+            client_secret=github_config.get("client_secret"),
+        ))
+    elif service == "atlassian":
+        atlassian_config = config.get("auth", {}).get("atlassian", {})
+        oauth.add_config(OAuthConfig.atlassian(
+            client_id=atlassian_config.get("client_id", ""),
+            client_secret=atlassian_config.get("client_secret"),
+        ))
+    
+    async def refresh():
+        return await oauth.refresh_token(service, cached.refresh_token)
+    
+    console.print(f"[blue]Refreshing {service} token...[/blue]")
+    new_token = asyncio.run(refresh())
+    
+    if new_token:
+        console.print(f"[green]Successfully refreshed {service} token![/green]")
+    else:
+        console.print(f"[red]Failed to refresh token. Try re-authenticating.[/red]")
+
+
 def main():
     """Main entry point."""
     cli(obj={})

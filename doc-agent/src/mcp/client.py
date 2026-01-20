@@ -5,11 +5,14 @@ import json
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 from dataclasses import dataclass
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
+if TYPE_CHECKING:
+    from ..auth import OAuthManager
 
 logger = logging.getLogger("doc-agent.mcp.client")
 
@@ -29,6 +32,8 @@ class MCPClient:
     This client provides a programmatic interface to call MCP tools
     and retrieve data from GitHub, Confluence, and Jira via the
     Natterbox MCP server.
+    
+    Supports OAuth authentication with automatic token refresh.
     """
     
     def __init__(
@@ -38,6 +43,7 @@ class MCPClient:
         server_args: Optional[list[str]] = None,
         server_env: Optional[dict[str, str]] = None,
         timeout: int = 60,
+        oauth_manager: Optional["OAuthManager"] = None,
     ):
         """
         Initialize the MCP client.
@@ -48,9 +54,11 @@ class MCPClient:
             server_args: Arguments for the server command
             server_env: Additional environment variables for the server
             timeout: Default timeout for operations in seconds
+            oauth_manager: OAuth manager for authentication
         """
         self.server_name = server_name
         self.timeout = timeout
+        self.oauth_manager = oauth_manager
         
         # Server launch configuration
         # Default assumes the natterbox MCP server is an npm package
@@ -81,6 +89,10 @@ class MCPClient:
         # Merge environment
         env = {**os.environ, **self.server_env}
         
+        # Add OAuth tokens to environment if available
+        if self.oauth_manager:
+            await self._add_oauth_tokens_to_env(env)
+        
         # Create server parameters
         server_params = StdioServerParameters(
             command=self.server_command,
@@ -110,6 +122,63 @@ class MCPClient:
         
         self._connected = True
         logger.info(f"Connected to MCP server with {len(self._available_tools)} tools available")
+    
+    async def _add_oauth_tokens_to_env(self, env: dict[str, str]) -> None:
+        """Add OAuth tokens to environment for MCP server."""
+        if not self.oauth_manager:
+            return
+        
+        # GitHub token
+        github_token = await self.oauth_manager.get_token("github")
+        if github_token:
+            env["GITHUB_TOKEN"] = github_token
+            logger.debug("Added GitHub token to MCP environment")
+        
+        # Atlassian token (Confluence/Jira)
+        atlassian_token = await self.oauth_manager.get_token("atlassian")
+        if atlassian_token:
+            env["ATLASSIAN_TOKEN"] = atlassian_token
+            env["CONFLUENCE_TOKEN"] = atlassian_token
+            env["JIRA_TOKEN"] = atlassian_token
+            logger.debug("Added Atlassian token to MCP environment")
+    
+    async def refresh_auth(self) -> bool:
+        """
+        Refresh authentication tokens and reconnect if needed.
+        
+        Returns:
+            True if refresh was successful
+        """
+        if not self.oauth_manager:
+            return True
+        
+        reconnect_needed = False
+        
+        # Check and refresh GitHub token
+        github_cached = self.oauth_manager.cache.get("github", "access_token")
+        if github_cached and github_cached.is_expired():
+            if github_cached.refresh_token:
+                new_token = await self.oauth_manager.refresh_token("github", github_cached.refresh_token)
+                if new_token:
+                    reconnect_needed = True
+                    logger.info("Refreshed GitHub token")
+        
+        # Check and refresh Atlassian token
+        atlassian_cached = self.oauth_manager.cache.get("atlassian", "access_token")
+        if atlassian_cached and atlassian_cached.is_expired():
+            if atlassian_cached.refresh_token:
+                new_token = await self.oauth_manager.refresh_token("atlassian", atlassian_cached.refresh_token)
+                if new_token:
+                    reconnect_needed = True
+                    logger.info("Refreshed Atlassian token")
+        
+        # Reconnect if tokens were refreshed
+        if reconnect_needed and self._connected:
+            logger.info("Reconnecting MCP client with refreshed tokens")
+            await self.disconnect()
+            await self.connect()
+        
+        return True
     
     async def disconnect(self) -> None:
         """Close the MCP connection."""
