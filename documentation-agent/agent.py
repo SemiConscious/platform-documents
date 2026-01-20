@@ -267,7 +267,7 @@ class FileStore:
                 result["remaining_chars"] = remaining_chars
                 result["next_offset"] = end
                 result["to_continue"] = f"read_from_store(file_id='{file_id}', offset={end}, limit={actual_limit})"
-                
+
                 # Warn about partial JSON
                 if content_type == "json":
                     result["⚠️_JSON_NOTE"] = "This is partial JSON data. Read the complete file to parse it properly."
@@ -1153,6 +1153,81 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
             }
         return result
 
+    def _compress_historical_messages(self, keep_recent: int = 2) -> None:
+        """
+        Compress older tool results in message history to save context space.
+        Same as main agent's method but for SubAgent.
+        """
+        # Find all user messages with tool_result content
+        tool_result_indices = []
+        for i, msg in enumerate(self.messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict) and item.get("type") == "tool_result":
+                            tool_result_indices.append(i)
+                            break
+
+        # Keep the most recent ones full, compress the rest
+        if len(tool_result_indices) <= keep_recent:
+            return  # Nothing to compress
+
+        indices_to_compress = tool_result_indices[:-keep_recent]
+        compressed_count = 0
+
+        for msg_idx in indices_to_compress:
+            msg = self.messages[msg_idx]
+            content = msg.get("content", [])
+
+            if not isinstance(content, list):
+                continue
+
+            new_content = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "tool_result":
+                    try:
+                        result_content = item.get("content", "{}")
+                        if isinstance(result_content, str):
+                            result_data = json.loads(result_content)
+                        else:
+                            result_data = result_content
+
+                        # Check if it has a file store reference
+                        file_ref = result_data.get("_file_store_ref")
+                        if file_ref:
+                            compact = {
+                                "stored_in_file_store": True,
+                                "file_id": file_ref["file_id"],
+                                "size_bytes": file_ref["size_bytes"],
+                                "note": "Historical result - use read_from_store if needed",
+                            }
+                            item["content"] = json.dumps(compact)
+                            compressed_count += 1
+                        elif result_data.get("stored_in_file_store"):
+                            pass  # Already a reference
+                        else:
+                            # No file store ref - store it now if large
+                            if len(result_content) > 1000:
+                                store_info = self.file_store.store(result_content, "historical_compression", "json")
+                                compact = {
+                                    "stored_in_file_store": True,
+                                    "file_id": store_info["file_id"],
+                                    "size_bytes": store_info["size_bytes"],
+                                    "note": "Historical result - use read_from_store if needed",
+                                }
+                                item["content"] = json.dumps(compact)
+                                compressed_count += 1
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                new_content.append(item)
+
+            msg["content"] = new_content
+
+        if compressed_count > 0:
+            logger.info(f"📦 SubAgent compressed {compressed_count} historical tool results")
+
     async def run(self) -> TaskResult:
         """Execute the task and return result."""
         logger.info(f"🚀 SubAgent starting: {self.task.title}")
@@ -1176,6 +1251,9 @@ When complete, provide a summary of what was created.""",
         turns = 0
         while turns < self.MAX_TURNS:
             turns += 1
+
+            # Compress historical tool results to save context space
+            self._compress_historical_messages(keep_recent=3)
 
             try:
                 response = self.bedrock.create_message(
