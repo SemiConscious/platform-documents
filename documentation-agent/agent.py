@@ -235,19 +235,25 @@ class FileStore:
             remaining_lines = total_lines - end
             
             result = {
-                "content": '\n'.join(selected_lines),
                 "file_id": file_id,
                 "offset": offset,
                 "lines_returned": len(selected_lines),
                 "total_lines": total_lines,
                 "total_size_bytes": metadata["size"],
-                "has_more": end < total_lines,
                 "source": metadata.get("source", "unknown"),
+                "content": '\n'.join(selected_lines),
             }
             
             if remaining_lines > 0:
+                # Make it VERY clear there's more data
+                result["⚠️_WARNING"] = f"INCOMPLETE DATA: Only showing {len(selected_lines)} of {total_lines} lines ({remaining_lines} lines remaining)"
+                result["has_more"] = True
                 result["remaining_lines"] = remaining_lines
-                result["hint"] = f"Use read_from_store(file_id='{file_id}', offset={end}) to get more"
+                result["next_offset"] = end
+                result["to_continue"] = f"read_from_store(file_id='{file_id}', offset={end}, limit=200)"
+            else:
+                result["has_more"] = False
+                result["status"] = "COMPLETE - all data returned"
             
             return result
             
@@ -1077,8 +1083,12 @@ You have access to the following tool categories:
 
 2. **File Store Tools** (read_from_store, list_store_files):
    - Large tool results are automatically stored here to save context space
-   - Use read_from_store with the file_id to retrieve stored content
-   - You can read in chunks using offset and limit to avoid loading too much
+   - Use read_from_store(file_id, offset, limit) to retrieve stored content
+   - **IMPORTANT**: When reading from store, ALWAYS check `has_more` and `remaining_lines`
+   - If `has_more` is true, you have NOT seen all the data - use `next_offset` to continue
+   - Keep reading until `has_more` is false to get complete information
+   - Example: First call returns 200 lines with has_more=true, next_offset=200
+     -> Call read_from_store(file_id, offset=200, limit=200) to get next chunk
    - Use list_store_files to see what's available
 
 3. **MCP Tools** (prefixed with mcp_):
