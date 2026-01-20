@@ -260,11 +260,15 @@ class MCPClient:
         "scopes": ["openid"],
     }
     
+    # Token refresh threshold (refresh if expiring within this many seconds)
+    TOKEN_REFRESH_THRESHOLD = 300  # 5 minutes
+    
     def __init__(self, server_url: str, token_file: Optional[Path] = None):
         self.server_url = server_url
         self.tools: dict[str, dict] = {}
         self._access_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
+        self._token_expiry: Optional[float] = None  # Unix timestamp
         self._token_file = token_file or Path.home() / ".natterbox-mcp-tokens.json"
         self._message_endpoint = server_url  # SSE endpoint accepts POST for messages
         
@@ -275,23 +279,52 @@ class MCPClient:
                 data = json.loads(self._token_file.read_text())
                 self._access_token = data.get("access_token")
                 self._refresh_token = data.get("refresh_token")
+                self._token_expiry = data.get("expires_at")
+                
+                # Check if token is expired or expiring soon
+                if self._token_expiry:
+                    import time
+                    time_until_expiry = self._token_expiry - time.time()
+                    if time_until_expiry < self.TOKEN_REFRESH_THRESHOLD:
+                        logger.info(f"Token expiring in {time_until_expiry:.0f}s, will refresh")
+                        return False  # Will trigger refresh
+                
                 logger.info("Loaded existing MCP tokens from file")
                 return bool(self._access_token)
         except Exception as e:
             logger.warning(f"Failed to load tokens: {e}")
         return False
     
-    def _save_tokens(self):
-        """Save tokens to file."""
+    def _save_tokens(self, expires_in: Optional[int] = None):
+        """Save tokens to file with expiry tracking."""
         try:
-            self._token_file.write_text(json.dumps({
+            import time
+            token_data = {
                 "access_token": self._access_token,
                 "refresh_token": self._refresh_token,
-            }))
+            }
+            
+            # Calculate expiry time
+            if expires_in:
+                self._token_expiry = time.time() + expires_in
+                token_data["expires_at"] = self._token_expiry
+                logger.info(f"Token expires in {expires_in}s")
+            elif self._token_expiry:
+                token_data["expires_at"] = self._token_expiry
+            
+            self._token_file.write_text(json.dumps(token_data))
             self._token_file.chmod(0o600)  # Secure permissions
             logger.info("Saved MCP tokens to file")
         except Exception as e:
             logger.warning(f"Failed to save tokens: {e}")
+    
+    def _should_refresh_token(self) -> bool:
+        """Check if token should be proactively refreshed."""
+        if not self._token_expiry:
+            return False
+        import time
+        time_until_expiry = self._token_expiry - time.time()
+        return time_until_expiry < self.TOKEN_REFRESH_THRESHOLD
     
     async def _do_oauth_flow(self) -> bool:
         """Perform OAuth authorization code flow with local callback server."""
@@ -374,7 +407,8 @@ class MCPClient:
                     tokens = response.json()
                     self._access_token = tokens.get("access_token")
                     self._refresh_token = tokens.get("refresh_token")
-                    self._save_tokens()
+                    expires_in = tokens.get("expires_in", 3600)  # Default 1 hour
+                    self._save_tokens(expires_in=expires_in)
                     logger.info("OAuth flow completed successfully")
                     return True
                 else:
@@ -405,13 +439,24 @@ class MCPClient:
                     self._access_token = tokens.get("access_token")
                     if tokens.get("refresh_token"):
                         self._refresh_token = tokens["refresh_token"]
-                    self._save_tokens()
-                    logger.info("Access token refreshed")
+                    expires_in = tokens.get("expires_in", 3600)
+                    self._save_tokens(expires_in=expires_in)
+                    logger.info("Access token refreshed successfully")
                     return True
+                else:
+                    logger.warning(f"Token refresh failed: {response.status_code}")
         except Exception as e:
             logger.warning(f"Token refresh failed: {e}")
         
         return False
+    
+    async def _ensure_valid_token(self) -> bool:
+        """Ensure we have a valid token, refreshing proactively if needed."""
+        if self._should_refresh_token():
+            logger.info("Proactively refreshing token before expiry")
+            if not await self._refresh_access_token():
+                logger.warning("Proactive refresh failed, will retry on 401")
+        return bool(self._access_token)
         
     async def connect(self) -> bool:
         """Connect to the MCP server and discover available tools."""
@@ -508,6 +553,10 @@ class MCPClient:
     async def call_tool(self, name: str, arguments: dict) -> dict[str, Any]:
         """Call an MCP tool with the given arguments."""
         logger.info(f"MCP tool call: {name}")
+        
+        # Proactively refresh token if needed
+        await self._ensure_valid_token()
+        
         headers = {"Authorization": f"Bearer {self._access_token}"}
         
         try:
@@ -632,7 +681,17 @@ class DocumentationAgent:
     """
     Main agent that orchestrates documentation generation using Claude
     with shell and MCP tools.
+    
+    Features:
+    - Loop detection: Detects repeated tool call patterns
+    - Error handling: Exits after consecutive errors
+    - Completion detection: Recognizes when tasks are done
     """
+    
+    # Exit conditions
+    MAX_CONSECUTIVE_ERRORS = 3
+    MAX_REPEATED_PATTERNS = 3  # Exit if same pattern repeats this many times
+    PATTERN_WINDOW_SIZE = 5   # Look at last N tool calls for pattern detection
     
     SYSTEM_PROMPT = """You are an expert documentation engineer helping to create and maintain platform documentation for Natterbox.
 
@@ -680,6 +739,19 @@ You have access to the following tool categories:
 - Keep documentation concise but comprehensive
 - Focus on actionable, practical content
 - Reference original sources for detailed information
+
+## Task Completion
+
+When you have completed the requested task:
+1. Provide a clear summary of what was accomplished
+2. List all files that were created or modified
+3. Explicitly state "Task complete" or "Documentation has been created"
+4. Suggest next steps if applicable
+
+If you encounter issues that prevent completion:
+1. Explain what went wrong
+2. Describe what was partially completed
+3. Suggest how to resolve the issue
 """
 
     def __init__(self, config: Config):
@@ -689,6 +761,11 @@ You have access to the following tool categories:
         self.bedrock = BedrockClient(config)
         self.messages: list[dict] = []
         self.tools: list[dict] = []
+        
+        # Tracking for loop detection and error handling
+        self._tool_call_history: list[str] = []  # Hashes of recent tool calls
+        self._consecutive_errors = 0
+        self._files_written: set[str] = set()  # Track created files
         
     async def initialize(self) -> bool:
         """Initialize the agent and connect to services."""
@@ -711,6 +788,62 @@ You have access to the following tool categories:
     def _get_system_prompt(self) -> str:
         """Get the system prompt with current date."""
         return self.SYSTEM_PROMPT.format(date=datetime.now().strftime("%Y-%m-%d"))
+    
+    def _get_tool_call_hash(self, tool_name: str, tool_input: dict) -> str:
+        """Generate a hash for a tool call to detect duplicates."""
+        import hashlib
+        # Create a normalized representation
+        call_str = f"{tool_name}:{json.dumps(tool_input, sort_keys=True)}"
+        return hashlib.md5(call_str.encode()).hexdigest()[:12]
+    
+    def _detect_loop(self, tool_calls: list[tuple[str, dict]]) -> bool:
+        """
+        Detect if we're in a loop by checking for repeated patterns.
+        Returns True if a loop is detected.
+        """
+        # Add new tool calls to history
+        for name, inputs in tool_calls:
+            call_hash = self._get_tool_call_hash(name, inputs)
+            self._tool_call_history.append(call_hash)
+        
+        # Keep only recent history
+        if len(self._tool_call_history) > self.PATTERN_WINDOW_SIZE * 3:
+            self._tool_call_history = self._tool_call_history[-self.PATTERN_WINDOW_SIZE * 3:]
+        
+        # Check for repeated patterns
+        if len(self._tool_call_history) >= self.PATTERN_WINDOW_SIZE * 2:
+            recent = self._tool_call_history[-self.PATTERN_WINDOW_SIZE:]
+            
+            # Count how many times this exact pattern appears
+            pattern_count = 0
+            for i in range(len(self._tool_call_history) - self.PATTERN_WINDOW_SIZE + 1):
+                window = self._tool_call_history[i:i + self.PATTERN_WINDOW_SIZE]
+                if window == recent:
+                    pattern_count += 1
+            
+            if pattern_count >= self.MAX_REPEATED_PATTERNS:
+                logger.warning(f"Loop detected: pattern repeated {pattern_count} times")
+                return True
+        
+        return False
+    
+    def _check_task_completion(self, response_text: str) -> bool:
+        """
+        Check if the response indicates task completion.
+        """
+        completion_indicators = [
+            "task is complete",
+            "task complete",
+            "documentation has been created",
+            "successfully created",
+            "finished creating",
+            "documentation is now available",
+            "work is complete",
+            "all done",
+        ]
+        
+        text_lower = response_text.lower()
+        return any(indicator in text_lower for indicator in completion_indicators)
     
     async def _handle_tool_use(self, tool_use: dict) -> dict:
         """Execute a tool and return the result."""
@@ -752,8 +885,19 @@ You have access to the following tool categories:
             
         Returns:
             Final response from the agent
+            
+        Exit conditions:
+            - Task completes naturally (end_turn)
+            - Maximum turns reached
+            - Loop detected (repeated tool call patterns)
+            - Too many consecutive errors
         """
         logger.info(f"Starting task: {task[:100]}...")
+        
+        # Reset tracking for new task
+        self._tool_call_history = []
+        self._consecutive_errors = 0
+        self._files_written = set()
         
         # Add user message
         self.messages.append({
@@ -766,12 +910,28 @@ You have access to the following tool categories:
             turns += 1
             logger.info(f"Turn {turns}/{self.config.max_turns}")
             
-            # Get Claude's response
-            response = self.bedrock.create_message(
-                messages=self.messages,
-                system=self._get_system_prompt(),
-                tools=self.tools,
-            )
+            try:
+                # Get Claude's response
+                response = self.bedrock.create_message(
+                    messages=self.messages,
+                    system=self._get_system_prompt(),
+                    tools=self.tools,
+                )
+                
+                # Reset error counter on successful API call
+                self._consecutive_errors = 0
+                
+            except Exception as e:
+                self._consecutive_errors += 1
+                logger.error(f"Bedrock API error ({self._consecutive_errors}/{self.MAX_CONSECUTIVE_ERRORS}): {e}")
+                
+                if self._consecutive_errors >= self.MAX_CONSECUTIVE_ERRORS:
+                    return f"Task aborted: {self.MAX_CONSECUTIVE_ERRORS} consecutive API errors. Last error: {e}"
+                
+                # Wait before retrying
+                import asyncio
+                await asyncio.sleep(2 ** self._consecutive_errors)  # Exponential backoff
+                continue
             
             # Check stop reason
             stop_reason = response.get("stop_reason")
@@ -783,23 +943,49 @@ You have access to the following tool categories:
                 "content": content
             })
             
+            # Extract text from response
+            response_text = ""
+            for block in content:
+                if block.get("type") == "text":
+                    response_text += block.get("text", "")
+            
             # If no more tool use, we're done
             if stop_reason == "end_turn":
-                # Extract final text response
-                final_text = ""
-                for block in content:
-                    if block.get("type") == "text":
-                        final_text += block.get("text", "")
-                return final_text
+                logger.info("Task completed (end_turn)")
+                
+                # Print summary if files were created
+                if self._files_written:
+                    logger.info(f"Files created/modified: {len(self._files_written)}")
+                    for f in sorted(self._files_written):
+                        logger.info(f"  - {f}")
+                
+                return response_text
             
             # Handle tool use
             if stop_reason == "tool_use":
+                tool_calls_this_turn = []
                 tool_results = []
+                tool_errors = 0
                 
                 for block in content:
                     if block.get("type") == "tool_use":
                         tool_id = block.get("id")
+                        tool_name = block.get("name", "")
+                        tool_input = block.get("input", {})
+                        
+                        # Track tool call for loop detection
+                        tool_calls_this_turn.append((tool_name, tool_input))
+                        
+                        # Execute tool
                         result = await self._handle_tool_use(block)
+                        
+                        # Track file writes
+                        if tool_name == "write_file" and result.get("success"):
+                            self._files_written.add(tool_input.get("path", "unknown"))
+                        
+                        # Count errors
+                        if not result.get("success", True) or result.get("error"):
+                            tool_errors += 1
                         
                         tool_results.append({
                             "type": "tool_result",
@@ -807,17 +993,41 @@ You have access to the following tool categories:
                             "content": json.dumps(result)
                         })
                 
+                # Check for loop
+                if self._detect_loop(tool_calls_this_turn):
+                    logger.error("Exiting due to detected loop in tool calls")
+                    return (
+                        f"Task aborted: Loop detected in tool calls. "
+                        f"The same pattern of {self.PATTERN_WINDOW_SIZE} tool calls "
+                        f"repeated {self.MAX_REPEATED_PATTERNS} times.\n\n"
+                        f"Files created before abort: {list(self._files_written)}"
+                    )
+                
+                # Check for too many tool errors
+                if tool_errors > 0:
+                    self._consecutive_errors += tool_errors
+                    if self._consecutive_errors >= self.MAX_CONSECUTIVE_ERRORS:
+                        logger.error(f"Exiting due to {self._consecutive_errors} tool errors")
+                        return f"Task aborted: Too many tool errors ({self._consecutive_errors})"
+                else:
+                    # Reset on successful tools
+                    self._consecutive_errors = 0
+                
                 # Add tool results to messages
                 self.messages.append({
                     "role": "user",
                     "content": tool_results
                 })
+                
             else:
                 logger.warning(f"Unexpected stop reason: {stop_reason}")
                 break
         
         logger.warning("Reached maximum turns")
-        return "Task incomplete - reached maximum turns"
+        return (
+            f"Task incomplete - reached maximum {self.config.max_turns} turns.\n\n"
+            f"Files created: {list(self._files_written)}"
+        )
     
     async def interactive_mode(self):
         """Run the agent in interactive mode."""
