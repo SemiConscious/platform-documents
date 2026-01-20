@@ -29,6 +29,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 import boto3
 import httpx
 
@@ -49,16 +53,16 @@ class Config:
     """Agent configuration."""
     
     # AWS Bedrock settings
-    aws_region: str = "us-east-1"
-    bedrock_model_id: str = "anthropic.claude-sonnet-4-20250514-v1:0"
+    aws_region: str = field(default_factory=lambda: os.environ.get("AWS_REGION", "us-east-1"))
+    bedrock_model_id: str = field(default_factory=lambda: os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-sonnet-4-20250514-v1:0"))
     max_tokens: int = 8192
     
     # MCP Server settings
-    natterbox_mcp_url: str = "https://avatar.natterbox-dev03.net/mcp/sse"
+    natterbox_mcp_url: str = field(default_factory=lambda: os.environ.get("NATTERBOX_MCP_URL", "https://avatar.natterbox-dev03.net/mcp/sse"))
     
     # Working directories
-    work_dir: Path = field(default_factory=lambda: Path("/workspace"))
-    output_dir: Path = field(default_factory=lambda: Path("/workspace/output"))
+    work_dir: Path = field(default_factory=lambda: Path(os.environ.get("WORK_DIR", "/workspace")))
+    output_dir: Path = field(default_factory=lambda: Path(os.environ.get("OUTPUT_DIR", "/workspace/output")))
     
     # Tool settings
     shell_timeout: int = 300  # seconds
@@ -238,29 +242,219 @@ class ShellTool:
 
 
 # =============================================================================
-# MCP Client for Natterbox Tools
+# MCP Client for Natterbox Tools (with OAuth + SSE)
 # =============================================================================
 
 class MCPClient:
     """
-    Client for connecting to the Natterbox MCP server via SSE.
+    Client for connecting to the Natterbox MCP server via SSE with OAuth authentication.
     Provides access to Confluence, GitHub, Salesforce, and other tools.
     """
     
-    def __init__(self, server_url: str):
+    # OAuth configuration
+    OAUTH_CONFIG = {
+        "authorization_url": "https://avatar.natterbox-dev03.net/mcp/authorize",
+        "token_url": "https://avatar.natterbox-dev03.net/mcp/token",
+        "client_id": "documentation-agent",
+        "redirect_uri": "http://localhost:8765/callback",
+        "scopes": ["openid"],
+    }
+    
+    def __init__(self, server_url: str, token_file: Optional[Path] = None):
         self.server_url = server_url
         self.tools: dict[str, dict] = {}
-        self._session_id: Optional[str] = None
+        self._access_token: Optional[str] = None
+        self._refresh_token: Optional[str] = None
+        self._token_file = token_file or Path.home() / ".natterbox-mcp-tokens.json"
+        self._message_endpoint = server_url  # SSE endpoint accepts POST for messages
+        
+    def _load_tokens(self) -> bool:
+        """Load tokens from file if they exist."""
+        try:
+            if self._token_file.exists():
+                data = json.loads(self._token_file.read_text())
+                self._access_token = data.get("access_token")
+                self._refresh_token = data.get("refresh_token")
+                logger.info("Loaded existing MCP tokens from file")
+                return bool(self._access_token)
+        except Exception as e:
+            logger.warning(f"Failed to load tokens: {e}")
+        return False
+    
+    def _save_tokens(self):
+        """Save tokens to file."""
+        try:
+            self._token_file.write_text(json.dumps({
+                "access_token": self._access_token,
+                "refresh_token": self._refresh_token,
+            }))
+            self._token_file.chmod(0o600)  # Secure permissions
+            logger.info("Saved MCP tokens to file")
+        except Exception as e:
+            logger.warning(f"Failed to save tokens: {e}")
+    
+    async def _do_oauth_flow(self) -> bool:
+        """Perform OAuth authorization code flow with local callback server."""
+        import webbrowser
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+        from urllib.parse import urlparse, parse_qs
+        import threading
+        
+        auth_code = None
+        server_error = None
+        
+        class CallbackHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                nonlocal auth_code, server_error
+                query = parse_qs(urlparse(self.path).query)
+                
+                if "code" in query:
+                    auth_code = query["code"][0]
+                    self.send_response(200)
+                    self.send_header("Content-type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(b"<html><body><h1>Authorization successful!</h1><p>You can close this window.</p></body></html>")
+                elif "error" in query:
+                    server_error = query.get("error_description", query["error"])[0]
+                    self.send_response(400)
+                    self.send_header("Content-type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(f"<html><body><h1>Error: {server_error}</h1></body></html>".encode())
+                else:
+                    self.send_response(400)
+                    self.end_headers()
+            
+            def log_message(self, format, *args):
+                pass  # Suppress logging
+        
+        # Start local server
+        server = HTTPServer(("localhost", 8765), CallbackHandler)
+        server_thread = threading.Thread(target=server.handle_request)
+        server_thread.start()
+        
+        # Build authorization URL
+        auth_url = (
+            f"{self.OAUTH_CONFIG['authorization_url']}?"
+            f"client_id={self.OAUTH_CONFIG['client_id']}&"
+            f"redirect_uri={self.OAUTH_CONFIG['redirect_uri']}&"
+            f"response_type=code&"
+            f"scope={' '.join(self.OAUTH_CONFIG['scopes'])}"
+        )
+        
+        logger.info("Opening browser for OAuth authorization...")
+        print(f"\n🔐 Please authorize in your browser: {auth_url}\n")
+        webbrowser.open(auth_url)
+        
+        # Wait for callback
+        server_thread.join(timeout=120)
+        server.server_close()
+        
+        if server_error:
+            logger.error(f"OAuth error: {server_error}")
+            return False
+        
+        if not auth_code:
+            logger.error("No authorization code received")
+            return False
+        
+        # Exchange code for tokens
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.OAUTH_CONFIG["token_url"],
+                    data={
+                        "grant_type": "authorization_code",
+                        "code": auth_code,
+                        "client_id": self.OAUTH_CONFIG["client_id"],
+                        "redirect_uri": self.OAUTH_CONFIG["redirect_uri"],
+                    }
+                )
+                
+                if response.status_code == 200:
+                    tokens = response.json()
+                    self._access_token = tokens.get("access_token")
+                    self._refresh_token = tokens.get("refresh_token")
+                    self._save_tokens()
+                    logger.info("OAuth flow completed successfully")
+                    return True
+                else:
+                    logger.error(f"Token exchange failed: {response.status_code} - {response.text}")
+                    return False
+        except Exception as e:
+            logger.error(f"Token exchange error: {e}")
+            return False
+    
+    async def _refresh_access_token(self) -> bool:
+        """Refresh the access token using the refresh token."""
+        if not self._refresh_token:
+            return False
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.OAUTH_CONFIG["token_url"],
+                    data={
+                        "grant_type": "refresh_token",
+                        "refresh_token": self._refresh_token,
+                        "client_id": self.OAUTH_CONFIG["client_id"],
+                    }
+                )
+                
+                if response.status_code == 200:
+                    tokens = response.json()
+                    self._access_token = tokens.get("access_token")
+                    if tokens.get("refresh_token"):
+                        self._refresh_token = tokens["refresh_token"]
+                    self._save_tokens()
+                    logger.info("Access token refreshed")
+                    return True
+        except Exception as e:
+            logger.warning(f"Token refresh failed: {e}")
+        
+        return False
         
     async def connect(self) -> bool:
         """Connect to the MCP server and discover available tools."""
         logger.info(f"Connecting to MCP server: {self.server_url}")
         
+        # Try to load existing tokens
+        if not self._load_tokens():
+            # No tokens - need to authenticate
+            logger.info("No existing tokens - initiating OAuth flow")
+            if not await self._do_oauth_flow():
+                logger.error("OAuth authentication failed")
+                return False
+        
+        # Try to connect with current token
+        try:
+            connected = await self._try_connect()
+            if not connected and self._refresh_token:
+                # Token might be expired, try refresh
+                if await self._refresh_access_token():
+                    connected = await self._try_connect()
+            
+            if not connected:
+                # Tokens invalid - re-authenticate
+                logger.info("Tokens invalid - re-authenticating")
+                if await self._do_oauth_flow():
+                    connected = await self._try_connect()
+            
+            return connected
+            
+        except Exception as e:
+            logger.error(f"Failed to connect to MCP server: {e}")
+            return False
+    
+    async def _try_connect(self) -> bool:
+        """Attempt to connect and list tools."""
+        headers = {"Authorization": f"Bearer {self._access_token}"}
+        
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 # Initialize connection
                 response = await client.post(
-                    self.server_url.replace("/sse", "/message"),
+                    self._message_endpoint,
+                    headers=headers,
                     json={
                         "jsonrpc": "2.0",
                         "id": 1,
@@ -276,6 +470,10 @@ class MCPClient:
                     }
                 )
                 
+                if response.status_code == 401:
+                    logger.warning("MCP authentication failed (401)")
+                    return False
+                
                 if response.status_code != 200:
                     logger.error(f"Failed to initialize MCP connection: {response.status_code}")
                     return False
@@ -285,7 +483,8 @@ class MCPClient:
                 
                 # List available tools
                 response = await client.post(
-                    self.server_url.replace("/sse", "/message"),
+                    self._message_endpoint,
+                    headers=headers,
                     json={
                         "jsonrpc": "2.0",
                         "id": 2,
@@ -303,17 +502,19 @@ class MCPClient:
                 return True
                 
         except Exception as e:
-            logger.error(f"Failed to connect to MCP server: {e}")
+            logger.error(f"Connection attempt failed: {e}")
             return False
     
     async def call_tool(self, name: str, arguments: dict) -> dict[str, Any]:
         """Call an MCP tool with the given arguments."""
         logger.info(f"MCP tool call: {name}")
+        headers = {"Authorization": f"Bearer {self._access_token}"}
         
         try:
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.post(
-                    self.server_url.replace("/sse", "/message"),
+                    self._message_endpoint,
+                    headers=headers,
                     json={
                         "jsonrpc": "2.0",
                         "id": 3,
@@ -324,6 +525,24 @@ class MCPClient:
                         }
                     }
                 )
+                
+                if response.status_code == 401:
+                    # Try refresh and retry
+                    if await self._refresh_access_token():
+                        headers = {"Authorization": f"Bearer {self._access_token}"}
+                        response = await client.post(
+                            self._message_endpoint,
+                            headers=headers,
+                            json={
+                                "jsonrpc": "2.0",
+                                "id": 3,
+                                "method": "tools/call",
+                                "params": {
+                                    "name": name,
+                                    "arguments": arguments
+                                }
+                            }
+                        )
                 
                 if response.status_code == 200:
                     result = response.json()

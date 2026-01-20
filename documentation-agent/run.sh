@@ -2,15 +2,24 @@
 # Natterbox Documentation Agent - Helper Script
 #
 # Usage:
-#   ./run.sh                    # Interactive mode
+#   ./run.sh                    # Interactive mode (local Python)
 #   ./run.sh task "Your task"   # Run a specific task
+#   ./run.sh docker             # Run in Docker (interactive)
+#   ./run.sh docker-task "..."  # Run task in Docker
 #   ./run.sh build              # Build Docker image
-#   ./run.sh shell              # Open shell in container
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+# Load .env file if it exists
+if [[ -f .env ]]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# AWS Profile for Bedrock access
+AWS_VAULT_PROFILE="${AWS_PROFILE:-sso-dev03-admin}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -32,6 +41,26 @@ log_error() {
 
 # Check prerequisites
 check_prerequisites() {
+    # Check for aws-vault
+    if ! command -v aws-vault &> /dev/null; then
+        log_error "aws-vault is not installed. Install with: brew install aws-vault"
+        exit 1
+    fi
+    
+    # Check for Python
+    if ! command -v python3 &> /dev/null; then
+        log_error "Python 3 is not installed"
+        exit 1
+    fi
+    
+    # Verify AWS SSO session
+    if ! aws-vault exec "$AWS_VAULT_PROFILE" -- aws sts get-caller-identity &> /dev/null; then
+        log_warn "AWS SSO session may have expired. You may need to re-authenticate."
+    fi
+}
+
+# Check Docker prerequisites
+check_docker_prerequisites() {
     if ! command -v docker &> /dev/null; then
         log_error "Docker is not installed"
         exit 1
@@ -41,27 +70,36 @@ check_prerequisites() {
         log_error "Docker Compose is not installed"
         exit 1
     fi
-    
-    # Check for AWS credentials
-    if [[ -z "$AWS_ACCESS_KEY_ID" ]] && [[ ! -f ~/.aws/credentials ]]; then
-        log_warn "AWS credentials not found. Run 'aws configure' first."
+}
+
+# Setup Python virtual environment
+setup_venv() {
+    if [[ ! -d "venv" ]]; then
+        log_info "Creating Python virtual environment..."
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -q -r requirements.txt
+    else
+        source venv/bin/activate
     fi
 }
 
 # Build Docker image
 build() {
+    check_docker_prerequisites
     log_info "Building Docker image..."
     docker-compose build
     log_info "Build complete!"
 }
 
-# Run in interactive mode
+# Run in interactive mode (local Python with aws-vault)
 interactive() {
-    log_info "Starting interactive mode..."
-    docker-compose run --rm agent --interactive
+    setup_venv
+    log_info "Starting interactive mode with aws-vault ($AWS_VAULT_PROFILE)..."
+    aws-vault exec "$AWS_VAULT_PROFILE" -- python agent.py --interactive --work-dir "$(pwd)/workspace" --output-dir "$(pwd)/output"
 }
 
-# Run a specific task
+# Run a specific task (local Python with aws-vault)
 run_task() {
     local task="$1"
     if [[ -z "$task" ]]; then
@@ -69,21 +107,43 @@ run_task() {
         echo "Usage: $0 task \"Your task description\""
         exit 1
     fi
-    log_info "Running task: $task"
-    docker-compose run --rm agent --task "$task"
+    setup_venv
+    log_info "Running task with aws-vault ($AWS_VAULT_PROFILE): $task"
+    aws-vault exec "$AWS_VAULT_PROFILE" -- python agent.py --task "$task" --work-dir "$(pwd)/workspace" --output-dir "$(pwd)/output"
+}
+
+# Run in Docker interactive mode
+docker_interactive() {
+    check_docker_prerequisites
+    log_info "Starting Docker interactive mode..."
+    # Export AWS credentials from aws-vault into Docker
+    aws-vault exec "$AWS_VAULT_PROFILE" -- docker-compose run --rm agent --interactive
+}
+
+# Run task in Docker
+docker_task() {
+    local task="$1"
+    if [[ -z "$task" ]]; then
+        log_error "No task specified"
+        exit 1
+    fi
+    check_docker_prerequisites
+    log_info "Running Docker task: $task"
+    aws-vault exec "$AWS_VAULT_PROFILE" -- docker-compose run --rm agent --task "$task"
 }
 
 # Open shell in container
 shell() {
+    check_docker_prerequisites
     log_info "Opening shell in container..."
-    docker-compose run --rm --entrypoint /bin/bash agent
+    aws-vault exec "$AWS_VAULT_PROFILE" -- docker-compose run --rm --entrypoint /bin/bash agent
 }
 
 # Clean up containers and volumes
 clean() {
     log_info "Cleaning up..."
-    docker-compose down -v
-    rm -rf workspace output
+    docker-compose down -v 2>/dev/null || true
+    rm -rf workspace output venv __pycache__
     log_info "Cleanup complete!"
 }
 
@@ -100,24 +160,35 @@ Natterbox Documentation Agent - Helper Script
 Usage:
     $0 [command] [arguments]
 
-Commands:
+Commands (Local Python + aws-vault):
     (none)          Start in interactive mode
-    build           Build the Docker image
     task "..."      Run a specific documentation task
+
+Commands (Docker):
+    docker          Start Docker interactive mode
+    docker-task "." Run task in Docker
+    build           Build the Docker image
     shell           Open a bash shell in the container
-    clean           Remove containers and clean up
+
+Utility:
+    clean           Remove containers, venv, and clean up
     logs            Show container logs
     help            Show this help message
 
 Examples:
-    $0                                          # Interactive mode
+    $0                                          # Interactive mode (local)
+    $0 task "Create emergency response runbook" # Run specific task (local)
+    $0 docker                                   # Interactive mode (Docker)
     $0 build                                    # Build Docker image
-    $0 task "Create emergency response runbook" # Run specific task
-    $0 shell                                    # Debug shell
 
-Environment Variables:
+AWS Authentication:
+    Uses aws-vault with profile: $AWS_VAULT_PROFILE
+    Bedrock model: ${BEDROCK_MODEL_ID:-anthropic.claude-sonnet-4-20250514-v1:0}
+
+Environment Variables (from .env):
+    AWS_PROFILE         AWS credentials profile (default: sso-dev03-admin)
     AWS_REGION          AWS region for Bedrock (default: us-east-1)
-    AWS_PROFILE         AWS credentials profile
+    BEDROCK_MODEL_ID    Claude model to use
     NATTERBOX_MCP_URL   MCP server URL
 
 EOF
@@ -125,15 +196,23 @@ EOF
 
 # Main entry point
 main() {
-    check_prerequisites
-    
     case "${1:-}" in
         build)
             build
             ;;
         task)
+            check_prerequisites
             shift
             run_task "$*"
+            ;;
+        docker)
+            check_prerequisites
+            docker_interactive
+            ;;
+        docker-task)
+            check_prerequisites
+            shift
+            docker_task "$*"
             ;;
         shell)
             shell
@@ -148,6 +227,7 @@ main() {
             show_help
             ;;
         "")
+            check_prerequisites
             interactive
             ;;
         *)
