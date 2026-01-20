@@ -1691,8 +1691,8 @@ Provide a summary of what was accomplished this iteration.
             # Log any thinking from the planner
             self._log_thinking(response, "planner")
 
-            # Handle tool use (reading STATUS/BACKLOG)
-            max_planning_turns = 5
+            # Handle tool use (reading STATUS/BACKLOG and exploring repo)
+            max_planning_turns = 15
             for _ in range(max_planning_turns):
                 if response.get("stop_reason") != "tool_use":
                     break
@@ -1708,6 +1708,9 @@ Provide a summary of what was accomplished this iteration.
                             result = self.shell.read_file(block["input"].get("path", ""))
                         elif block["name"] == "list_directory":
                             result = self.shell.list_directory(block["input"].get("path", "."))
+                        elif block["name"] == "bash":
+                            # Allow read-only bash commands for exploration
+                            result = self.shell.execute(block["input"].get("command", ""), block["input"].get("description", ""))
                         else:
                             result = {"error": "Only read operations allowed in planning"}
                         tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": json.dumps(result)})
