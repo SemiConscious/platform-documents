@@ -1,0 +1,1095 @@
+2026-01-20 08:52:37,416 - botocore.credentials - INFO - Found credentials in environment variables.
+2026-01-20 08:52:37,451 - documentation-agent - INFO - Initializing documentation agent...
+2026-01-20 08:52:37,451 - documentation-agent - INFO - Loaded 4 shell tools
+2026-01-20 08:52:37,451 - documentation-agent - INFO - Loaded 2 file store tools
+2026-01-20 08:52:37,451 - documentation-agent - INFO - Connecting to MCP server: https://avatar.natterbox-dev03.net/mcp/sse
+2026-01-20 08:52:37,451 - documentation-agent - INFO - Loaded existing MCP tokens from file
+2026-01-20 08:52:38,064 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:52:38,065 - documentation-agent - INFO - MCP server initialized: {'name': 'avatar-tools', 'version': '1.0.0'}
+2026-01-20 08:52:38,220 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:52:38,297 - documentation-agent - INFO - Discovered 18 MCP tools
+2026-01-20 08:52:38,297 - documentation-agent - INFO - Loaded 18 MCP tools
+2026-01-20 08:52:38,297 - documentation-agent - INFO - Agent initialized with 24 total tools
+2026-01-20 08:52:38,298 - documentation-agent - INFO - 🗑️  Cleared file store
+2026-01-20 08:52:38,298 - documentation-agent - INFO - 🗑️  Cleared file store for new iteration
+2026-01-20 08:52:38,298 - documentation-agent - INFO - 📋 PLANNING PHASE: Creating task plan...
+2026-01-20 08:52:38,298 - documentation-agent - INFO - 📊 Context size: ~635 tokens
+2026-01-20 08:52:41,152 - documentation-agent - INFO - 📊 Context size: ~5,338 tokens
+2026-01-20 08:52:44,626 - documentation-agent - INFO - 📊 Context size: ~5,824 tokens
+2026-01-20 08:52:47,859 - documentation-agent - INFO - 📊 Context size: ~6,171 tokens
+2026-01-20 08:53:03,397 - documentation-agent - INFO - 📋 Plan created with 5 tasks:
+2026-01-20 08:53:03,397 - documentation-agent - INFO -    - Lumina Observability Architecture Documentation → architecture/observability/lumina.md
+2026-01-20 08:53:03,397 - documentation-agent - INFO -    - CI/CD and Release Management Documentation → operations/cicd-workflows.md
+2026-01-20 08:53:03,397 - documentation-agent - INFO -    - Permissions and Authentication Architecture (NAPS/Gatekeeper) → architecture/security/permissions-auth.md
+2026-01-20 08:53:03,397 - documentation-agent - INFO -    - Voice Routing Deep-Dive: Dialplan and PBX Documentation → architecture/voice-routing/dialplan-pbx.md
+2026-01-20 08:53:03,397 - documentation-agent - INFO -    - Support Team Onboarding Guide → onboarding/support.md
+2026-01-20 08:53:03,398 - documentation-agent - INFO - 🚀 EXECUTION PHASE: Running 5 tasks in parallel (max 3 concurrent)
+2026-01-20 08:53:03,398 - documentation-agent - INFO - 🚀 SubAgent starting: Lumina Observability Architecture Documentation
+2026-01-20 08:53:03,398 - documentation-agent - INFO - 📊 Context size: ~24,682 tokens
+2026-01-20 08:53:07,566 - documentation-agent - INFO - 🚀 SubAgent starting: CI/CD and Release Management Documentation
+2026-01-20 08:53:07,567 - documentation-agent - INFO - 📊 Context size: ~24,673 tokens
+2026-01-20 08:53:12,233 - documentation-agent - INFO - 🚀 SubAgent starting: Permissions and Authentication Architecture (NAPS/Gatekeeper)
+2026-01-20 08:53:12,234 - documentation-agent - INFO - 📊 Context size: ~24,690 tokens
+2026-01-20 08:53:16,257 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:16,315 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:16,336 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:16,485 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:16,753 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:17,684 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:17,687 - documentation-agent - INFO - 📊 Context size: ~28,529 tokens
+2026-01-20 08:53:23,692 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:23,692 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:23,694 - documentation-agent - INFO - 📊 Context size: ~35,837 tokens
+2026-01-20 08:53:28,811 - documentation-agent - INFO - 📊 Context size: ~35,844 tokens
+2026-01-20 08:53:35,709 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:35,847 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:35,943 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:36,406 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:36,441 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:36,721 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:36,724 - documentation-agent - INFO - 📊 Context size: ~36,656 tokens
+2026-01-20 08:53:43,285 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:43,286 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:43,293 - documentation-agent - INFO - 📊 Context size: ~47,486 tokens
+2026-01-20 08:53:51,651 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:51,652 - documentation-agent - INFO - 📊 Context size: ~32,822 tokens
+2026-01-20 08:53:58,899 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:58,900 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:58,910 - documentation-agent - INFO - 📦 Stored result: 49e2e7ef (58,856 bytes from mcp_confluence)
+2026-01-20 08:53:59,369 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:59,439 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:59,526 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:59,788 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:59,942 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:53:59,944 - documentation-agent - INFO - 📊 Context size: ~40,712 tokens
+2026-01-20 08:54:07,181 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:07,545 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:07,730 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:07,786 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:07,788 - documentation-agent - INFO - 📊 Context size: ~48,444 tokens
+2026-01-20 08:54:12,733 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:13,133 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:13,223 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:13,236 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:13,601 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:13,748 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:13,750 - documentation-agent - INFO - 📊 Context size: ~49,383 tokens
+2026-01-20 08:54:20,214 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:20,217 - documentation-agent - INFO - 📦 Stored result: 6c517fa0 (37,273 bytes from historical_compression)
+2026-01-20 08:54:20,218 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:54:20,219 - documentation-agent - INFO - 📊 Context size: ~54,104 tokens
+2026-01-20 08:54:29,147 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:29,255 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:29,273 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:29,274 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:54:29,275 - documentation-agent - INFO - 📊 Context size: ~32,953 tokens
+2026-01-20 08:54:35,175 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:35,249 - documentation-agent - INFO - 📦 Stored result: fdc789e1 (68,979 bytes from mcp_github)
+2026-01-20 08:54:35,251 - documentation-agent - INFO - 📦 Stored result: c829c1e7 (38,528 bytes from historical_compression)
+2026-01-20 08:54:35,251 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:54:35,252 - documentation-agent - INFO - 📊 Context size: ~49,391 tokens
+2026-01-20 08:54:41,282 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:41,283 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:41,724 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:41,773 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:41,787 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:54:41,790 - documentation-agent - INFO - 📊 Context size: ~63,303 tokens
+2026-01-20 08:54:48,939 - documentation-agent - INFO - 📦 Stored result: 1bf49fd5 (55,523 bytes from mcp_confluence)
+2026-01-20 08:54:48,940 - documentation-agent - INFO - 📦 Stored result: 66dec629 (1,515 bytes from historical_compression)
+2026-01-20 08:54:48,940 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:54:48,941 - documentation-agent - INFO - 📊 Context size: ~39,816 tokens
+2026-01-20 08:54:53,609 - documentation-agent - INFO - 📦 Stored result: 78bd98ab (6,420 bytes from historical_compression)
+2026-01-20 08:54:53,610 - documentation-agent - INFO - 📦 Stored result: 7b8834a6 (5,958 bytes from historical_compression)
+2026-01-20 08:54:53,610 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:54:53,612 - documentation-agent - INFO - 📊 Context size: ~47,590 tokens
+2026-01-20 08:55:00,791 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:00,811 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:00,897 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:00,899 - documentation-agent - INFO - 📦 Stored result: 9a87bf32 (11,044 bytes from historical_compression)
+2026-01-20 08:55:00,900 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:55:00,901 - documentation-agent - INFO - 📊 Context size: ~58,780 tokens
+2026-01-20 08:55:08,523 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:08,527 - documentation-agent - INFO - 📦 Stored result: 3a76c5ae (2,534 bytes from historical_compression)
+2026-01-20 08:55:08,527 - documentation-agent - INFO - 📦 Stored result: 6dc4cf49 (2,724 bytes from historical_compression)
+2026-01-20 08:55:08,528 - documentation-agent - INFO - 📦 Stored result: 991c8a18 (2,968 bytes from historical_compression)
+2026-01-20 08:55:08,529 - documentation-agent - INFO - 📦 Stored result: 6b45f762 (1,342 bytes from historical_compression)
+2026-01-20 08:55:08,529 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:55:08,530 - documentation-agent - INFO - 📊 Context size: ~49,657 tokens
+2026-01-20 08:55:14,437 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:14,438 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:14,837 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:14,955 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:14,958 - documentation-agent - INFO - 📦 Stored result: 3a72c71f (16,000 bytes from historical_compression)
+2026-01-20 08:55:14,959 - documentation-agent - INFO - 📦 Stored result: 0cec545d (30,277 bytes from historical_compression)
+2026-01-20 08:55:14,960 - documentation-agent - INFO - 📦 Stored result: ce59b160 (8,292 bytes from historical_compression)
+2026-01-20 08:55:14,960 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:55:14,961 - documentation-agent - INFO - 📊 Context size: ~50,685 tokens
+2026-01-20 08:55:21,439 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:21,803 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:21,905 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:21,923 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:22,344 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:22,351 - documentation-agent - INFO - 📦 Stored result: ee2b4a7b (15,773 bytes from historical_compression)
+2026-01-20 08:55:22,352 - documentation-agent - INFO - 📦 Stored result: 68a2d7da (7,613 bytes from historical_compression)
+2026-01-20 08:55:22,352 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:55:22,353 - documentation-agent - INFO - 📊 Context size: ~48,649 tokens
+2026-01-20 08:55:28,144 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:28,144 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:28,147 - documentation-agent - INFO - 📦 Stored result: 6ea7c11a (4,035 bytes from historical_compression)
+2026-01-20 08:55:28,147 - documentation-agent - INFO - 📦 Stored result: bb62b697 (18,093 bytes from historical_compression)
+2026-01-20 08:55:28,148 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:55:28,149 - documentation-agent - INFO - 📊 Context size: ~57,260 tokens
+2026-01-20 08:55:33,972 - documentation-agent - INFO - 📦 Stored result: e37871b3 (2,789 bytes from historical_compression)
+2026-01-20 08:55:33,973 - documentation-agent - INFO - 📦 Stored result: 4898d01f (5,501 bytes from historical_compression)
+2026-01-20 08:55:33,973 - documentation-agent - INFO - 📦 Stored result: 738cb964 (4,567 bytes from historical_compression)
+2026-01-20 08:55:33,974 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:55:33,975 - documentation-agent - INFO - 📊 Context size: ~65,101 tokens
+2026-01-20 08:55:41,992 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:42,008 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:42,009 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:42,012 - documentation-agent - INFO - 📦 Stored result: 96a93c3a (16,773 bytes from historical_compression)
+2026-01-20 08:55:42,014 - documentation-agent - INFO - 📦 Stored result: 194d5be3 (17,407 bytes from historical_compression)
+2026-01-20 08:55:42,015 - documentation-agent - INFO - 📦 Stored result: ba515197 (12,583 bytes from historical_compression)
+2026-01-20 08:55:42,015 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:55:42,016 - documentation-agent - INFO - 📊 Context size: ~43,175 tokens
+2026-01-20 08:55:50,457 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:50,558 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:50,561 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:50,936 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:50,972 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:51,270 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:51,275 - documentation-agent - INFO - 📦 Stored result: ed221b80 (18,000 bytes from historical_compression)
+2026-01-20 08:55:51,276 - documentation-agent - INFO - 📦 Stored result: 01e35a7d (20,734 bytes from historical_compression)
+2026-01-20 08:55:51,276 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:55:51,277 - documentation-agent - INFO - 📊 Context size: ~47,063 tokens
+2026-01-20 08:55:56,576 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:56,577 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:55:56,580 - documentation-agent - INFO - 📦 Stored result: 16510da6 (2,837 bytes from historical_compression)
+2026-01-20 08:55:56,581 - documentation-agent - INFO - 📦 Stored result: 8ecf36fe (1,926 bytes from historical_compression)
+2026-01-20 08:55:56,581 - documentation-agent - INFO - 📦 Stored result: f482627a (6,568 bytes from historical_compression)
+2026-01-20 08:55:56,582 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:55:56,583 - documentation-agent - INFO - 📊 Context size: ~42,673 tokens
+2026-01-20 08:56:01,946 - documentation-agent - INFO - 📦 Stored result: d369a123 (16,220 bytes from historical_compression)
+2026-01-20 08:56:01,948 - documentation-agent - INFO - 📦 Stored result: 2c915acb (18,193 bytes from historical_compression)
+2026-01-20 08:56:01,949 - documentation-agent - INFO - 📦 Stored result: b4e8ae59 (10,558 bytes from historical_compression)
+2026-01-20 08:56:01,965 - documentation-agent - INFO - 📦 Stored result: 6f42eae6 (8,793 bytes from historical_compression)
+2026-01-20 08:56:01,966 - documentation-agent - INFO - 📦 Stored result: 051f173f (7,067 bytes from historical_compression)
+2026-01-20 08:56:01,966 - documentation-agent - INFO - 📦 SubAgent compressed 5 historical tool results
+2026-01-20 08:56:01,967 - documentation-agent - INFO - 📊 Context size: ~60,124 tokens
+2026-01-20 08:56:08,798 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:08,812 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:08,842 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:09,180 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:09,285 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:09,289 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:09,292 - documentation-agent - INFO - 📦 Stored result: 5ccf4813 (10,618 bytes from historical_compression)
+2026-01-20 08:56:09,292 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:56:09,293 - documentation-agent - INFO - 📊 Context size: ~44,506 tokens
+2026-01-20 08:56:15,011 - documentation-agent - INFO - 📦 Stored result: a3a61c22 (19,149 bytes from historical_compression)
+2026-01-20 08:56:15,013 - documentation-agent - INFO - 📦 Stored result: a7e415eb (3,895 bytes from historical_compression)
+2026-01-20 08:56:15,013 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:56:15,014 - documentation-agent - INFO - 📊 Context size: ~41,241 tokens
+2026-01-20 08:56:21,927 - documentation-agent - INFO - 📦 Stored result: 18dabc41 (16,559 bytes from historical_compression)
+2026-01-20 08:56:21,937 - documentation-agent - INFO - 📦 Stored result: 0dd6903c (12,428 bytes from historical_compression)
+2026-01-20 08:56:21,938 - documentation-agent - INFO - 📦 Stored result: 2273239f (12,637 bytes from historical_compression)
+2026-01-20 08:56:21,939 - documentation-agent - INFO - 📦 Stored result: 656a8a53 (2,418 bytes from historical_compression)
+2026-01-20 08:56:21,939 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:56:21,940 - documentation-agent - INFO - 📊 Context size: ~53,494 tokens
+2026-01-20 08:56:27,968 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:27,973 - documentation-agent - INFO - 📦 Stored result: 7a18abc7 (7,688 bytes from historical_compression)
+2026-01-20 08:56:27,975 - documentation-agent - INFO - 📦 Stored result: f91c1e67 (2,918 bytes from historical_compression)
+2026-01-20 08:56:27,976 - documentation-agent - INFO - 📦 Stored result: 0430d7a7 (3,939 bytes from historical_compression)
+2026-01-20 08:56:27,976 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:56:27,978 - documentation-agent - INFO - 📊 Context size: ~44,008 tokens
+2026-01-20 08:56:34,564 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:34,564 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:34,571 - documentation-agent - INFO - 📦 Stored result: 63b9580f (9,904 bytes from historical_compression)
+2026-01-20 08:56:34,571 - documentation-agent - INFO - 📦 Stored result: 492a1a1c (7,971 bytes from historical_compression)
+2026-01-20 08:56:34,572 - documentation-agent - INFO - 📦 Stored result: 38af7405 (4,067 bytes from historical_compression)
+2026-01-20 08:56:34,573 - documentation-agent - INFO - 📦 Stored result: 00e1af47 (14,456 bytes from historical_compression)
+2026-01-20 08:56:34,573 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:56:34,574 - documentation-agent - INFO - 📊 Context size: ~51,490 tokens
+2026-01-20 08:56:41,507 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:41,556 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:41,573 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:41,942 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:41,945 - documentation-agent - INFO - 📦 Stored result: 6e773690 (3,529 bytes from historical_compression)
+2026-01-20 08:56:41,946 - documentation-agent - INFO - 📦 Stored result: 5e6f8b83 (2,613 bytes from historical_compression)
+2026-01-20 08:56:41,947 - documentation-agent - INFO - 📦 Stored result: 131aa695 (2,841 bytes from historical_compression)
+2026-01-20 08:56:41,948 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:56:41,949 - documentation-agent - INFO - 📊 Context size: ~41,217 tokens
+2026-01-20 08:56:47,456 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:47,456 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:56:47,458 - documentation-agent - INFO - 📦 Stored result: d45a4e98 (42,320 bytes from historical_compression)
+2026-01-20 08:56:47,458 - documentation-agent - INFO - 📦 Stored result: 3029aebc (2,027 bytes from historical_compression)
+2026-01-20 08:56:47,459 - documentation-agent - INFO - 📦 Stored result: d9b8a71b (2,834 bytes from historical_compression)
+2026-01-20 08:56:47,459 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:56:47,459 - documentation-agent - INFO - 📊 Context size: ~38,799 tokens
+2026-01-20 08:56:54,391 - documentation-agent - INFO - 📦 Stored result: 075246aa (4,035 bytes from historical_compression)
+2026-01-20 08:56:54,393 - documentation-agent - INFO - 📦 Stored result: cbbb4623 (28,021 bytes from historical_compression)
+2026-01-20 08:56:54,394 - documentation-agent - INFO - 📦 Stored result: b214b955 (5,812 bytes from historical_compression)
+2026-01-20 08:56:54,394 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:56:54,396 - documentation-agent - INFO - 📊 Context size: ~55,852 tokens
+2026-01-20 08:57:01,051 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:01,057 - documentation-agent - INFO - 📦 Stored result: 1b3d49a7 (13,863 bytes from historical_compression)
+2026-01-20 08:57:01,058 - documentation-agent - INFO - 📦 Stored result: f6be04c3 (1,137 bytes from historical_compression)
+2026-01-20 08:57:01,059 - documentation-agent - INFO - 📦 Stored result: 5a75baef (3,530 bytes from historical_compression)
+2026-01-20 08:57:01,059 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:57:01,060 - documentation-agent - INFO - 📊 Context size: ~43,910 tokens
+2026-01-20 08:57:06,645 - documentation-agent - INFO - 📦 Stored result: 8bb66396 (3,351 bytes from historical_compression)
+2026-01-20 08:57:06,647 - documentation-agent - INFO - 📦 Stored result: c9784e2b (2,440 bytes from historical_compression)
+2026-01-20 08:57:06,649 - documentation-agent - INFO - 📦 Stored result: 80dda4ec (7,964 bytes from historical_compression)
+2026-01-20 08:57:06,649 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:57:06,651 - documentation-agent - INFO - 📊 Context size: ~46,777 tokens
+2026-01-20 08:57:13,918 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:13,918 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:13,925 - documentation-agent - INFO - 📦 Stored result: 9a902a1f (1,189 bytes from historical_compression)
+2026-01-20 08:57:13,925 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:57:13,926 - documentation-agent - INFO - 📊 Context size: ~46,700 tokens
+2026-01-20 08:57:20,052 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:20,057 - documentation-agent - INFO - 📦 Stored result: 695748f3 (9,164 bytes from historical_compression)
+2026-01-20 08:57:20,060 - documentation-agent - INFO - 📦 Stored result: 606f5568 (9,689 bytes from historical_compression)
+2026-01-20 08:57:20,060 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:57:20,062 - documentation-agent - INFO - 📊 Context size: ~58,608 tokens
+2026-01-20 08:57:27,224 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:27,225 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:27,718 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:27,723 - documentation-agent - INFO - 📦 Stored result: f43e83e9 (11,739 bytes from historical_compression)
+2026-01-20 08:57:27,725 - documentation-agent - INFO - 📦 Stored result: 398645ea (11,867 bytes from historical_compression)
+2026-01-20 08:57:27,725 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:57:27,727 - documentation-agent - INFO - 📊 Context size: ~56,613 tokens
+2026-01-20 08:57:34,487 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:34,487 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:34,501 - documentation-agent - INFO - 📦 Stored result: 513caa88 (3,384 bytes from historical_compression)
+2026-01-20 08:57:34,501 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:57:34,502 - documentation-agent - INFO - 📊 Context size: ~51,887 tokens
+2026-01-20 08:57:42,082 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:42,089 - documentation-agent - INFO - 📦 Stored result: 9cd7c52b (5,125 bytes from historical_compression)
+2026-01-20 08:57:42,089 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 08:57:42,090 - documentation-agent - INFO - 📊 Context size: ~47,716 tokens
+2026-01-20 08:57:47,201 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:47,202 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:47,205 - documentation-agent - INFO - 📦 Stored result: 08bd3571 (19,815 bytes from historical_compression)
+2026-01-20 08:57:47,206 - documentation-agent - INFO - 📦 Stored result: 94fa96a6 (2,534 bytes from historical_compression)
+2026-01-20 08:57:47,206 - documentation-agent - INFO - 📦 Stored result: 8aae4b58 (2,713 bytes from historical_compression)
+2026-01-20 08:57:47,206 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:57:47,207 - documentation-agent - INFO - 📊 Context size: ~46,397 tokens
+2026-01-20 08:57:54,020 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:57:54,026 - documentation-agent - INFO - 📦 Stored result: 4d492ca9 (15,080 bytes from historical_compression)
+2026-01-20 08:57:54,028 - documentation-agent - INFO - 📦 Stored result: e4477331 (2,082 bytes from historical_compression)
+2026-01-20 08:57:54,029 - documentation-agent - INFO - 📦 Stored result: 9ec76cc5 (3,951 bytes from historical_compression)
+2026-01-20 08:57:54,029 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:57:54,031 - documentation-agent - INFO - 📊 Context size: ~46,408 tokens
+2026-01-20 08:58:00,572 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:00,573 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:00,576 - documentation-agent - INFO - 📦 Stored result: f21c8953 (4,557 bytes from historical_compression)
+2026-01-20 08:58:00,577 - documentation-agent - INFO - 📦 Stored result: 1a8994d0 (11,125 bytes from historical_compression)
+2026-01-20 08:58:00,578 - documentation-agent - INFO - 📦 Stored result: 855ca089 (29,296 bytes from historical_compression)
+2026-01-20 08:58:00,579 - documentation-agent - INFO - 📦 Stored result: 5cc2afbc (5,164 bytes from historical_compression)
+2026-01-20 08:58:00,579 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:58:00,580 - documentation-agent - INFO - 📊 Context size: ~50,248 tokens
+2026-01-20 08:58:07,403 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:07,436 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:07,439 - documentation-agent - INFO - 📦 Stored result: fb41c4f9 (3,611 bytes from historical_compression)
+2026-01-20 08:58:07,440 - documentation-agent - INFO - 📦 Stored result: 03b3edf3 (11,281 bytes from historical_compression)
+2026-01-20 08:58:07,441 - documentation-agent - INFO - 📦 Stored result: 814cbb82 (12,981 bytes from historical_compression)
+2026-01-20 08:58:07,442 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:58:07,443 - documentation-agent - INFO - 📊 Context size: ~52,575 tokens
+2026-01-20 08:58:13,190 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:13,581 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:13,640 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:13,643 - documentation-agent - INFO - 📦 Stored result: 63351459 (18,876 bytes from historical_compression)
+2026-01-20 08:58:13,645 - documentation-agent - INFO - 📦 Stored result: 0a0370e4 (4,863 bytes from historical_compression)
+2026-01-20 08:58:13,645 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:58:13,646 - documentation-agent - INFO - 📊 Context size: ~40,856 tokens
+2026-01-20 08:58:19,104 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:19,108 - documentation-agent - INFO - 📦 Stored result: adb6c8c4 (9,972 bytes from historical_compression)
+2026-01-20 08:58:19,118 - documentation-agent - INFO - 📦 Stored result: f3cd3802 (7,635 bytes from historical_compression)
+2026-01-20 08:58:19,119 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:58:19,120 - documentation-agent - INFO - 📊 Context size: ~55,482 tokens
+2026-01-20 08:58:25,637 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:25,698 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:25,704 - documentation-agent - INFO - 📦 Stored result: 3b48d417 (16,229 bytes from historical_compression)
+2026-01-20 08:58:25,705 - documentation-agent - INFO - 📦 Stored result: f4d22528 (3,003 bytes from historical_compression)
+2026-01-20 08:58:25,707 - documentation-agent - INFO - 📦 Stored result: 31ddbe34 (3,231 bytes from historical_compression)
+2026-01-20 08:58:25,707 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:58:25,708 - documentation-agent - INFO - 📊 Context size: ~41,597 tokens
+2026-01-20 08:58:31,971 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:31,973 - documentation-agent - INFO - 📦 Stored result: a2d47454 (6,386 bytes from historical_compression)
+2026-01-20 08:58:31,973 - documentation-agent - INFO - 📦 Stored result: c1c4db1c (12,695 bytes from historical_compression)
+2026-01-20 08:58:31,974 - documentation-agent - INFO - 📦 Stored result: 5f886d14 (2,028 bytes from historical_compression)
+2026-01-20 08:58:31,974 - documentation-agent - INFO - 📦 Stored result: e1267dc9 (3,012 bytes from historical_compression)
+2026-01-20 08:58:31,974 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:58:31,975 - documentation-agent - INFO - 📊 Context size: ~55,972 tokens
+2026-01-20 08:58:38,050 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:38,144 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:38,150 - documentation-agent - INFO - 📦 Stored result: 9469263f (10,032 bytes from historical_compression)
+2026-01-20 08:58:38,150 - documentation-agent - INFO - 📦 Stored result: 828ff07f (2,918 bytes from historical_compression)
+2026-01-20 08:58:38,151 - documentation-agent - INFO - 📦 Stored result: 1f485b43 (5,034 bytes from historical_compression)
+2026-01-20 08:58:38,151 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:58:38,152 - documentation-agent - INFO - 📊 Context size: ~53,147 tokens
+2026-01-20 08:58:45,551 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:45,859 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:58:45,869 - documentation-agent - INFO - 📦 Stored result: 2d1868ad (5,345 bytes from historical_compression)
+2026-01-20 08:58:45,871 - documentation-agent - INFO - 📦 Stored result: c9980538 (11,747 bytes from historical_compression)
+2026-01-20 08:58:45,874 - documentation-agent - INFO - 📦 Stored result: 4cde05be (11,289 bytes from historical_compression)
+2026-01-20 08:58:45,875 - documentation-agent - INFO - 📦 Stored result: 9f438616 (3,197 bytes from historical_compression)
+2026-01-20 08:58:45,876 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:58:45,877 - documentation-agent - INFO - 📊 Context size: ~57,627 tokens
+2026-01-20 08:58:51,907 - documentation-agent - INFO - 📦 Stored result: 544e37b5 (4,021 bytes from historical_compression)
+2026-01-20 08:58:51,910 - documentation-agent - INFO - 📦 Stored result: 761cbcad (11,898 bytes from historical_compression)
+2026-01-20 08:58:51,911 - documentation-agent - INFO - 📦 Stored result: 18edba79 (10,015 bytes from historical_compression)
+2026-01-20 08:58:51,911 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:58:51,912 - documentation-agent - INFO - 📊 Context size: ~58,242 tokens
+2026-01-20 08:58:57,495 - documentation-agent - INFO - 📦 Stored result: a896c94f (11,396 bytes from historical_compression)
+2026-01-20 08:58:57,496 - documentation-agent - INFO - 📦 Stored result: 0f82ce9d (8,579 bytes from historical_compression)
+2026-01-20 08:58:57,498 - documentation-agent - INFO - 📦 Stored result: f77fb971 (5,233 bytes from historical_compression)
+2026-01-20 08:58:57,498 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:58:57,500 - documentation-agent - INFO - 📊 Context size: ~62,299 tokens
+2026-01-20 08:59:02,966 - documentation-agent - INFO - 📦 Stored result: 068bb570 (14,601 bytes from historical_compression)
+2026-01-20 08:59:02,972 - documentation-agent - INFO - 📦 Stored result: a09216d1 (18,572 bytes from historical_compression)
+2026-01-20 08:59:02,973 - documentation-agent - INFO - 📦 Stored result: 4e9ae537 (2,394 bytes from historical_compression)
+2026-01-20 08:59:02,973 - documentation-agent - INFO - 📦 Stored result: b6d441b6 (3,470 bytes from historical_compression)
+2026-01-20 08:59:02,974 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 08:59:02,974 - documentation-agent - INFO - 📊 Context size: ~61,530 tokens
+2026-01-20 08:59:08,929 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:59:08,930 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:59:08,933 - documentation-agent - INFO - 📦 Stored result: 10d0c094 (3,916 bytes from historical_compression)
+2026-01-20 08:59:08,935 - documentation-agent - INFO - 📦 Stored result: e67fc7f4 (4,781 bytes from historical_compression)
+2026-01-20 08:59:08,935 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:59:08,936 - documentation-agent - INFO - 📊 Context size: ~58,470 tokens
+2026-01-20 08:59:15,759 - documentation-agent - INFO - 📦 Stored result: a80140a4 (4,504 bytes from historical_compression)
+2026-01-20 08:59:15,760 - documentation-agent - INFO - 📦 Stored result: a4884709 (3,611 bytes from historical_compression)
+2026-01-20 08:59:15,760 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:59:15,761 - documentation-agent - INFO - 📊 Context size: ~40,537 tokens
+2026-01-20 08:59:21,149 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:59:21,160 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 08:59:21,162 - documentation-agent - INFO - 📦 Stored result: acb19dfd (12,879 bytes from historical_compression)
+2026-01-20 08:59:21,163 - documentation-agent - INFO - 📦 Stored result: d482b7ac (3,715 bytes from historical_compression)
+2026-01-20 08:59:21,164 - documentation-agent - INFO - 📦 Stored result: 271a85f7 (6,729 bytes from historical_compression)
+2026-01-20 08:59:21,164 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:59:21,165 - documentation-agent - INFO - 📊 Context size: ~56,456 tokens
+2026-01-20 08:59:26,481 - documentation-agent - INFO - 📦 Stored result: a4576054 (4,649 bytes from historical_compression)
+2026-01-20 08:59:26,483 - documentation-agent - INFO - 📦 Stored result: 8dab8022 (13,099 bytes from historical_compression)
+2026-01-20 08:59:26,491 - documentation-agent - INFO - 📦 Stored result: b447ad3a (14,087 bytes from historical_compression)
+2026-01-20 08:59:26,491 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:59:26,493 - documentation-agent - INFO - 📊 Context size: ~55,361 tokens
+2026-01-20 08:59:32,767 - documentation-agent - INFO - 📦 Stored result: 3befe4eb (7,342 bytes from historical_compression)
+2026-01-20 08:59:32,770 - documentation-agent - INFO - 📦 Stored result: 48724751 (12,551 bytes from historical_compression)
+2026-01-20 08:59:32,771 - documentation-agent - INFO - 📦 Stored result: fc8f0f2a (10,275 bytes from historical_compression)
+2026-01-20 08:59:32,771 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:59:32,773 - documentation-agent - INFO - 📊 Context size: ~53,536 tokens
+2026-01-20 08:59:38,012 - documentation-agent - INFO - 📦 Stored result: 925cced9 (2,934 bytes from historical_compression)
+2026-01-20 08:59:38,015 - documentation-agent - INFO - 📦 Stored result: fc80c214 (4,194 bytes from historical_compression)
+2026-01-20 08:59:38,015 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:59:38,017 - documentation-agent - INFO - 📊 Context size: ~59,587 tokens
+2026-01-20 08:59:42,619 - documentation-agent - INFO - 📦 Stored result: 72dc1821 (11,272 bytes from historical_compression)
+2026-01-20 08:59:42,621 - documentation-agent - INFO - 📦 Stored result: 54d6a056 (13,905 bytes from historical_compression)
+2026-01-20 08:59:42,623 - documentation-agent - INFO - 📦 Stored result: cce8ef13 (4,559 bytes from historical_compression)
+2026-01-20 08:59:42,623 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 08:59:42,625 - documentation-agent - INFO - 📊 Context size: ~53,173 tokens
+2026-01-20 08:59:47,059 - documentation-agent - INFO - 📦 Stored result: b191e6dd (5,713 bytes from historical_compression)
+2026-01-20 08:59:47,061 - documentation-agent - INFO - 📦 Stored result: d90a7cea (14,656 bytes from historical_compression)
+2026-01-20 08:59:47,061 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:59:47,062 - documentation-agent - INFO - 📊 Context size: ~55,385 tokens
+2026-01-20 08:59:52,848 - documentation-agent - INFO - 📦 Stored result: 36d335b9 (13,671 bytes from historical_compression)
+2026-01-20 08:59:52,850 - documentation-agent - INFO - 📦 Stored result: 97fb3b7a (9,062 bytes from historical_compression)
+2026-01-20 08:59:52,850 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:59:52,852 - documentation-agent - INFO - 📊 Context size: ~57,311 tokens
+2026-01-20 08:59:58,851 - documentation-agent - INFO - 📦 Stored result: 2210a305 (5,450 bytes from historical_compression)
+2026-01-20 08:59:58,853 - documentation-agent - INFO - 📦 Stored result: 5af1b6e7 (3,822 bytes from historical_compression)
+2026-01-20 08:59:58,854 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 08:59:58,855 - documentation-agent - INFO - 📊 Context size: ~65,180 tokens
+2026-01-20 09:00:04,272 - documentation-agent - INFO - 📦 Stored result: adc2fd02 (14,967 bytes from historical_compression)
+2026-01-20 09:00:04,275 - documentation-agent - INFO - 📦 Stored result: 6f9a50a5 (11,805 bytes from historical_compression)
+2026-01-20 09:00:04,275 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:04,276 - documentation-agent - INFO - 📊 Context size: ~60,852 tokens
+2026-01-20 09:00:08,967 - documentation-agent - INFO - 📦 Stored result: 0da1724f (7,649 bytes from historical_compression)
+2026-01-20 09:00:08,968 - documentation-agent - INFO - 📦 Stored result: 0ab3931f (16,225 bytes from historical_compression)
+2026-01-20 09:00:08,968 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:08,970 - documentation-agent - INFO - 📊 Context size: ~62,055 tokens
+2026-01-20 09:00:14,236 - documentation-agent - INFO - 📦 Stored result: fadaf1b3 (15,292 bytes from historical_compression)
+2026-01-20 09:00:14,239 - documentation-agent - INFO - 📦 Stored result: 46e336c1 (12,310 bytes from historical_compression)
+2026-01-20 09:00:14,239 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:14,240 - documentation-agent - INFO - 📊 Context size: ~63,836 tokens
+2026-01-20 09:00:19,138 - documentation-agent - INFO - 📦 Stored result: 35a9874a (7,770 bytes from historical_compression)
+2026-01-20 09:00:19,140 - documentation-agent - INFO - 📦 Stored result: 447d4e38 (5,406 bytes from historical_compression)
+2026-01-20 09:00:19,140 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:19,141 - documentation-agent - INFO - 📊 Context size: ~72,479 tokens
+2026-01-20 09:00:24,555 - documentation-agent - INFO - 📦 Stored result: 40cb91be (16,549 bytes from historical_compression)
+2026-01-20 09:00:24,556 - documentation-agent - INFO - 📦 Stored result: 2af1c273 (9,305 bytes from historical_compression)
+2026-01-20 09:00:24,556 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:24,558 - documentation-agent - INFO - 📊 Context size: ~70,682 tokens
+2026-01-20 09:00:30,108 - documentation-agent - INFO - 📦 Stored result: 4e4d2487 (11,329 bytes from historical_compression)
+2026-01-20 09:00:30,109 - documentation-agent - INFO - 📦 Stored result: e937b470 (17,399 bytes from historical_compression)
+2026-01-20 09:00:30,109 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:30,110 - documentation-agent - INFO - 📊 Context size: ~71,475 tokens
+2026-01-20 09:00:35,649 - documentation-agent - INFO - 📦 Stored result: 7db2ba66 (16,555 bytes from historical_compression)
+2026-01-20 09:00:35,651 - documentation-agent - INFO - 📦 Stored result: 3acbef8b (15,383 bytes from historical_compression)
+2026-01-20 09:00:35,652 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:35,653 - documentation-agent - INFO - 📊 Context size: ~74,423 tokens
+2026-01-20 09:00:40,664 - documentation-agent - INFO - 📦 Stored result: fdaafdcc (12,218 bytes from historical_compression)
+2026-01-20 09:00:40,666 - documentation-agent - INFO - 📦 Stored result: b0adfc71 (8,382 bytes from historical_compression)
+2026-01-20 09:00:40,666 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:40,667 - documentation-agent - INFO - 📊 Context size: ~81,904 tokens
+2026-01-20 09:00:47,298 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:00:47,805 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:00:47,812 - documentation-agent - INFO - 📦 Stored result: 28de50d5 (2,124 bytes from historical_compression)
+2026-01-20 09:00:47,812 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:47,813 - documentation-agent - INFO - 📊 Context size: ~35,827 tokens
+2026-01-20 09:00:52,138 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:00:52,139 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:00:52,151 - documentation-agent - INFO - 📦 Stored result: 0c80e266 (5,718 bytes from historical_compression)
+2026-01-20 09:00:52,152 - documentation-agent - INFO - 📦 Stored result: 0a1d615a (1,327 bytes from historical_compression)
+2026-01-20 09:00:52,152 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:00:52,154 - documentation-agent - INFO - 📊 Context size: ~62,245 tokens
+2026-01-20 09:01:00,237 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:01:00,239 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:01:00,257 - documentation-agent - INFO - 📦 Stored result: b1bbde7a (18,755 bytes from historical_compression)
+2026-01-20 09:01:00,264 - documentation-agent - INFO - 📦 Stored result: 9512c785 (12,479 bytes from historical_compression)
+2026-01-20 09:01:00,264 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:01:00,266 - documentation-agent - INFO - 📊 Context size: ~69,567 tokens
+2026-01-20 09:01:06,511 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:01:06,946 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:01:06,951 - documentation-agent - INFO - 📦 Stored result: 9721d630 (16,630 bytes from historical_compression)
+2026-01-20 09:01:06,953 - documentation-agent - INFO - 📦 Stored result: ea8f16a3 (18,935 bytes from historical_compression)
+2026-01-20 09:01:06,953 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:01:06,954 - documentation-agent - INFO - 📊 Context size: ~71,279 tokens
+2026-01-20 09:02:35,118 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/operations/cicd-workflows.md
+2026-01-20 09:02:35,122 - documentation-agent - INFO - 📦 Stored result: bba25e85 (18,295 bytes from historical_compression)
+2026-01-20 09:02:35,124 - documentation-agent - INFO - 📦 Stored result: 953bfe0d (16,902 bytes from historical_compression)
+2026-01-20 09:02:35,124 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:02:35,125 - documentation-agent - INFO - 📊 Context size: ~62,591 tokens
+2026-01-20 09:02:40,125 - documentation-agent - INFO - Shell: Verify the created documentation file
+2026-01-20 09:02:40,154 - documentation-agent - INFO - 📊 Context size: ~65,444 tokens
+2026-01-20 09:02:54,366 - documentation-agent - INFO - ✅ SubAgent complete: CI/CD and Release Management Documentation (40 turns, 1 files)
+2026-01-20 09:02:54,367 - documentation-agent - INFO - 🚀 SubAgent starting: Voice Routing Deep-Dive: Dialplan and PBX Documentation
+2026-01-20 09:02:54,369 - documentation-agent - INFO - 📊 Context size: ~24,682 tokens
+2026-01-20 09:03:00,050 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:00,051 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:00,054 - documentation-agent - INFO - 📦 Stored result: f4fb9640 (1,821 bytes from historical_compression)
+2026-01-20 09:03:00,055 - documentation-agent - INFO - 📦 Stored result: 32fb2075 (4,146 bytes from historical_compression)
+2026-01-20 09:03:00,055 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:03:00,056 - documentation-agent - INFO - 📊 Context size: ~35,960 tokens
+2026-01-20 09:03:05,199 - documentation-agent - INFO - 📦 Stored result: b63ed776 (27,360 bytes from historical_compression)
+2026-01-20 09:03:05,201 - documentation-agent - INFO - 📦 Stored result: 3bb203a9 (11,498 bytes from historical_compression)
+2026-01-20 09:03:05,202 - documentation-agent - INFO - 📦 Stored result: 0e25834f (20,547 bytes from historical_compression)
+2026-01-20 09:03:05,202 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:03:05,204 - documentation-agent - INFO - 📊 Context size: ~50,389 tokens
+2026-01-20 09:03:12,197 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:12,249 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:12,771 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:12,777 - documentation-agent - INFO - 📦 Stored result: 945480ac (5,860 bytes from historical_compression)
+2026-01-20 09:03:12,779 - documentation-agent - INFO - 📦 Stored result: 562c4650 (14,777 bytes from historical_compression)
+2026-01-20 09:03:12,780 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:03:12,781 - documentation-agent - INFO - 📊 Context size: ~65,696 tokens
+2026-01-20 09:03:20,521 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:20,522 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:20,836 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:20,840 - documentation-agent - INFO - 📊 Context size: ~35,833 tokens
+2026-01-20 09:03:26,632 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:26,632 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:26,634 - documentation-agent - INFO - 📦 Stored result: f15ff993 (2,608 bytes from historical_compression)
+2026-01-20 09:03:26,634 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:03:26,635 - documentation-agent - INFO - 📊 Context size: ~38,646 tokens
+2026-01-20 09:03:33,117 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:33,120 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:33,125 - documentation-agent - INFO - 📦 Stored result: 5dc4f837 (3,476 bytes from historical_compression)
+2026-01-20 09:03:33,125 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:03:33,126 - documentation-agent - INFO - 📊 Context size: ~45,053 tokens
+2026-01-20 09:03:39,302 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:39,827 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:39,833 - documentation-agent - INFO - 📦 Stored result: a59ddcfa (17,508 bytes from historical_compression)
+2026-01-20 09:03:39,833 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:03:39,835 - documentation-agent - INFO - 📊 Context size: ~65,504 tokens
+2026-01-20 09:03:45,290 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:45,291 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:03:45,296 - documentation-agent - INFO - 📦 Stored result: 65119f5f (2,923 bytes from historical_compression)
+2026-01-20 09:03:45,297 - documentation-agent - INFO - 📦 Stored result: d560eb56 (2,350 bytes from historical_compression)
+2026-01-20 09:03:45,297 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:03:45,299 - documentation-agent - INFO - 📊 Context size: ~46,159 tokens
+2026-01-20 09:03:49,968 - documentation-agent - INFO - 📦 Stored result: c8e53a0b (1,894 bytes from historical_compression)
+2026-01-20 09:03:49,970 - documentation-agent - INFO - 📦 Stored result: fa7e5644 (3,810 bytes from historical_compression)
+2026-01-20 09:03:49,971 - documentation-agent - INFO - 📦 Stored result: 2a3118ad (5,482 bytes from historical_compression)
+2026-01-20 09:03:49,971 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:03:49,973 - documentation-agent - INFO - 📊 Context size: ~47,922 tokens
+2026-01-20 09:03:54,258 - documentation-agent - INFO - 📦 Stored result: 0003c5ab (11,833 bytes from historical_compression)
+2026-01-20 09:03:54,260 - documentation-agent - INFO - 📦 Stored result: 0ea79496 (4,614 bytes from historical_compression)
+2026-01-20 09:03:54,262 - documentation-agent - INFO - 📦 Stored result: e6ff953e (7,287 bytes from historical_compression)
+2026-01-20 09:03:54,262 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:03:54,263 - documentation-agent - INFO - 📊 Context size: ~50,108 tokens
+2026-01-20 09:04:00,122 - documentation-agent - INFO - 📦 Stored result: eb08e480 (2,938 bytes from historical_compression)
+2026-01-20 09:04:00,124 - documentation-agent - INFO - 📦 Stored result: 5a57f0b5 (3,978 bytes from historical_compression)
+2026-01-20 09:04:00,126 - documentation-agent - INFO - 📦 Stored result: c7953358 (1,463 bytes from historical_compression)
+2026-01-20 09:04:00,126 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:04:00,127 - documentation-agent - INFO - 📊 Context size: ~52,028 tokens
+2026-01-20 09:04:07,026 - documentation-agent - INFO - 📦 Stored result: 909451ad (16,679 bytes from historical_compression)
+2026-01-20 09:04:07,027 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:04:07,027 - documentation-agent - INFO - 📊 Context size: ~52,797 tokens
+2026-01-20 09:04:14,075 - documentation-agent - INFO - 📦 Stored result: 49add9b8 (31,515 bytes from historical_compression)
+2026-01-20 09:04:14,075 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:04:14,076 - documentation-agent - INFO - 📊 Context size: ~46,473 tokens
+2026-01-20 09:04:21,610 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:21,616 - documentation-agent - INFO - 📦 Stored result: cca2fc76 (6,327 bytes from historical_compression)
+2026-01-20 09:04:21,618 - documentation-agent - INFO - 📦 Stored result: 1733b9cb (7,651 bytes from historical_compression)
+2026-01-20 09:04:21,620 - documentation-agent - INFO - 📦 Stored result: f0b7a8ba (4,210 bytes from historical_compression)
+2026-01-20 09:04:21,620 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:04:21,622 - documentation-agent - INFO - 📊 Context size: ~68,556 tokens
+2026-01-20 09:04:28,784 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:28,784 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:28,785 - documentation-agent - INFO - 📊 Context size: ~38,445 tokens
+2026-01-20 09:04:35,288 - documentation-agent - INFO - 📦 Stored result: f9324a6b (5,358 bytes from historical_compression)
+2026-01-20 09:04:35,290 - documentation-agent - INFO - 📦 Stored result: 6c34d3e3 (8,362 bytes from historical_compression)
+2026-01-20 09:04:35,290 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:04:35,291 - documentation-agent - INFO - 📊 Context size: ~46,273 tokens
+2026-01-20 09:04:40,986 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:41,001 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:41,012 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:41,015 - documentation-agent - INFO - 📦 Stored result: 20cd5db8 (4,166 bytes from historical_compression)
+2026-01-20 09:04:41,017 - documentation-agent - INFO - 📦 Stored result: 392a2553 (10,564 bytes from historical_compression)
+2026-01-20 09:04:41,017 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:04:41,018 - documentation-agent - INFO - 📊 Context size: ~51,372 tokens
+2026-01-20 09:04:46,547 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:46,596 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:46,598 - documentation-agent - INFO - 📦 Stored result: f5809803 (4,603 bytes from historical_compression)
+2026-01-20 09:04:46,599 - documentation-agent - INFO - 📦 Stored result: 6f36356f (3,591 bytes from historical_compression)
+2026-01-20 09:04:46,599 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:04:46,599 - documentation-agent - INFO - 📊 Context size: ~51,914 tokens
+2026-01-20 09:04:51,445 - documentation-agent - INFO - 📦 Stored result: 1e2a8dd1 (3,819 bytes from historical_compression)
+2026-01-20 09:04:51,447 - documentation-agent - INFO - 📦 Stored result: 80cf62d4 (3,276 bytes from historical_compression)
+2026-01-20 09:04:51,448 - documentation-agent - INFO - 📦 Stored result: ef5ae796 (4,425 bytes from historical_compression)
+2026-01-20 09:04:51,448 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:04:51,449 - documentation-agent - INFO - 📊 Context size: ~51,655 tokens
+2026-01-20 09:04:59,268 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:04:59,273 - documentation-agent - INFO - 📦 Stored result: 71162148 (30,439 bytes from historical_compression)
+2026-01-20 09:04:59,275 - documentation-agent - INFO - 📦 Stored result: 3742695b (23,295 bytes from historical_compression)
+2026-01-20 09:04:59,277 - documentation-agent - INFO - 📦 Stored result: b446f8b0 (16,199 bytes from historical_compression)
+2026-01-20 09:04:59,277 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:04:59,278 - documentation-agent - INFO - 📊 Context size: ~49,482 tokens
+2026-01-20 09:05:05,547 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:05:05,554 - documentation-agent - INFO - 📦 Stored result: 23aa1745 (1,162 bytes from historical_compression)
+2026-01-20 09:05:05,555 - documentation-agent - INFO - 📦 Stored result: 2dd5b319 (14,120 bytes from historical_compression)
+2026-01-20 09:05:05,557 - documentation-agent - INFO - 📦 Stored result: 2736f6d1 (1,709 bytes from historical_compression)
+2026-01-20 09:05:05,557 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:05:05,559 - documentation-agent - INFO - 📊 Context size: ~52,740 tokens
+2026-01-20 09:05:11,736 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:05:11,740 - documentation-agent - INFO - 📦 Stored result: 5070b8fe (19,479 bytes from historical_compression)
+2026-01-20 09:05:11,741 - documentation-agent - INFO - 📦 Stored result: 381e2c1b (11,833 bytes from historical_compression)
+2026-01-20 09:05:11,741 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:05:11,743 - documentation-agent - INFO - 📊 Context size: ~45,121 tokens
+2026-01-20 09:05:17,631 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:05:17,636 - documentation-agent - INFO - 📊 Context size: ~41,106 tokens
+2026-01-20 09:05:22,615 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:05:22,616 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:05:22,620 - documentation-agent - INFO - 📦 Stored result: 2442810b (6,654 bytes from historical_compression)
+2026-01-20 09:05:22,620 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:05:22,621 - documentation-agent - INFO - 📊 Context size: ~52,924 tokens
+2026-01-20 09:06:59,847 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/observability/lumina.md
+2026-01-20 09:06:59,852 - documentation-agent - INFO - 📦 Stored result: 7a71cb65 (9,668 bytes from historical_compression)
+2026-01-20 09:06:59,852 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:06:59,854 - documentation-agent - INFO - 📊 Context size: ~60,435 tokens
+2026-01-20 09:07:03,980 - documentation-agent - INFO - Shell: Verify the created documentation file
+2026-01-20 09:07:04,008 - documentation-agent - INFO - 📦 Stored result: ed90c60e (4,682 bytes from historical_compression)
+2026-01-20 09:07:04,010 - documentation-agent - INFO - 📦 Stored result: 83c4f846 (5,332 bytes from historical_compression)
+2026-01-20 09:07:04,010 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:07:04,011 - documentation-agent - INFO - 📊 Context size: ~59,911 tokens
+2026-01-20 09:07:17,801 - documentation-agent - INFO - ✅ SubAgent complete: Lumina Observability Architecture Documentation (38 turns, 1 files)
+2026-01-20 09:07:17,807 - documentation-agent - INFO - 📦 Stored result: 4a77248a (21,349 bytes from historical_compression)
+2026-01-20 09:07:17,809 - documentation-agent - INFO - 📦 Stored result: 70c27e08 (9,278 bytes from historical_compression)
+2026-01-20 09:07:17,809 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:07:17,809 - documentation-agent - INFO - 📊 Context size: ~51,663 tokens
+2026-01-20 09:07:30,555 - documentation-agent - INFO - 🚀 SubAgent starting: Support Team Onboarding Guide
+2026-01-20 09:07:30,556 - documentation-agent - INFO - 📊 Context size: ~24,643 tokens
+2026-01-20 09:07:35,878 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:36,151 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:36,447 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:36,454 - documentation-agent - INFO - 📦 Stored result: b6746cf2 (8,465 bytes from historical_compression)
+2026-01-20 09:07:36,456 - documentation-agent - INFO - 📦 Stored result: 2a838d03 (1,916 bytes from historical_compression)
+2026-01-20 09:07:36,457 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:07:36,458 - documentation-agent - INFO - 📊 Context size: ~57,132 tokens
+2026-01-20 09:07:42,766 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:42,766 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:42,777 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:07:42,777 - documentation-agent - INFO - 📊 Context size: ~34,687 tokens
+2026-01-20 09:07:49,608 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:49,745 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:49,758 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:49,886 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:49,889 - documentation-agent - INFO - 📊 Context size: ~25,392 tokens
+2026-01-20 09:07:55,013 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:07:55,021 - documentation-agent - INFO - 📦 Stored result: 7b8a9903 (4,956 bytes from historical_compression)
+2026-01-20 09:07:55,022 - documentation-agent - INFO - 📦 Stored result: 0954dbdc (19,047 bytes from historical_compression)
+2026-01-20 09:07:55,022 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:07:55,024 - documentation-agent - INFO - 📊 Context size: ~49,624 tokens
+2026-01-20 09:08:00,393 - documentation-agent - INFO - 📦 Stored result: 86b4b0a5 (9,063 bytes from historical_compression)
+2026-01-20 09:08:00,395 - documentation-agent - INFO - 📦 Stored result: 5b77c3ec (7,320 bytes from historical_compression)
+2026-01-20 09:08:00,397 - documentation-agent - INFO - 📦 Stored result: f63774f9 (3,287 bytes from historical_compression)
+2026-01-20 09:08:00,397 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:08:00,399 - documentation-agent - INFO - 📊 Context size: ~61,365 tokens
+2026-01-20 09:08:05,980 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:08:06,511 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:08:06,518 - documentation-agent - INFO - 📦 Stored result: a4be5def (4,491 bytes from historical_compression)
+2026-01-20 09:08:06,520 - documentation-agent - INFO - 📦 Stored result: c8c49e1f (2,822 bytes from historical_compression)
+2026-01-20 09:08:06,520 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:06,521 - documentation-agent - INFO - 📊 Context size: ~40,742 tokens
+2026-01-20 09:08:10,959 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:08:10,960 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:08:10,964 - documentation-agent - INFO - 📦 Stored result: bd658b15 (18,859 bytes from historical_compression)
+2026-01-20 09:08:10,966 - documentation-agent - INFO - 📦 Stored result: 461ec895 (6,252 bytes from historical_compression)
+2026-01-20 09:08:10,966 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:10,967 - documentation-agent - INFO - 📊 Context size: ~59,945 tokens
+2026-01-20 09:08:17,299 - documentation-agent - INFO - 📊 Context size: ~69,750 tokens
+2026-01-20 09:08:23,293 - documentation-agent - INFO - 📦 Stored result: e6166af5 (21,261 bytes from historical_compression)
+2026-01-20 09:08:23,295 - documentation-agent - INFO - 📦 Stored result: 16aded7f (23,591 bytes from historical_compression)
+2026-01-20 09:08:23,295 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:23,296 - documentation-agent - INFO - 📊 Context size: ~62,751 tokens
+2026-01-20 09:08:29,280 - documentation-agent - INFO - 📦 Stored result: 23e060cb (14,343 bytes from historical_compression)
+2026-01-20 09:08:29,281 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:29,282 - documentation-agent - INFO - 📊 Context size: ~86,068 tokens
+2026-01-20 09:08:35,756 - documentation-agent - INFO - Shell: Create security directory for documentation
+2026-01-20 09:08:35,771 - documentation-agent - INFO - 📦 Stored result: 38f6cbf1 (22,019 bytes from historical_compression)
+2026-01-20 09:08:35,778 - documentation-agent - INFO - 📦 Stored result: 9516fa49 (12,288 bytes from historical_compression)
+2026-01-20 09:08:35,778 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:35,779 - documentation-agent - INFO - 📊 Context size: ~87,997 tokens
+2026-01-20 09:08:42,150 - documentation-agent - INFO - 📦 Stored result: a240aadd (25,084 bytes from historical_compression)
+2026-01-20 09:08:42,152 - documentation-agent - INFO - 📦 Stored result: 12b65720 (5,542 bytes from historical_compression)
+2026-01-20 09:08:42,152 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:42,154 - documentation-agent - INFO - 📊 Context size: ~88,268 tokens
+2026-01-20 09:08:49,664 - documentation-agent - INFO - 📦 Stored result: 4c9c0666 (31,526 bytes from historical_compression)
+2026-01-20 09:08:49,666 - documentation-agent - INFO - 📦 Stored result: 8237c568 (35,239 bytes from historical_compression)
+2026-01-20 09:08:49,666 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:08:49,668 - documentation-agent - INFO - 📊 Context size: ~77,252 tokens
+2026-01-20 09:10:36,852 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/security/permissions-auth.md
+2026-01-20 09:10:36,857 - documentation-agent - INFO - 📦 Stored result: afb0eae8 (24,713 bytes from historical_compression)
+2026-01-20 09:10:36,858 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:10:36,860 - documentation-agent - INFO - 📊 Context size: ~77,161 tokens
+2026-01-20 09:10:43,784 - documentation-agent - INFO - Shell: Verify the documentation was created
+2026-01-20 09:10:43,813 - documentation-agent - INFO - 📦 Stored result: 137815ad (23,263 bytes from historical_compression)
+2026-01-20 09:10:43,819 - documentation-agent - INFO - 📦 Stored result: 679ce7fc (13,608 bytes from historical_compression)
+2026-01-20 09:10:43,819 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:10:43,821 - documentation-agent - INFO - 📊 Context size: ~69,515 tokens
+2026-01-20 09:10:50,823 - documentation-agent - INFO - 📦 Stored result: bc65eff6 (38,702 bytes from historical_compression)
+2026-01-20 09:10:50,826 - documentation-agent - INFO - 📦 Stored result: dbb63568 (6,522 bytes from historical_compression)
+2026-01-20 09:10:50,826 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:10:50,827 - documentation-agent - INFO - 📊 Context size: ~51,593 tokens
+2026-01-20 09:10:56,226 - documentation-agent - INFO - Shell: Check the end of the documentation file
+2026-01-20 09:10:56,247 - documentation-agent - INFO - 📊 Context size: ~52,363 tokens
+2026-01-20 09:11:12,005 - documentation-agent - INFO - ✅ SubAgent complete: Permissions and Authentication Architecture (NAPS/Gatekeeper) (40 turns, 1 files)
+2026-01-20 09:11:12,671 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:13,102 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:13,688 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:14,229 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:14,232 - documentation-agent - INFO - 📊 Context size: ~31,009 tokens
+2026-01-20 09:11:19,663 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:19,668 - documentation-agent - INFO - 📦 Stored result: 7e6f48f0 (2,188 bytes from historical_compression)
+2026-01-20 09:11:19,670 - documentation-agent - INFO - 📦 Stored result: d63ad743 (5,766 bytes from historical_compression)
+2026-01-20 09:11:19,670 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:11:19,671 - documentation-agent - INFO - 📊 Context size: ~51,825 tokens
+2026-01-20 09:11:27,013 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:27,141 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:27,424 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:27,611 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:27,614 - documentation-agent - INFO - 📦 Stored result: ae411a65 (13,565 bytes from historical_compression)
+2026-01-20 09:11:27,616 - documentation-agent - INFO - 📦 Stored result: 39ebd0d0 (1,990 bytes from historical_compression)
+2026-01-20 09:11:27,617 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:11:27,618 - documentation-agent - INFO - 📊 Context size: ~53,015 tokens
+2026-01-20 09:11:34,486 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:35,172 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:35,247 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:35,250 - documentation-agent - INFO - 📊 Context size: ~36,623 tokens
+2026-01-20 09:11:41,247 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:41,275 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:41,771 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:41,773 - documentation-agent - INFO - 📦 Stored result: 6ad0e5cf (8,004 bytes from historical_compression)
+2026-01-20 09:11:41,774 - documentation-agent - INFO - 📦 Stored result: 4676d53d (21,367 bytes from historical_compression)
+2026-01-20 09:11:41,774 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:11:41,775 - documentation-agent - INFO - 📊 Context size: ~62,189 tokens
+2026-01-20 09:11:47,816 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:48,288 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:48,548 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:48,781 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:48,813 - documentation-agent - INFO - 📦 Stored result: 22416c69 (7,435 bytes from historical_compression)
+2026-01-20 09:11:48,813 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:11:48,814 - documentation-agent - INFO - 📊 Context size: ~70,638 tokens
+2026-01-20 09:11:55,278 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:11:55,281 - documentation-agent - INFO - 📊 Context size: ~45,841 tokens
+2026-01-20 09:12:01,900 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:01,982 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:02,039 - documentation-agent - INFO - 📦 Stored result: 054fb3be (48,810 bytes from mcp_github)
+2026-01-20 09:12:02,352 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:02,523 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:02,530 - documentation-agent - INFO - 📦 Stored result: 9df2bb17 (2,744 bytes from historical_compression)
+2026-01-20 09:12:02,532 - documentation-agent - INFO - 📦 Stored result: 14495d6b (8,170 bytes from historical_compression)
+2026-01-20 09:12:02,533 - documentation-agent - INFO - 📦 Stored result: 310f75fe (5,777 bytes from historical_compression)
+2026-01-20 09:12:02,533 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:12:02,535 - documentation-agent - INFO - 📊 Context size: ~68,478 tokens
+2026-01-20 09:12:07,835 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:08,243 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:08,518 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:08,526 - documentation-agent - INFO - 📦 Stored result: 7a23d7b4 (4,173 bytes from historical_compression)
+2026-01-20 09:12:08,528 - documentation-agent - INFO - 📦 Stored result: 37fc833b (4,825 bytes from historical_compression)
+2026-01-20 09:12:08,530 - documentation-agent - INFO - 📦 Stored result: 5fdbb1c9 (7,122 bytes from historical_compression)
+2026-01-20 09:12:08,530 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:12:08,531 - documentation-agent - INFO - 📊 Context size: ~49,011 tokens
+2026-01-20 09:12:14,350 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:14,353 - documentation-agent - INFO - 📦 Stored result: 1efa5776 (46,759 bytes from historical_compression)
+2026-01-20 09:12:14,354 - documentation-agent - INFO - 📦 Stored result: e0d8229b (4,011 bytes from historical_compression)
+2026-01-20 09:12:14,356 - documentation-agent - INFO - 📦 Stored result: 5eb187de (6,375 bytes from historical_compression)
+2026-01-20 09:12:14,356 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:12:14,357 - documentation-agent - INFO - 📊 Context size: ~56,140 tokens
+2026-01-20 09:12:20,415 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:20,755 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:20,904 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:20,963 - documentation-agent - INFO - 📦 Stored result: 20fe7a4e (33,522 bytes from historical_compression)
+2026-01-20 09:12:20,965 - documentation-agent - INFO - 📦 Stored result: f37d15bf (32,920 bytes from historical_compression)
+2026-01-20 09:12:20,967 - documentation-agent - INFO - 📦 Stored result: 84fffb81 (10,783 bytes from historical_compression)
+2026-01-20 09:12:20,968 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:12:20,969 - documentation-agent - INFO - 📊 Context size: ~57,812 tokens
+2026-01-20 09:12:27,725 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:28,243 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:28,254 - documentation-agent - INFO - 📦 Stored result: 7c67737c (8,365 bytes from historical_compression)
+2026-01-20 09:12:28,254 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:12:28,256 - documentation-agent - INFO - 📊 Context size: ~67,824 tokens
+2026-01-20 09:12:35,425 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:35,891 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:35,893 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:35,898 - documentation-agent - INFO - 📦 Stored result: 87da27ef (7,961 bytes from historical_compression)
+2026-01-20 09:12:35,899 - documentation-agent - INFO - 📦 Stored result: 97305817 (4,407 bytes from historical_compression)
+2026-01-20 09:12:35,900 - documentation-agent - INFO - 📦 Stored result: 6718af2f (1,557 bytes from historical_compression)
+2026-01-20 09:12:35,901 - documentation-agent - INFO - 📦 Stored result: 7503b155 (5,126 bytes from historical_compression)
+2026-01-20 09:12:35,901 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 09:12:35,901 - documentation-agent - INFO - 📊 Context size: ~47,176 tokens
+2026-01-20 09:12:41,996 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:42,012 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:42,021 - documentation-agent - INFO - 📦 Stored result: fc01d7d2 (10,372 bytes from historical_compression)
+2026-01-20 09:12:42,021 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:12:42,023 - documentation-agent - INFO - 📊 Context size: ~79,094 tokens
+2026-01-20 09:12:49,303 - documentation-agent - INFO - 📦 Stored result: 9b53b06a (100,599 bytes from mcp_confluence)
+2026-01-20 09:12:49,719 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:49,780 - documentation-agent - INFO - 📦 Stored result: ab9e5a65 (53,438 bytes from mcp_confluence)
+2026-01-20 09:12:49,887 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:50,287 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:50,312 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:50,319 - documentation-agent - INFO - 📦 Stored result: 52fc34b6 (19,676 bytes from historical_compression)
+2026-01-20 09:12:50,321 - documentation-agent - INFO - 📦 Stored result: 884b949d (46,759 bytes from historical_compression)
+2026-01-20 09:12:50,322 - documentation-agent - INFO - 📦 Stored result: 60385480 (11,907 bytes from historical_compression)
+2026-01-20 09:12:50,322 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:12:50,322 - documentation-agent - INFO - 📊 Context size: ~70,527 tokens
+2026-01-20 09:12:57,534 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:12:57,682 - documentation-agent - INFO - 📦 Stored result: 7c09628f (75,451 bytes from mcp_github)
+2026-01-20 09:12:57,685 - documentation-agent - INFO - 📦 Stored result: f8cbd0cf (4,473 bytes from historical_compression)
+2026-01-20 09:12:57,687 - documentation-agent - INFO - 📦 Stored result: 1e61fc77 (11,147 bytes from historical_compression)
+2026-01-20 09:12:57,689 - documentation-agent - INFO - 📦 Stored result: ecd04c7e (27,130 bytes from historical_compression)
+2026-01-20 09:12:57,690 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:12:57,691 - documentation-agent - INFO - 📊 Context size: ~61,625 tokens
+2026-01-20 09:13:05,237 - documentation-agent - INFO - 📦 Stored result: a3bd4cc0 (10,850 bytes from historical_compression)
+2026-01-20 09:13:05,239 - documentation-agent - INFO - 📦 Stored result: b97904e8 (10,127 bytes from historical_compression)
+2026-01-20 09:13:05,242 - documentation-agent - INFO - 📦 Stored result: ef47acc9 (32,118 bytes from historical_compression)
+2026-01-20 09:13:05,242 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:13:05,243 - documentation-agent - INFO - 📊 Context size: ~55,561 tokens
+2026-01-20 09:13:10,993 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:10,997 - documentation-agent - INFO - 📦 Stored result: 0ed08dab (15,348 bytes from historical_compression)
+2026-01-20 09:13:10,999 - documentation-agent - INFO - 📦 Stored result: 2eaa6ab1 (4,886 bytes from historical_compression)
+2026-01-20 09:13:11,001 - documentation-agent - INFO - 📦 Stored result: dadcca98 (5,207 bytes from historical_compression)
+2026-01-20 09:13:11,002 - documentation-agent - INFO - 📦 Stored result: fbce191b (5,522 bytes from historical_compression)
+2026-01-20 09:13:11,002 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 09:13:11,003 - documentation-agent - INFO - 📊 Context size: ~44,246 tokens
+2026-01-20 09:13:17,471 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:17,507 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:17,510 - documentation-agent - INFO - 📦 Stored result: f224bdaa (37,153 bytes from historical_compression)
+2026-01-20 09:13:17,511 - documentation-agent - INFO - 📦 Stored result: 944528b6 (11,501 bytes from historical_compression)
+2026-01-20 09:13:17,511 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:13:17,512 - documentation-agent - INFO - 📊 Context size: ~51,603 tokens
+2026-01-20 09:13:23,729 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:23,926 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:23,932 - documentation-agent - INFO - 📦 Stored result: a7c084a7 (9,314 bytes from historical_compression)
+2026-01-20 09:13:23,935 - documentation-agent - INFO - 📦 Stored result: 0c5b127e (4,762 bytes from historical_compression)
+2026-01-20 09:13:23,936 - documentation-agent - INFO - 📦 Stored result: df011e44 (15,194 bytes from historical_compression)
+2026-01-20 09:13:23,936 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:13:23,937 - documentation-agent - INFO - 📊 Context size: ~39,379 tokens
+2026-01-20 09:13:29,521 - documentation-agent - INFO - 📦 Stored result: 4da6aa33 (4,683 bytes from historical_compression)
+2026-01-20 09:13:29,523 - documentation-agent - INFO - 📦 Stored result: 74fe3913 (1,937 bytes from historical_compression)
+2026-01-20 09:13:29,524 - documentation-agent - INFO - 📦 Stored result: b17138b0 (3,324 bytes from historical_compression)
+2026-01-20 09:13:29,524 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:13:29,525 - documentation-agent - INFO - 📊 Context size: ~44,234 tokens
+2026-01-20 09:13:35,621 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:36,014 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:36,022 - documentation-agent - INFO - 📦 Stored result: f04c8509 (18,461 bytes from historical_compression)
+2026-01-20 09:13:36,022 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:13:36,023 - documentation-agent - INFO - 📊 Context size: ~46,288 tokens
+2026-01-20 09:13:42,622 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:42,626 - documentation-agent - INFO - 📦 Stored result: dc9fbdb3 (10,911 bytes from historical_compression)
+2026-01-20 09:13:42,626 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:13:42,628 - documentation-agent - INFO - 📊 Context size: ~66,136 tokens
+2026-01-20 09:13:49,895 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:50,097 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:50,112 - documentation-agent - INFO - 📦 Stored result: fd9600b4 (12,907 bytes from historical_compression)
+2026-01-20 09:13:50,114 - documentation-agent - INFO - 📦 Stored result: e3dd7316 (5,205 bytes from historical_compression)
+2026-01-20 09:13:50,115 - documentation-agent - INFO - 📦 Stored result: 2d1b0d61 (6,911 bytes from historical_compression)
+2026-01-20 09:13:50,115 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:13:50,116 - documentation-agent - INFO - 📊 Context size: ~75,315 tokens
+2026-01-20 09:13:57,734 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:58,457 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:13:58,466 - documentation-agent - INFO - 📦 Stored result: 569b0b6c (2,281 bytes from historical_compression)
+2026-01-20 09:13:58,468 - documentation-agent - INFO - 📦 Stored result: f56d96e1 (5,055 bytes from historical_compression)
+2026-01-20 09:13:58,468 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:13:58,470 - documentation-agent - INFO - 📊 Context size: ~63,275 tokens
+2026-01-20 09:14:05,343 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:14:05,347 - documentation-agent - INFO - 📦 Stored result: 311bccd4 (10,976 bytes from historical_compression)
+2026-01-20 09:14:05,350 - documentation-agent - INFO - 📦 Stored result: ed214980 (14,370 bytes from historical_compression)
+2026-01-20 09:14:05,352 - documentation-agent - INFO - 📦 Stored result: f43907c0 (2,070 bytes from historical_compression)
+2026-01-20 09:14:05,352 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:14:05,353 - documentation-agent - INFO - 📊 Context size: ~70,508 tokens
+2026-01-20 09:14:10,940 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:14:10,946 - documentation-agent - INFO - 📦 Stored result: 7236a332 (5,267 bytes from historical_compression)
+2026-01-20 09:14:10,949 - documentation-agent - INFO - 📦 Stored result: c78d9c26 (5,999 bytes from historical_compression)
+2026-01-20 09:14:10,951 - documentation-agent - INFO - 📦 Stored result: bf063056 (9,704 bytes from historical_compression)
+2026-01-20 09:14:10,951 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:14:10,953 - documentation-agent - INFO - 📊 Context size: ~72,596 tokens
+2026-01-20 09:14:16,531 - documentation-agent - INFO - 📦 Stored result: 30e74015 (8,595 bytes from historical_compression)
+2026-01-20 09:14:16,532 - documentation-agent - INFO - 📦 Stored result: d44fa6b6 (5,009 bytes from historical_compression)
+2026-01-20 09:14:16,533 - documentation-agent - INFO - 📦 Stored result: 3aeac240 (2,261 bytes from historical_compression)
+2026-01-20 09:14:16,534 - documentation-agent - INFO - 📦 Stored result: 62bdb116 (10,381 bytes from historical_compression)
+2026-01-20 09:14:16,534 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 09:14:16,535 - documentation-agent - INFO - 📊 Context size: ~68,692 tokens
+2026-01-20 09:14:21,804 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:14:21,808 - documentation-agent - INFO - 📦 Stored result: 0de7b414 (15,142 bytes from historical_compression)
+2026-01-20 09:14:21,811 - documentation-agent - INFO - 📦 Stored result: 7630fac9 (42,096 bytes from historical_compression)
+2026-01-20 09:14:21,813 - documentation-agent - INFO - 📦 Stored result: 4fe3546d (7,140 bytes from historical_compression)
+2026-01-20 09:14:21,813 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:14:21,814 - documentation-agent - INFO - 📊 Context size: ~63,825 tokens
+2026-01-20 09:14:27,252 - documentation-agent - INFO - 📦 Stored result: 375af6c8 (12,041 bytes from historical_compression)
+2026-01-20 09:14:27,256 - documentation-agent - INFO - 📦 Stored result: f5398378 (11,332 bytes from historical_compression)
+2026-01-20 09:14:27,259 - documentation-agent - INFO - 📦 Stored result: e9b40e10 (37,153 bytes from historical_compression)
+2026-01-20 09:14:27,259 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:14:27,260 - documentation-agent - INFO - 📊 Context size: ~54,442 tokens
+2026-01-20 09:14:33,288 - documentation-agent - INFO - 📦 Stored result: 4901a584 (10,033 bytes from historical_compression)
+2026-01-20 09:14:33,291 - documentation-agent - INFO - 📦 Stored result: 85be45ff (2,707 bytes from historical_compression)
+2026-01-20 09:14:33,291 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:14:33,292 - documentation-agent - INFO - 📊 Context size: ~53,942 tokens
+2026-01-20 09:14:37,844 - documentation-agent - INFO - 📦 Stored result: 180cc319 (11,803 bytes from historical_compression)
+2026-01-20 09:14:37,845 - documentation-agent - INFO - 📦 Stored result: 291ec165 (25,761 bytes from historical_compression)
+2026-01-20 09:14:37,846 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:14:37,846 - documentation-agent - INFO - 📊 Context size: ~55,626 tokens
+2026-01-20 09:14:43,569 - documentation-agent - INFO - 📦 Stored result: 30203bb8 (11,282 bytes from historical_compression)
+2026-01-20 09:14:43,571 - documentation-agent - INFO - 📦 Stored result: 89f48b22 (12,450 bytes from historical_compression)
+2026-01-20 09:14:43,571 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:14:43,572 - documentation-agent - INFO - 📊 Context size: ~57,418 tokens
+2026-01-20 09:14:49,358 - documentation-agent - INFO - 📦 Stored result: 00f90b8f (11,361 bytes from historical_compression)
+2026-01-20 09:14:49,358 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:14:49,360 - documentation-agent - INFO - 📊 Context size: ~60,788 tokens
+2026-01-20 09:14:54,021 - documentation-agent - INFO - 📦 Stored result: a785d378 (28,965 bytes from historical_compression)
+2026-01-20 09:14:54,024 - documentation-agent - INFO - 📦 Stored result: 606797d4 (13,270 bytes from historical_compression)
+2026-01-20 09:14:54,024 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:14:54,025 - documentation-agent - INFO - 📊 Context size: ~53,099 tokens
+2026-01-20 09:15:00,448 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:15:00,461 - documentation-agent - INFO - 📦 Stored result: f86300d2 (37,198 bytes from historical_compression)
+2026-01-20 09:15:00,463 - documentation-agent - INFO - 📦 Stored result: c1efc537 (15,421 bytes from historical_compression)
+2026-01-20 09:15:00,465 - documentation-agent - INFO - 📦 Stored result: dccd4de2 (5,155 bytes from historical_compression)
+2026-01-20 09:15:00,468 - documentation-agent - INFO - 📦 Stored result: 1030ac42 (10,348 bytes from historical_compression)
+2026-01-20 09:15:00,468 - documentation-agent - INFO - 📦 SubAgent compressed 4 historical tool results
+2026-01-20 09:15:00,469 - documentation-agent - INFO - 📊 Context size: ~55,144 tokens
+2026-01-20 09:15:05,984 - documentation-agent - INFO - 📦 Stored result: 3857d846 (10,791 bytes from historical_compression)
+2026-01-20 09:15:05,987 - documentation-agent - INFO - 📦 Stored result: a4aca3d4 (15,776 bytes from historical_compression)
+2026-01-20 09:15:05,990 - documentation-agent - INFO - 📦 Stored result: dfd874c5 (36,481 bytes from historical_compression)
+2026-01-20 09:15:05,990 - documentation-agent - INFO - 📦 SubAgent compressed 3 historical tool results
+2026-01-20 09:15:05,990 - documentation-agent - INFO - 📊 Context size: ~43,176 tokens
+2026-01-20 09:15:10,832 - documentation-agent - INFO - 📦 Stored result: 5cc51f9c (10,477 bytes from historical_compression)
+2026-01-20 09:15:10,832 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:15:10,833 - documentation-agent - INFO - 📊 Context size: ~49,962 tokens
+2026-01-20 09:15:15,977 - documentation-agent - INFO - 📦 Stored result: b762b313 (2,669 bytes from historical_compression)
+2026-01-20 09:15:15,977 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:15,978 - documentation-agent - INFO - 📊 Context size: ~51,791 tokens
+2026-01-20 09:15:21,308 - documentation-agent - INFO - 📦 Stored result: e0bb7cd2 (7,021 bytes from historical_compression)
+2026-01-20 09:15:21,311 - documentation-agent - INFO - 📦 Stored result: 800a934a (8,582 bytes from historical_compression)
+2026-01-20 09:15:21,311 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:21,312 - documentation-agent - INFO - 📊 Context size: ~55,544 tokens
+2026-01-20 09:15:26,557 - documentation-agent - INFO - 📦 Stored result: 582b0df9 (16,013 bytes from historical_compression)
+2026-01-20 09:15:26,559 - documentation-agent - INFO - 📦 Stored result: e6dea380 (17,048 bytes from historical_compression)
+2026-01-20 09:15:26,559 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:26,560 - documentation-agent - INFO - 📊 Context size: ~50,985 tokens
+2026-01-20 09:15:32,370 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:15:32,374 - documentation-agent - INFO - 📦 Stored result: 64312ef4 (12,704 bytes from historical_compression)
+2026-01-20 09:15:32,376 - documentation-agent - INFO - 📦 Stored result: 6d86cbc1 (13,148 bytes from historical_compression)
+2026-01-20 09:15:32,376 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:32,378 - documentation-agent - INFO - 📊 Context size: ~48,107 tokens
+2026-01-20 09:15:38,363 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:15:38,646 - documentation-agent - INFO - 📦 Stored result: ba5c4371 (198,011 bytes from mcp_github)
+2026-01-20 09:15:38,648 - documentation-agent - INFO - 📦 Stored result: 05cb60ff (11,348 bytes from historical_compression)
+2026-01-20 09:15:38,649 - documentation-agent - INFO - 📦 Stored result: 8dc3e8e6 (8,987 bytes from historical_compression)
+2026-01-20 09:15:38,649 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:38,650 - documentation-agent - INFO - 📊 Context size: ~45,802 tokens
+2026-01-20 09:15:42,628 - documentation-agent - INFO - 📦 Stored result: 6a44518c (12,119 bytes from historical_compression)
+2026-01-20 09:15:42,628 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:15:42,630 - documentation-agent - INFO - 📊 Context size: ~45,742 tokens
+2026-01-20 09:15:49,919 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:15:49,921 - documentation-agent - INFO - 📦 Stored result: d8239507 (16,236 bytes from historical_compression)
+2026-01-20 09:15:49,923 - documentation-agent - INFO - 📦 Stored result: 86304347 (7,634 bytes from historical_compression)
+2026-01-20 09:15:49,923 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:49,923 - documentation-agent - INFO - 📊 Context size: ~48,561 tokens
+2026-01-20 09:15:55,043 - documentation-agent - INFO - 📦 Stored result: 1d46ec76 (16,503 bytes from historical_compression)
+2026-01-20 09:15:55,047 - documentation-agent - INFO - 📦 Stored result: 36b8a201 (10,893 bytes from historical_compression)
+2026-01-20 09:15:55,047 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:55,048 - documentation-agent - INFO - 📊 Context size: ~48,512 tokens
+2026-01-20 09:15:59,966 - documentation-agent - INFO - 📦 Stored result: e75b3aee (9,141 bytes from historical_compression)
+2026-01-20 09:15:59,969 - documentation-agent - INFO - 📦 Stored result: 1c4bba33 (7,530 bytes from historical_compression)
+2026-01-20 09:15:59,969 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:15:59,970 - documentation-agent - INFO - 📊 Context size: ~47,175 tokens
+2026-01-20 09:17:51,137 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/onboarding/support.md
+2026-01-20 09:17:51,141 - documentation-agent - INFO - 📦 Stored result: 89d27061 (5,262 bytes from historical_compression)
+2026-01-20 09:17:51,143 - documentation-agent - INFO - 📦 Stored result: 3a52d720 (6,411 bytes from historical_compression)
+2026-01-20 09:17:51,143 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:17:51,143 - documentation-agent - INFO - 📊 Context size: ~50,166 tokens
+2026-01-20 09:18:07,755 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/onboarding/README.md
+2026-01-20 09:18:07,760 - documentation-agent - INFO - 📦 Stored result: 05fd2af1 (15,729 bytes from historical_compression)
+2026-01-20 09:18:07,764 - documentation-agent - INFO - 📦 Stored result: 28aa359d (11,623 bytes from historical_compression)
+2026-01-20 09:18:07,764 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:18:07,765 - documentation-agent - INFO - 📊 Context size: ~43,869 tokens
+2026-01-20 09:18:12,022 - documentation-agent - INFO - Shell: Verify the support onboarding guide was created
+2026-01-20 09:18:12,053 - documentation-agent - INFO - 📦 Stored result: e90a38c8 (8,011 bytes from historical_compression)
+2026-01-20 09:18:12,056 - documentation-agent - INFO - 📦 Stored result: c8a550c3 (2,997 bytes from historical_compression)
+2026-01-20 09:18:12,056 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:18:12,057 - documentation-agent - INFO - 📊 Context size: ~41,884 tokens
+2026-01-20 09:18:28,074 - documentation-agent - INFO - ✅ SubAgent complete: Support Team Onboarding Guide (26 turns, 2 files)
+2026-01-20 09:18:29,080 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 09:18:29,089 - documentation-agent - INFO - 📦 Stored result: ea470851 (11,766 bytes from historical_compression)
+2026-01-20 09:18:29,089 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:18:29,090 - documentation-agent - INFO - 📊 Context size: ~43,842 tokens
+2026-01-20 09:18:33,665 - documentation-agent - INFO - 📦 Stored result: 9e299258 (12,127 bytes from historical_compression)
+2026-01-20 09:18:33,665 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:18:33,667 - documentation-agent - INFO - 📊 Context size: ~51,188 tokens
+2026-01-20 09:20:50,730 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/voice-routing/dialplan-pbx.md
+2026-01-20 09:20:50,734 - documentation-agent - INFO - 📦 Stored result: 49298016 (11,823 bytes from historical_compression)
+2026-01-20 09:20:50,734 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:20:50,736 - documentation-agent - INFO - 📊 Context size: ~63,905 tokens
+2026-01-20 09:20:55,132 - documentation-agent - INFO - Shell: Check the created documentation file
+2026-01-20 09:20:55,163 - documentation-agent - INFO - 📦 Stored result: 65e8feaf (4,592 bytes from historical_compression)
+2026-01-20 09:20:55,163 - documentation-agent - INFO - 📦 SubAgent compressed 1 historical tool results
+2026-01-20 09:20:55,164 - documentation-agent - INFO - 📊 Context size: ~64,422 tokens
+2026-01-20 09:20:59,844 - documentation-agent - INFO - Shell: List voice-routing directory contents
+2026-01-20 09:20:59,864 - documentation-agent - INFO - 📦 Stored result: 47ee6fd8 (15,964 bytes from historical_compression)
+2026-01-20 09:20:59,866 - documentation-agent - INFO - 📦 Stored result: 985705f7 (12,684 bytes from historical_compression)
+2026-01-20 09:20:59,866 - documentation-agent - INFO - 📦 SubAgent compressed 2 historical tool results
+2026-01-20 09:20:59,866 - documentation-agent - INFO - 📊 Context size: ~53,730 tokens
+2026-01-20 09:21:15,807 - documentation-agent - INFO - ✅ SubAgent complete: Voice Routing Deep-Dive: Dialplan and PBX Documentation (37 turns, 1 files)
+2026-01-20 09:21:15,808 - documentation-agent - INFO - 📝 REVIEW PHASE: Updating project tracking...
+2026-01-20 09:21:15,809 - documentation-agent - INFO - 📊 Context size: ~1,390 tokens
+2026-01-20 09:21:18,382 - documentation-agent - INFO - 📊 Context size: ~6,096 tokens
+2026-01-20 09:22:38,827 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/.project/STATUS.md
+2026-01-20 09:22:38,828 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/.project/BACKLOG.md
+2026-01-20 09:22:38,829 - documentation-agent - INFO - 📊 Context size: ~11,610 tokens
+2026-01-20 09:22:49,270 - documentation-agent - INFO - 📊 Context size: ~171 tokens
+2026-01-20 09:22:53,850 - documentation-agent - INFO - 📋 Remaining work: - [ ] tts-gateway service documentation
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Routing policies documentation
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] AVS package deep-dive
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] SCV BYOT connector details
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Omni-Channel integration details
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Voice Call object usage
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Omniservice deep-dive
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Chat widget integration details
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Message templates service
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Channel routing logic
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Bedrock integration deep-dive
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Prompt pipeline documentation
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] WebSocket service details
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Document module dependencies
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Standardize module documentation format
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] Key modules deep-dive:
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] aws-terraform-omnichannel
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] aws-terraform-network-rt
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] aws-terraform-fsx8
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] aws-terraform-cai
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] aws-terraform-bedrock
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📋 Remaining work: - [ ] aws-terraform-lumina-pipeline
+2026-01-20 09:22:53,851 - documentation-agent - INFO - 📊 Found 22 unchecked items in backlog (excluding deferred/complex)
+
+======================================================================
+  ITERATION 1/1 - PARALLEL EXECUTION MODE
+======================================================================
+
+
+============================================================
+  PLANNING PHASE
+============================================================
+
+  📌 Lumina Observability Architecture Documentation
+     Files: architecture/observability/lumina.md
+  📌 CI/CD and Release Management Documentation
+     Files: operations/cicd-workflows.md
+  📌 Permissions and Authentication Architecture (NAPS/Gatekeeper)
+     Files: architecture/security/permissions-auth.md
+  📌 Voice Routing Deep-Dive: Dialplan and PBX Documentation
+     Files: architecture/voice-routing/dialplan-pbx.md
+  📌 Support Team Onboarding Guide
+     Files: onboarding/support.md
+
+============================================================
+  EXECUTION PHASE - 5 parallel tasks
+============================================================
+
+  ▶️  Starting: Lumina Observability Architecture Documentation
+  ▶️  Starting: CI/CD and Release Management Documentation
+  ▶️  Starting: Permissions and Authentication Architecture (NAPS/Gatekeeper)
+  ✅ Finished: CI/CD and Release Management Documentation (40 turns, 1 files)
+  ▶️  Starting: Voice Routing Deep-Dive: Dialplan and PBX Documentation
+  ✅ Finished: Lumina Observability Architecture Documentation (38 turns, 1 files)
+  ▶️  Starting: Support Team Onboarding Guide
+  ✅ Finished: Permissions and Authentication Architecture (NAPS/Gatekeeper) (40 turns, 1 files)
+  ✅ Finished: Support Team Onboarding Guide (26 turns, 2 files)
+  ✅ Finished: Voice Routing Deep-Dive: Dialplan and PBX Documentation (37 turns, 1 files)
+
+============================================================
+  REVIEW PHASE
+============================================================
+
+
+📋 Review summary:
+I've updated both project tracking files. Here's a summary of what was accomplished:
+
+---
+
+## Iteration Summary: Parallel Documentation Tasks
+
+### ✅ All 5 Tasks Completed Successfully
+
+| Task | File Created | Lines | Turns Used |
+|------|--------------|-------|------------|
+| Lumina Observability Architecture | `architecture/observability/lumina.md` | 698 | 38 |
+| CI/CD and Release Management | `operations/cicd-workflows.md` | 646 | 40 |
+| Permissions and Authentication (NAPS/Gatekeeper) | `arch
+
+📁 Files modified this iteration: ['architecture/observability/lumina.md', 'operations/cicd-workflows.md', 'architecture/security/permissions-auth.md', 'architecture/voice-routing/dialplan-pbx.md', 'onboarding/README.md', 'onboarding/support.md', '.project/STATUS.md', '.project/BACKLOG.md']
+
+📝 Commit message:
+docs: update architecture, operations and onboarding documentation
+
+- Update Lumina observability and voice routing dialplan docs
+- Revise CI/CD workflows and security permissions documentation
+- Refresh onboarding README and support guides
+- Update project status and backlog tracking
+✅ Committed: [fresh-agent-run 8ed1eef] docs: update architecture, operations and onboarding documentation
+ 8 files changed, 3919 insertions(+), 38 deletions(-)
+ create mode 100644 architecture/observability/lumina.md
+ create mode 100644 architecture/security/permissions-auth.md
+ create mode 100644 architecture/voice-routing/dialplan-pbx.md
+ create mode 100644 onboarding/support.md
+ create mode 100644 operations/cicd-workflows.md
+✅ Pushed to remote
+
+🔄 More work available, continuing to iteration 2...
+
+======================================================================
+  CONTINUOUS RUN COMPLETE
+======================================================================
+  Iterations: 1
+  Total files modified: 8
+    - .project/BACKLOG.md
+    - .project/STATUS.md
+    - architecture/observability/lumina.md
+    - architecture/security/permissions-auth.md
+    - architecture/voice-routing/dialplan-pbx.md
+    - onboarding/README.md
+    - onboarding/support.md
+    - operations/cicd-workflows.md
+======================================================================
+

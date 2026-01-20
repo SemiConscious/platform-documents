@@ -1,0 +1,1295 @@
+2026-01-20 10:47:33,753 - botocore.credentials - INFO - Found credentials in environment variables.
+2026-01-20 10:47:33,812 - documentation-agent - INFO - Initializing documentation agent...
+2026-01-20 10:47:33,812 - documentation-agent - INFO - Loaded 4 shell tools
+2026-01-20 10:47:33,812 - documentation-agent - INFO - Loaded 2 file store tools
+2026-01-20 10:47:33,812 - documentation-agent - INFO - Connecting to MCP server: https://avatar.natterbox-dev03.net/mcp/sse
+2026-01-20 10:47:33,814 - documentation-agent - INFO - Loaded existing MCP tokens from file
+2026-01-20 10:47:34,299 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:47:34,300 - documentation-agent - INFO - MCP server initialized: {'name': 'avatar-tools', 'version': '1.0.0'}
+2026-01-20 10:47:34,434 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:47:34,516 - documentation-agent - INFO - Discovered 18 MCP tools
+2026-01-20 10:47:34,516 - documentation-agent - INFO - Loaded 18 MCP tools
+2026-01-20 10:47:34,516 - documentation-agent - INFO - Agent initialized with 24 total tools
+2026-01-20 10:47:34,553 - documentation-agent - INFO - 🗑️  Cleared file store
+2026-01-20 10:47:34,553 - documentation-agent - INFO - 🗑️  Cleared file store for new iteration
+2026-01-20 10:47:34,553 - documentation-agent - INFO - 📋 PLANNING PHASE: Creating task plan...
+2026-01-20 10:47:34,553 - documentation-agent - INFO - 📊 Context size: ~917 tokens
+2026-01-20 10:47:37,565 - documentation-agent - INFO - [planner] Tool: read_file
+2026-01-20 10:47:37,566 - documentation-agent - INFO - [planner] Tool: read_file
+2026-01-20 10:47:37,567 - documentation-agent - INFO - 📊 Context size: ~6,502 tokens
+2026-01-20 10:47:41,549 - documentation-agent - INFO - [planner] 💭 Thinking (137 chars):
+2026-01-20 10:47:41,549 - documentation-agent - INFO - [planner]    Now let me explore the project structure to understand what documentation already exists and what source repositories might be available:
+
+======================================================================
+  ITERATION 1/1 - PARALLEL EXECUTION MODE
+======================================================================
+
+
+============================================================
+  PLANNING PHASE
+============================================================
+
+
+[planner] ──────────────────────────────────────────────────
+[planner] 💭 Thinking:
+Now let me explore the project structure to understand what documentation already exists and what source repositories might be available:
+[planner] ──────────────────────────────────────────────────
+
+2026-01-20 10:47:41,549 - documentation-agent - INFO - [planner] Tool: list_directory
+2026-01-20 10:47:41,553 - documentation-agent - INFO - [planner] Tool: list_directory
+2026-01-20 10:47:41,553 - documentation-agent - INFO - [planner] Tool: list_directory
+2026-01-20 10:47:41,554 - documentation-agent - INFO - 📊 Context size: ~7,254 tokens
+2026-01-20 10:47:45,702 - documentation-agent - INFO - [planner] 💭 Thinking (96 chars):
+2026-01-20 10:47:45,702 - documentation-agent - INFO - [planner]    Let me check the AI/CAI area and Salesforce area to understand what exists and what's remaining:
+
+[planner] ──────────────────────────────────────────────────
+[planner] 💭 Thinking:
+Let me check the AI/CAI area and Salesforce area to understand what exists and what's remaining:
+[planner] ──────────────────────────────────────────────────
+
+2026-01-20 10:47:45,702 - documentation-agent - INFO - [planner] Tool: list_directory
+2026-01-20 10:47:45,703 - documentation-agent - INFO - [planner] Tool: list_directory
+2026-01-20 10:47:45,703 - documentation-agent - INFO - [planner] Tool: list_directory
+2026-01-20 10:47:45,704 - documentation-agent - INFO - [planner] Tool: read_file
+2026-01-20 10:47:45,705 - documentation-agent - INFO - 📊 Context size: ~15,924 tokens
+2026-01-20 10:47:49,143 - documentation-agent - INFO - [planner] 💭 Thinking (119 chars):
+2026-01-20 10:47:49,143 - documentation-agent - INFO - [planner]    Now let me check the repository inventory to understand what source repositories are available for the remaining items:
+
+[planner] ──────────────────────────────────────────────────
+[planner] 💭 Thinking:
+Now let me check the repository inventory to understand what source repositories are available for the remaining items:
+[planner] ──────────────────────────────────────────────────
+
+2026-01-20 10:47:49,143 - documentation-agent - INFO - [planner] Tool: read_file
+2026-01-20 10:47:49,145 - documentation-agent - INFO - 📊 Context size: ~25,245 tokens
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner] 💭 Thinking (6626 chars):
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    Based on my analysis of the STATUS.md, BACKLOG.md, and repository inventory, I can now identify the highest priority remaining item. Looking at the backlog:
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    **Priority 3: Salesforce Integration** - Has overview complete but deep-dives are outstanding:
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    - AVS package deep-dive
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    - SCV BYOT connector details  
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    - Omni-Channel integration details
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    - Voice Call object usage
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    
+2026-01-20 10:48:19,502 - documentation-agent - INFO - [planner]    **Priority 4: AI/CAI** - Has overview complete but deep-dives are outstanding:
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    - Bedrock integration deep-dive
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    - Prompt pipeline documentation  
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    - WebSocket service details
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    **Priority 5: Terraform Module deep-dives** - Listed in parking lot
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    Looking at the backlog structure, **Salesforce Integration deep-dive** is the highest priority incomplete item (Priority 3 vs Priority 4/5 for others) that is not marked as deferred or complex.
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    ```json
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]    {
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]      "main_topic": {
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]        "title": "Salesforce Integration Deep-Dive Documentation",
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]        "backlog_reference": "Priority 3: Key Integrations - Salesforce Integration: AVS package deep-dive, SCV BYOT connector details, Omni-Channel integration details, Voice Call object usage"
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]      },
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]      "subtasks": [
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]          "id": "subtask_1",
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]          "title": "AVS Salesforce Package Architecture",
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]          "description": "Document the Natterbox AVS (Advanced Voice Services) Salesforce managed package. Include: Package components (Apex classes, triggers, LWC components, Visualforce pages), object definitions and custom fields, permission sets and profiles, package versioning and upgrade paths, installation and configuration process, integration with Salesforce standard objects (Contact, Account, Lead, Task, Case), custom metadata types, remote site settings, connected apps, and API endpoints exposed by the package. Document the relationship between AVS and NBAVS packages.",
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/avs-package.md"],
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]          "priority": 1
+2026-01-20 10:48:19,503 - documentation-agent - INFO - [planner]        },
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "id": "subtask_2", 
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "title": "SCV BYOT Connector Implementation",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "description": "Document the Service Cloud Voice Bring Your Own Telephony (BYOT) connector. Include: Complete architecture of platform-scv-byot-connector, API endpoints and request/response formats, authentication flow with Salesforce, WebSocket/real-time event handling, call control operations (answer, hold, transfer, conference), agent state synchronization, presence management, CTI adapter integration, configuration parameters and environment variables, error handling and retry logic, deployment to AWS Lambda/ECS, Salesforce Connected App setup, and troubleshooting procedures.",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/scv-byot-connector.md"],
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "priority": 1
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        },
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "id": "subtask_3",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "title": "Voice Call Record and Telephony Integration",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "description": "Document the Salesforce Voice Call standard object integration. Include: Voice Call object fields and their mapping to Natterbox CDR data, call lifecycle events and status transitions, recording URL attachment process, transcription integration, call disposition handling, related records (Contact, Account, Case) linking, Voice Call triggers and automation, reporting and dashboards using Voice Call data, call activity logging to Task records, and data synchronization patterns between Natterbox and Salesforce.",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/voice-call-integration.md"],
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "priority": 2
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        },
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "id": "subtask_4",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "title": "Omni-Channel Routing Integration",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "description": "Document the integration between Natterbox voice and Salesforce Omni-Channel routing. Include: Omni-Channel routing configuration for voice, presence status synchronization between Natterbox and Salesforce, queue-based routing setup, skills-based routing configuration, priority routing rules, agent capacity management, routing flow customization with Flow Builder, work item creation and assignment, real-time queue metrics integration with Natterbox wallboards, and supervisor monitoring capabilities.",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/omnichannel-routing.md"],
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "priority": 2
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        },
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "id": "subtask_5",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "title": "CTI Adapter and Softphone Integration",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "description": "Document the CTI (Computer Telephony Integration) adapter implementation. Include: Open CTI API usage, softphone panel configuration, click-to-dial implementation, screen pop functionality and customization, call control from Salesforce UI, multi-call handling, WebPhone integration (platform-webphoned), browser-based WebRTC softphone, CTI flow customization, Lightning component integration, and mobile CTI considerations for Salesforce mobile app.",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/cti-adapter.md"],
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "priority": 2
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        },
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "id": "subtask_6",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "title": "Salesforce Data Synchronization and APIs",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "description": "Document the data synchronization patterns between Natterbox and Salesforce. Include: Real-time sync via Streaming API/Platform Events, bulk data sync patterns, CDC (Change Data Capture) integration, Salesforce REST API usage from platform-api, SOQL query patterns, composite API usage for efficiency, Salesforce Connect for external data, authentication (OAuth 2.0, JWT Bearer flow), rate limiting and governor limits handling, retry and error recovery strategies, and data consistency guarantees.",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/data-sync-apis.md"],
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "priority": 3
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        },
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]        {
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "id": "subtask_7",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "title": "Routing Policy Builder Integration",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "description": "Document the Natterbox Routing Policy Builder within Salesforce AVS. Include: Visual routing policy designer UI, available routing components and containers, Lua script generation from visual policies, policy versioning and deployment, testing and simulation tools, integration with Salesforce Flow, conditional routing based on Salesforce data, business hours configuration, holiday calendars, IVR menu configuration, queue and agent routing, voicemail and callback configuration, and AI/CAI integration points.",
+2026-01-20 10:48:19,504 - documentation-agent - INFO - [planner]          "suggested_files": ["architecture/salesforce-integration/routing-policy-builder.md"],
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]          "priority": 3
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]        }
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]      ],
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]      "additional_files": [
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]        {"path": "architecture/salesforce-integration/overview.md", "purpose": "Update existing overview with cross-references to new deep-dive documents"},
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]        {"path": "architecture/salesforce-integration/README.md", "purpose": "Create index file for Salesforce integration documentation section"}
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]      ]
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]    }
+2026-01-20 10:48:19,505 - documentation-agent - INFO - [planner]    ```
+
+[planner] ──────────────────────────────────────────────────
+[planner] 💭 Thinking:
+Based on my analysis of the STATUS.md, BACKLOG.md, and repository inventory, I can now identify the highest priority remaining item. Looking at the backlog:
+
+**Priority 3: Salesforce Integration** - Has overview complete but deep-dives are outstanding:
+- AVS package deep-dive
+- SCV BYOT connector details  
+- Omni-Channel integration details
+- Voice Call object usage
+
+**Priority 4: AI/CAI** - Has overview complete but deep-dives are outstanding:
+- Bedrock integration deep-dive
+- Prompt pipeline documentation  
+- WebSocket service details
+
+**Priority 5: Terraform Module deep-dives** - Listed in parking lot
+
+Looking at the backlog structure, **Salesforce Integration deep-dive** is the highest priority incomplete item (Priority 3 vs Priority 4/5 for others) that is not marked as deferred or complex.
+
+```json
+{
+  "main_topic": {
+    "title": "Salesforce Integration Deep-Dive Documentation",
+    "backlog_reference": "Priority 3: Key Integrations - Salesforce Integration: AVS package deep-dive, SCV BYOT connector details, Omni-Channel integration details, Voice Call object usage"
+  },
+  "subtasks": [
+    {
+      "id": "subtask_1",
+      "title": "AVS Salesforce Package Architecture",
+      "description": "Document the Natterbox AVS (Advanced Voice Services) Salesforce managed package. Include: Package components (Apex classes, triggers, LWC components, Visualforce pages), object definitions and custom fields, permission sets and profiles, package versioning and upgrade paths, installation and configuration process, integration with Salesforce standard objects (Contact, Account, Lead, Task, Case), custom metadata types, remote site settings, connected apps, and API endpoints exposed by the package. Document the relationship between AVS and NBAVS packages.",
+      "suggested_files": ["architecture/salesforce-integration/avs-package.md"],
+      "priority": 1
+    },
+    {
+      "id": "subtask_2", 
+      "title": "SCV BYOT Connector Implementation",
+      "description": "Document the Service Cloud Voice Bring Your Own Telephony (BYOT) connector. Include: Complete architecture of platform-scv-byot-connector, API endpoints and request/response formats, authentication flow with Salesforce, WebSocket/real-time event handling, call control operations (answer, hold, transfer, conference), agent state synchronization, presence management, CTI adapter integration, configuration parameters and environment variables, error handling and retry logic, deployment to AWS Lambda/ECS, Salesforce Connected App setup, and troubleshooting procedures.",
+      "suggested_files": ["architecture/salesforce-integration/scv-byot-connector.md"],
+      "priority": 1
+    },
+    {
+      "id": "subtask_3",
+      "title": "Voice Call Record and Telephony Integration",
+      "description": "Document the Salesforce Voice Call standard object integration. Include: Voice Call object fields and their mapping to Natterbox CDR data, call lifecycle events and status transitions, recording URL attachment process, transcription integration, call disposition handling, related records (Contact, Account, Case) linking, Voice Call triggers and automation, reporting and dashboards using Voice Call data, call activity logging to Task records, and data synchronization patterns between Natterbox and Salesforce.",
+      "suggested_files": ["architecture/salesforce-integration/voice-call-integration.md"],
+      "priority": 2
+    },
+    {
+      "id": "subtask_4",
+      "title": "Omni-Channel Routing Integration",
+      "description": "Document the integration between Natterbox voice and Salesforce Omni-Channel routing. Include: Omni-Channel routing configuration for voice, presence status synchronization between Natterbox and Salesforce, queue-based routing setup, skills-based routing configuration, priority routing rules, agent capacity management, routing flow customization with Flow Builder, work item creation and assignment, real-time queue metrics integration with Natterbox wallboards, and supervisor monitoring capabilities.",
+      "suggested_files": ["architecture/salesforce-integration/omnichannel-routing.md"],
+      "priority": 2
+    },
+    {
+      "id": "subtask_5",
+      "title": "CTI Adapter and Softphone Integration",
+      "description": "Document the CTI (Computer Telephony Integration) adapter implementation. Include: Open CTI API usage, softphone panel configuration, click-to-dial implementation, screen pop functionality and customization, call control from Salesforce UI, multi-call handling, WebPhone integration (platform-webphoned), browser-based WebRTC softphone, CTI flow customization, Lightning component integration, and mobile CTI considerations for Salesforce mobile app.",
+      "suggested_files": ["architecture/salesforce-integration/cti-adapter.md"],
+      "priority": 2
+    },
+    {
+      "id": "subtask_6",
+      "title": "Salesforce Data Synchronization and APIs",
+      "description": "Document the data synchronization patterns between Natterbox and Salesforce. Include: Real-time sync via Streaming API/Platform Events, bulk data sync patterns, CDC (Change Data Capture) integration, Salesforce REST API usage from platform-api, SOQL query patterns, composite API usage for efficiency, Salesforce Connect for external data, authentication (OAuth 2.0, JWT Bearer flow), rate limiting and governor limits handling, retry and error recovery strategies, and data consistency guarantees.",
+      "suggested_files": ["architecture/salesforce-integration/data-sync-apis.md"],
+      "priority": 3
+    },
+    {
+      "id": "subtask_7",
+      "title": "Routing Policy Builder Integration",
+      "description": "Document the Natterbox Routing Policy Builder within Salesforce AVS. Include: Visual routing policy designer UI, available routing components and containers, Lua script generation from visual policies, policy versioning and deployment, testing and simulation tools, integration with Salesforce Flow, conditional routing based on Salesforce data, business hours configuration, holiday calendars, IVR menu configuration, queue and agent routing, voicemail and callback configuration, and AI/CAI integration points.",
+      "suggested_files": ["architecture/salesforce-integration/routing-policy-builder.md"],
+      "priority": 3
+    }
+  ],
+  "additional_files": [
+    {"path": "architecture/salesforce-integration/overview.md", "purpose": "Update existing overview with cross-references to new deep-dive documents"},
+    {"path": "architecture/salesforce-integration/README.md", "purpose": "Create index file for Salesforce integration documentation section"}
+  ]
+}
+```
+[planner] ──────────────────────────────────────────────────
+
+2026-01-20 10:48:19,505 - documentation-agent - INFO - 📋 Main topic: Salesforce Integration Deep-Dive Documentation
+2026-01-20 10:48:19,506 - documentation-agent - INFO - 📋 Plan created with 7 subtasks:
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - AVS Salesforce Package Architecture → architecture/salesforce-integration/avs-package.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - SCV BYOT Connector Implementation → architecture/salesforce-integration/scv-byot-connector.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - Voice Call Record and Telephony Integration → architecture/salesforce-integration/voice-call-integration.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - Omni-Channel Routing Integration → architecture/salesforce-integration/omnichannel-routing.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - CTI Adapter and Softphone Integration → architecture/salesforce-integration/cti-adapter.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - Salesforce Data Synchronization and APIs → architecture/salesforce-integration/data-sync-apis.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - Routing Policy Builder Integration → architecture/salesforce-integration/routing-policy-builder.md
+2026-01-20 10:48:19,506 - documentation-agent - INFO - 📋 Additional files suggested: 2
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - architecture/salesforce-integration/overview.md: Update existing overview with cross-references to new deep-dive documents
+2026-01-20 10:48:19,506 - documentation-agent - INFO -    - architecture/salesforce-integration/README.md: Create index file for Salesforce integration documentation section
+2026-01-20 10:48:19,506 - documentation-agent - INFO - 🚀 EXECUTION PHASE: Running 7 tasks in parallel (max 3 concurrent)
+2026-01-20 10:48:19,506 - documentation-agent - INFO - [sub-1] Starting task: AVS Salesforce Package Architecture
+2026-01-20 10:48:19,506 - documentation-agent - INFO - [sub-1] 🚀 Starting: AVS Salesforce Package Architecture
+2026-01-20 10:48:19,507 - documentation-agent - INFO - 📊 Context size: ~25,046 tokens
+2026-01-20 10:48:24,052 - documentation-agent - INFO - [sub-2] Starting task: SCV BYOT Connector Implementation
+2026-01-20 10:48:24,052 - documentation-agent - INFO - [sub-2] 🚀 Starting: SCV BYOT Connector Implementation
+2026-01-20 10:48:24,052 - documentation-agent - INFO - 📊 Context size: ~25,054 tokens
+2026-01-20 10:48:28,532 - documentation-agent - INFO - [sub-3] Starting task: Voice Call Record and Telephony Integration
+2026-01-20 10:48:28,532 - documentation-agent - INFO - [sub-3] 🚀 Starting: Voice Call Record and Telephony Integration
+2026-01-20 10:48:28,533 - documentation-agent - INFO - 📊 Context size: ~25,032 tokens
+2026-01-20 10:48:33,061 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,066 - documentation-agent - INFO - 📦 Stored result: fa1beec9 (423 bytes from mcp_confluence)
+2026-01-20 10:48:33,080 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,094 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,284 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,295 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,342 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,508 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:33,511 - documentation-agent - INFO - 📊 Context size: ~25,651 tokens
+2026-01-20 10:48:37,252 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:37,253 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:37,255 - documentation-agent - INFO - 📦 Stored result: 2b4b2394 (10,930 bytes from mcp_github)
+2026-01-20 10:48:37,256 - documentation-agent - INFO - 📊 Context size: ~28,757 tokens
+2026-01-20 10:48:42,021 - documentation-agent - INFO - [sub-2] 💭 Thinking (99 chars):
+2026-01-20 10:48:42,021 - documentation-agent - INFO - [sub-2]    Let me search for the BYOT connector repository and Confluence content with the correct operations:
+
+  🎯 MAIN TOPIC: Salesforce Integration Deep-Dive Documentation
+     Backlog: Priority 3: Key Integrations - Salesforce Integration: AVS package deep-dive, SCV BYOT connector details, Omni-Channel integration details, Voice Call object usage
+  📌 AVS Salesforce Package Architecture
+     Files: architecture/salesforce-integration/avs-package.md
+  📌 SCV BYOT Connector Implementation
+     Files: architecture/salesforce-integration/scv-byot-connector.md
+  📌 Voice Call Record and Telephony Integration
+     Files: architecture/salesforce-integration/voice-call-integration.md
+  📌 Omni-Channel Routing Integration
+     Files: architecture/salesforce-integration/omnichannel-routing.md
+  📌 CTI Adapter and Softphone Integration
+     Files: architecture/salesforce-integration/cti-adapter.md
+  📌 Salesforce Data Synchronization and APIs
+     Files: architecture/salesforce-integration/data-sync-apis.md
+  📌 Routing Policy Builder Integration
+     Files: architecture/salesforce-integration/routing-policy-builder.md
+
+============================================================
+  EXECUTION PHASE - 7 parallel tasks
+============================================================
+
+  ▶️  [sub-1] Starting: AVS Salesforce Package Architecture
+  ▶️  [sub-2] Starting: SCV BYOT Connector Implementation
+  ▶️  [sub-3] Starting: Voice Call Record and Telephony Integration
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me search for the BYOT connector repository and Confluence content with the correct operations:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:48:42,060 - documentation-agent - INFO - 📊 Context size: ~25,664 tokens
+2026-01-20 10:48:46,148 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:46,155 - documentation-agent - INFO - 📦 Stored result: 8a1e3d84 (149 bytes from mcp_confluence)
+2026-01-20 10:48:46,306 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:46,308 - documentation-agent - INFO - 📦 Stored result: 53a6f990 (1,906 bytes from mcp_confluence)
+2026-01-20 10:48:46,400 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:46,406 - documentation-agent - INFO - 📦 Stored result: f015b098 (4,878 bytes from mcp_confluence)
+2026-01-20 10:48:46,685 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:46,981 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:46,982 - documentation-agent - INFO - 📦 Stored result: d8804cc2 (2,300 bytes from mcp_confluence)
+2026-01-20 10:48:47,385 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:47,390 - documentation-agent - INFO - 📦 Stored result: 27007cb3 (4,974 bytes from mcp_confluence)
+2026-01-20 10:48:47,394 - documentation-agent - INFO - 📊 Context size: ~27,522 tokens
+2026-01-20 10:48:52,419 - documentation-agent - INFO - [sub-3] 💭 Thinking (100 chars):
+2026-01-20 10:48:52,419 - documentation-agent - INFO - [sub-3]    I found some relevant pages. Let me explore those that look most relevant to Voice Call integration.
+
+[sub-3] ──────────────────────────────────────────────────
+[sub-3] 💭 Thinking:
+I found some relevant pages. Let me explore those that look most relevant to Voice Call integration.
+[sub-3] ──────────────────────────────────────────────────
+
+2026-01-20 10:48:52,430 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:52,431 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:48:52,436 - documentation-agent - INFO - 📦 Stored result: 3430e735 (4,799 bytes from mcp_confluence)
+2026-01-20 10:48:52,438 - documentation-agent - INFO - 📊 Context size: ~29,533 tokens
+2026-01-20 10:48:56,898 - documentation-agent - INFO - [sub-1] 💭 Thinking (97 chars):
+2026-01-20 10:48:56,899 - documentation-agent - INFO - [sub-1]    I found many relevant Confluence pages. Let me retrieve the key ones related to AVS architecture:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+I found many relevant Confluence pages. Let me retrieve the key ones related to AVS architecture:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:48:56,914 - documentation-agent - INFO - 📦 Stored result: b13c1534 (37,341 bytes from mcp_github)
+2026-01-20 10:48:56,916 - documentation-agent - INFO - 📊 Context size: ~40,448 tokens
+2026-01-20 10:49:02,026 - documentation-agent - INFO - [sub-2] 💭 Thinking (135 chars):
+2026-01-20 10:49:02,026 - documentation-agent - INFO - [sub-2]    I found the SCV BYOT connector repository (`platform-scv-byot-connector`) and relevant Confluence pages. Let me fetch more information:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+I found the SCV BYOT connector repository (`platform-scv-byot-connector`) and relevant Confluence pages. Let me fetch more information:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:02,425 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:02,430 - documentation-agent - INFO - 📦 Stored result: 7456b491 (9,551 bytes from mcp_confluence)
+2026-01-20 10:49:02,459 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:02,493 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:02,496 - documentation-agent - INFO - 📦 Stored result: 852dac2e (7,753 bytes from mcp_confluence)
+2026-01-20 10:49:02,572 - documentation-agent - INFO - 📦 Stored result: 3b9ccedb (160,931 bytes from mcp_confluence)
+2026-01-20 10:49:02,800 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:02,876 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:02,880 - documentation-agent - INFO - 📦 Stored result: f4fc0959 (20,470 bytes from mcp_confluence)
+2026-01-20 10:49:02,967 - documentation-agent - INFO - 📦 Stored result: 07725552 (311,306 bytes from mcp_confluence)
+2026-01-20 10:49:02,993 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:02,995 - documentation-agent - INFO - 📦 Stored result: 5da59091 (13,250 bytes from mcp_confluence)
+2026-01-20 10:49:03,339 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:03,341 - documentation-agent - INFO - 📦 Stored result: 6a2e5011 (13,568 bytes from mcp_confluence)
+2026-01-20 10:49:03,359 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:03,359 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:03,361 - documentation-agent - INFO - 📦 Stored result: 17fb34ac (7,431 bytes from mcp_confluence)
+2026-01-20 10:49:03,372 - documentation-agent - INFO - 📦 Stored result: 8db63b52 (34,341 bytes from mcp_github)
+2026-01-20 10:49:03,374 - documentation-agent - INFO - 📊 Context size: ~58,656 tokens
+2026-01-20 10:49:11,059 - documentation-agent - INFO - [sub-2] 💭 Thinking (115 chars):
+2026-01-20 10:49:11,059 - documentation-agent - INFO - [sub-2]    I found the repository structure. Let me now read the main source files to understand the connector implementation:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+I found the repository structure. Let me now read the main source files to understand the connector implementation:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:11,421 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:11,428 - documentation-agent - INFO - 📦 Stored result: 489e7c46 (21,583 bytes from mcp_confluence)
+2026-01-20 10:49:11,430 - documentation-agent - WARNING - ⚠️  Large context: ~118,620 tokens (474,483 chars) - approaching limit
+2026-01-20 10:49:18,755 - documentation-agent - INFO - [sub-3] 💭 Thinking (122 chars):
+2026-01-20 10:49:18,755 - documentation-agent - INFO - [sub-3]    I've found several relevant documents. Let me search for more specific information on Voice Call integration and CDR data.
+
+[sub-3] ──────────────────────────────────────────────────
+[sub-3] 💭 Thinking:
+I've found several relevant documents. Let me search for more specific information on Voice Call integration and CDR data.
+[sub-3] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:18,770 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:18,771 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:18,774 - documentation-agent - INFO - 📦 Stored result: 5ce282b6 (13,695 bytes from mcp_confluence)
+2026-01-20 10:49:18,776 - documentation-agent - INFO - 📊 Context size: ~83,187 tokens
+2026-01-20 10:49:26,023 - documentation-agent - INFO - [sub-1] 💭 Thinking (115 chars):
+2026-01-20 10:49:26,023 - documentation-agent - INFO - [sub-1]    I have some good information. Let me gather more details on the AVS package components, CRO, and development setup:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+I have some good information. Let me gather more details on the AVS package components, CRO, and development setup:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:26,040 - documentation-agent - INFO - 📦 Stored result: c31a157b (12,868 bytes from mcp_github)
+2026-01-20 10:49:26,479 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:26,490 - documentation-agent - INFO - 📦 Stored result: 6f244788 (18,010 bytes from mcp_confluence)
+2026-01-20 10:49:26,559 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:26,561 - documentation-agent - INFO - 📦 Stored result: 00496da4 (8,336 bytes from mcp_github)
+2026-01-20 10:49:26,717 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:26,718 - documentation-agent - INFO - 📦 Stored result: 3c316baa (1,884 bytes from mcp_confluence)
+2026-01-20 10:49:26,909 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:26,910 - documentation-agent - INFO - 📦 Stored result: 319cfb40 (17,731 bytes from mcp_confluence)
+2026-01-20 10:49:27,176 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:27,206 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:27,274 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:27,276 - documentation-agent - INFO - 📦 Stored result: e3b6feea (17,666 bytes from mcp_confluence)
+2026-01-20 10:49:27,348 - documentation-agent - INFO - 📦 Stored result: 50d6fcd1 (171,331 bytes from mcp_github)
+2026-01-20 10:49:27,597 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:27,615 - documentation-agent - INFO - 📦 Stored result: 7bf966e6 (40,481 bytes from mcp_confluence)
+2026-01-20 10:49:27,616 - documentation-agent - INFO - [sub-3] 📦 Compressed 3 historical tool results
+2026-01-20 10:49:27,618 - documentation-agent - WARNING - ⚠️  Large context: ~129,561 tokens (518,245 chars) - approaching limit
+2026-01-20 10:49:34,318 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:34,319 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:34,322 - documentation-agent - INFO - 📦 Stored result: 83b20ec1 (24,857 bytes from mcp_confluence)
+2026-01-20 10:49:34,324 - documentation-agent - INFO - [sub-1] 📦 Compressed 3 historical tool results
+2026-01-20 10:49:34,326 - documentation-agent - WARNING - ⚠️  Large context: ~104,388 tokens (417,553 chars) - approaching limit
+2026-01-20 10:49:41,086 - documentation-agent - INFO - [sub-1] 💭 Thinking (136 chars):
+2026-01-20 10:49:41,087 - documentation-agent - INFO - [sub-1]    Excellent! I have rich information about the AVS package. Now let me search for the GitHub repository to examine the actual source code:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! I have rich information about the AVS package. Now let me search for the GitHub repository to examine the actual source code:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:41,106 - documentation-agent - INFO - 📦 Stored result: d2cf95f1 (1,540 bytes from mcp_github)
+2026-01-20 10:49:41,107 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:49:41,109 - documentation-agent - WARNING - ⚠️  Large context: ~107,289 tokens (429,159 chars) - approaching limit
+2026-01-20 10:49:49,392 - documentation-agent - INFO - [sub-2] 💭 Thinking (80 chars):
+2026-01-20 10:49:49,393 - documentation-agent - INFO - [sub-2]    Let me continue reading more source files to understand the full implementation:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me continue reading more source files to understand the full implementation:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:49,793 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:49,884 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:49,887 - documentation-agent - INFO - 📦 Stored result: 8a7048eb (10,646 bytes from mcp_github)
+2026-01-20 10:49:50,177 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:50,179 - documentation-agent - INFO - 📦 Stored result: 7eb25405 (12,056 bytes from mcp_confluence)
+2026-01-20 10:49:50,182 - documentation-agent - INFO - [sub-3] 📦 Compressed 3 historical tool results
+2026-01-20 10:49:50,185 - documentation-agent - WARNING - ⚠️  Large context: ~136,727 tokens (546,910 chars) - approaching limit
+2026-01-20 10:49:56,396 - documentation-agent - INFO - [sub-3] 💭 Thinking (89 chars):
+2026-01-20 10:49:56,396 - documentation-agent - INFO - [sub-3]    Now let me search for related GitHub repositories to find the actual code implementation:
+
+[sub-3] ──────────────────────────────────────────────────
+[sub-3] 💭 Thinking:
+Now let me search for related GitHub repositories to find the actual code implementation:
+[sub-3] ──────────────────────────────────────────────────
+
+2026-01-20 10:49:56,416 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:56,417 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:56,422 - documentation-agent - INFO - 📦 Stored result: ea050d28 (6,171 bytes from mcp_github)
+2026-01-20 10:49:56,931 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:56,935 - documentation-agent - INFO - 📦 Stored result: 6daf363f (13,805 bytes from mcp_github)
+2026-01-20 10:49:56,965 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:49:56,967 - documentation-agent - INFO - 📦 Stored result: a2401629 (4,559 bytes from mcp_internet_search)
+2026-01-20 10:49:56,969 - documentation-agent - INFO - [sub-1] 📦 Compressed 3 historical tool results
+2026-01-20 10:49:56,971 - documentation-agent - WARNING - ⚠️  Large context: ~105,497 tokens (421,990 chars) - approaching limit
+2026-01-20 10:50:04,797 - documentation-agent - INFO - [sub-1] 💭 Thinking (136 chars):
+2026-01-20 10:50:04,798 - documentation-agent - INFO - [sub-1]    Let me look for the nbinternal-salesforce repo which appears to contain Salesforce code, and search for more AVS-specific documentation:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Let me look for the nbinternal-salesforce repo which appears to contain Salesforce code, and search for more AVS-specific documentation:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:04,811 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:04,817 - documentation-agent - INFO - [sub-3] 📦 Compressed 4 historical tool results
+2026-01-20 10:50:04,818 - documentation-agent - INFO - 📊 Context size: ~49,381 tokens
+2026-01-20 10:50:09,503 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:09,719 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:09,734 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:09,736 - documentation-agent - INFO - 📦 Stored result: f04d9345 (15,407 bytes from mcp_github)
+2026-01-20 10:50:09,739 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:50:09,741 - documentation-agent - WARNING - ⚠️  Large context: ~108,609 tokens (434,437 chars) - approaching limit
+2026-01-20 10:50:18,294 - documentation-agent - INFO - [sub-2] 💭 Thinking (99 chars):
+2026-01-20 10:50:18,295 - documentation-agent - INFO - [sub-2]    Let me read more core files including the server-side implementation and CometD/Cometd integration:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me read more core files including the server-side implementation and CometD/Cometd integration:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:18,308 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:18,564 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:18,569 - documentation-agent - INFO - [sub-1] 📦 Compressed 4 historical tool results
+2026-01-20 10:50:18,570 - documentation-agent - INFO - 📊 Context size: ~52,925 tokens
+2026-01-20 10:50:22,978 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:22,981 - documentation-agent - INFO - 📦 Stored result: 5571a29b (2,989 bytes from mcp_github)
+2026-01-20 10:50:23,430 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:23,432 - documentation-agent - INFO - 📦 Stored result: 84bf5a7f (5,101 bytes from mcp_github)
+2026-01-20 10:50:23,687 - documentation-agent - INFO - 📦 Stored result: f1a54d6c (2,001,681 bytes from mcp_github)
+2026-01-20 10:50:23,688 - documentation-agent - INFO - [sub-3] 📦 Truncating result (2,001,681 > 402,041 available) [file_id=f1a54d6c]
+2026-01-20 10:50:23,739 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:23,740 - documentation-agent - INFO - 📦 Stored result: c11a5a48 (4,552 bytes from mcp_confluence)
+2026-01-20 10:50:23,889 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:23,890 - documentation-agent - INFO - 📦 Stored result: b3618860 (4,928 bytes from mcp_github)
+2026-01-20 10:50:23,899 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:23,901 - documentation-agent - INFO - [sub-3] 📦 Compressed 3 historical tool results
+2026-01-20 10:50:24,204 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:24,367 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:24,369 - documentation-agent - INFO - 📦 Stored result: 63ef98ce (12,287 bytes from mcp_github)
+2026-01-20 10:50:24,370 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:50:24,371 - documentation-agent - INFO - 📊 Context size: ~97,975 tokens
+2026-01-20 10:50:34,819 - documentation-agent - INFO - [sub-2] 💭 Thinking (99 chars):
+2026-01-20 10:50:34,820 - documentation-agent - INFO - [sub-2]    Let me also read more relevant files to understand the WebSocket handling and other key components:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me also read more relevant files to understand the WebSocket handling and other key components:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:34,831 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:50:34,836 - documentation-agent - INFO - [sub-1] 📦 Compressed 4 historical tool results
+2026-01-20 10:50:34,837 - documentation-agent - INFO - 📊 Context size: ~33,583 tokens
+2026-01-20 10:50:38,336 - documentation-agent - INFO - [sub-1] 💭 Thinking (77 chars):
+2026-01-20 10:50:38,336 - documentation-agent - INFO - [sub-1]    Let me retrieve the key pages about AVS architecture, CRO, and Natterbox App:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Let me retrieve the key pages about AVS architecture, CRO, and Natterbox App:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:38,337 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:50:38,338 - documentation-agent - INFO - 📊 Context size: ~45,474 tokens
+2026-01-20 10:50:43,069 - documentation-agent - INFO - [sub-1] 💭 Thinking (148 chars):
+2026-01-20 10:50:43,070 - documentation-agent - INFO - [sub-1]    I have extensive AVS version information. Let me get more specific documentation about the package architecture, CRO objects, and development setup:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+I have extensive AVS version information. Let me get more specific documentation about the package architecture, CRO objects, and development setup:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:43,070 - documentation-agent - INFO - [sub-1] 📦 Compressed 3 historical tool results
+2026-01-20 10:50:43,071 - documentation-agent - INFO - 📊 Context size: ~59,454 tokens
+2026-01-20 10:50:47,865 - documentation-agent - INFO - [sub-1] 💭 Thinking (98 chars):
+2026-01-20 10:50:47,865 - documentation-agent - INFO - [sub-1]    Excellent! Now let me get more information about the AVS design constraints and development setup:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! Now let me get more information about the AVS design constraints and development setup:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:47,869 - documentation-agent - INFO - [sub-1] 📦 Compressed 3 historical tool results
+2026-01-20 10:50:47,870 - documentation-agent - INFO - 📊 Context size: ~65,711 tokens
+2026-01-20 10:50:52,859 - documentation-agent - INFO - [sub-1] 💭 Thinking (98 chars):
+2026-01-20 10:50:52,859 - documentation-agent - INFO - [sub-1]    Now let me search for more information about the NBAVS package and Natterbox AI (Insight) objects:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Now let me search for more information about the NBAVS package and Natterbox AI (Insight) objects:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:52,862 - documentation-agent - INFO - 📦 Stored result: 4893c502 (55,249 bytes from historical_compression)
+2026-01-20 10:50:52,863 - documentation-agent - INFO - [sub-1] 📦 Compressed 1 historical tool results
+2026-01-20 10:50:52,864 - documentation-agent - INFO - 📊 Context size: ~59,092 tokens
+2026-01-20 10:50:58,457 - documentation-agent - INFO - [sub-1] 💭 Thinking (81 chars):
+2026-01-20 10:50:58,457 - documentation-agent - INFO - [sub-1]    Let me search for more details about the AVS versioning and NBAVS custom objects:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Let me search for more details about the AVS versioning and NBAVS custom objects:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:50:58,461 - documentation-agent - INFO - 📦 Stored result: a84a8710 (20,146 bytes from historical_compression)
+2026-01-20 10:50:58,462 - documentation-agent - INFO - 📦 Stored result: 40fc0859 (27,514 bytes from historical_compression)
+2026-01-20 10:50:58,462 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:50:58,464 - documentation-agent - INFO - 📊 Context size: ~68,566 tokens
+2026-01-20 10:51:03,391 - documentation-agent - INFO - [sub-1] 💭 Thinking (151 chars):
+2026-01-20 10:51:03,391 - documentation-agent - INFO - [sub-1]    I have extensive information about AVS versions and architecture. Now let me search for more specific documentation on CRO objects and NBAVS namespace:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+I have extensive information about AVS versions and architecture. Now let me search for more specific documentation on CRO objects and NBAVS namespace:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:03,392 - documentation-agent - INFO - 📦 Stored result: a1c89fcb (7,905 bytes from historical_compression)
+2026-01-20 10:51:03,394 - documentation-agent - INFO - 📦 Stored result: 63c45b5e (19,155 bytes from historical_compression)
+2026-01-20 10:51:03,394 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:03,396 - documentation-agent - INFO - 📊 Context size: ~79,917 tokens
+2026-01-20 10:51:09,393 - documentation-agent - INFO - [sub-1] 💭 Thinking (132 chars):
+2026-01-20 10:51:09,394 - documentation-agent - INFO - [sub-1]    Excellent! I'm getting comprehensive information. Let me also search for details about the AVS development setup and custom objects:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! I'm getting comprehensive information. Let me also search for details about the AVS development setup and custom objects:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:09,397 - documentation-agent - INFO - 📦 Stored result: 3ef44c86 (18,568 bytes from historical_compression)
+2026-01-20 10:51:09,398 - documentation-agent - INFO - 📦 Stored result: 48f91e26 (14,822 bytes from historical_compression)
+2026-01-20 10:51:09,398 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:09,400 - documentation-agent - INFO - 📊 Context size: ~79,903 tokens
+2026-01-20 10:51:15,428 - documentation-agent - INFO - [sub-1] 💭 Thinking (169 chars):
+2026-01-20 10:51:15,428 - documentation-agent - INFO - [sub-1]    Now I have extensive information. Let me search for more specific information about custom objects, fields, permission sets and the NBAVS (Insight/Natterbox AI) package:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Now I have extensive information. Let me search for more specific information about custom objects, fields, permission sets and the NBAVS (Insight/Natterbox AI) package:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:15,431 - documentation-agent - INFO - 📦 Stored result: c98c27ee (14,907 bytes from historical_compression)
+2026-01-20 10:51:15,432 - documentation-agent - INFO - 📦 Stored result: 7a140e14 (59,165 bytes from historical_compression)
+2026-01-20 10:51:15,432 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:15,434 - documentation-agent - INFO - 📊 Context size: ~68,363 tokens
+2026-01-20 10:51:20,586 - documentation-agent - INFO - [sub-1] 💭 Thinking (106 chars):
+2026-01-20 10:51:20,586 - documentation-agent - INFO - [sub-1]    Now let me get the AVS version information and search for more details about NBAVS (Natterbox AI/Insight):
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Now let me get the AVS version information and search for more details about NBAVS (Natterbox AI/Insight):
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:20,589 - documentation-agent - INFO - 📦 Stored result: 703fa318 (24,240 bytes from historical_compression)
+2026-01-20 10:51:20,590 - documentation-agent - INFO - 📦 Stored result: 8f69fcf7 (32,650 bytes from historical_compression)
+2026-01-20 10:51:20,590 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:20,592 - documentation-agent - INFO - 📊 Context size: ~77,779 tokens
+2026-01-20 10:51:25,911 - documentation-agent - INFO - [sub-1] 💭 Thinking (163 chars):
+2026-01-20 10:51:25,911 - documentation-agent - INFO - [sub-1]    Excellent! I have extensive information about AVS version history, features, and architecture. Now let me get more details about the CRO objects and NBAVS package:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! I have extensive information about AVS version history, features, and architecture. Now let me get more details about the CRO objects and NBAVS package:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:25,915 - documentation-agent - INFO - 📦 Stored result: c4ca8190 (21,825 bytes from historical_compression)
+2026-01-20 10:51:25,916 - documentation-agent - INFO - 📦 Stored result: c3db7581 (8,677 bytes from historical_compression)
+2026-01-20 10:51:25,916 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:25,918 - documentation-agent - INFO - 📊 Context size: ~96,447 tokens
+2026-01-20 10:51:32,313 - documentation-agent - INFO - [sub-1] 💭 Thinking (198 chars):
+2026-01-20 10:51:32,313 - documentation-agent - INFO - [sub-1]    Excellent! Now I have comprehensive information about the AVS package, CRO, and OAuth integration. Let me search for more details about custom objects, permission sets, and NBAVS package components:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! Now I have comprehensive information about the AVS package, CRO, and OAuth integration. Let me search for more details about custom objects, permission sets, and NBAVS package components:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:32,315 - documentation-agent - INFO - 📦 Stored result: 3a5e7bc7 (20,194 bytes from historical_compression)
+2026-01-20 10:51:32,316 - documentation-agent - INFO - 📦 Stored result: 4e84d846 (17,788 bytes from historical_compression)
+2026-01-20 10:51:32,317 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:32,318 - documentation-agent - INFO - 📊 Context size: ~97,403 tokens
+2026-01-20 10:51:38,862 - documentation-agent - INFO - [sub-1] 💭 Thinking (137 chars):
+2026-01-20 10:51:38,862 - documentation-agent - INFO - [sub-1]    Excellent! Now let me get more details about the app architecture and search for specific information about NBAVS (Natterbox AI/Insight):
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! Now let me get more details about the app architecture and search for specific information about NBAVS (Natterbox AI/Insight):
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:38,866 - documentation-agent - INFO - 📦 Stored result: 7ae94eda (76,745 bytes from historical_compression)
+2026-01-20 10:51:38,866 - documentation-agent - INFO - [sub-1] 📦 Compressed 1 historical tool results
+2026-01-20 10:51:38,868 - documentation-agent - INFO - 📊 Context size: ~82,277 tokens
+2026-01-20 10:51:44,188 - documentation-agent - INFO - [sub-1] 💭 Thinking (79 chars):
+2026-01-20 10:51:44,188 - documentation-agent - INFO - [sub-1]    Now let me read the AVS version history in more detail to get the full picture:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Now let me read the AVS version history in more detail to get the full picture:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:44,191 - documentation-agent - INFO - 📦 Stored result: 52420098 (32,234 bytes from historical_compression)
+2026-01-20 10:51:44,192 - documentation-agent - INFO - 📦 Stored result: 8c224e1c (42,728 bytes from historical_compression)
+2026-01-20 10:51:44,193 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:44,195 - documentation-agent - WARNING - ⚠️  Large context: ~108,884 tokens (435,538 chars) - approaching limit
+2026-01-20 10:51:50,535 - documentation-agent - INFO - [sub-1] 💭 Thinking (160 chars):
+2026-01-20 10:51:50,535 - documentation-agent - INFO - [sub-1]    I now have extensive information about the AVS package, including version history. Let me search for more details about the CRO object and NBAVS custom objects:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+I now have extensive information about the AVS package, including version history. Let me search for more details about the CRO object and NBAVS custom objects:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:50,542 - documentation-agent - INFO - 📦 Stored result: 8b3dce26 (26,971 bytes from historical_compression)
+2026-01-20 10:51:50,543 - documentation-agent - INFO - 📦 Stored result: 3a58cae5 (10,029 bytes from historical_compression)
+2026-01-20 10:51:50,543 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:50,546 - documentation-agent - WARNING - ⚠️  Large context: ~142,180 tokens (568,721 chars) - approaching limit
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1] 💭 Thinking (375 chars):
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1]    I now have very comprehensive information about AVS, including:
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1]    1. AVS version history (over 60 versions from 1.300 onwards)
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1]    2. Call Reporting Object (CRO) architecture and triggers
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1]    3. OAuth integration with Salesforce
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1]    4. AVS package build process
+2026-01-20 10:51:59,160 - documentation-agent - INFO - [sub-1]    5. CTI integration merge plans
+2026-01-20 10:51:59,161 - documentation-agent - INFO - [sub-1]    
+2026-01-20 10:51:59,161 - documentation-agent - INFO - [sub-1]    Now let me read some additional information about the development setup and design constraints:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+I now have very comprehensive information about AVS, including:
+1. AVS version history (over 60 versions from 1.300 onwards)
+2. Call Reporting Object (CRO) architecture and triggers
+3. OAuth integration with Salesforce
+4. AVS package build process
+5. CTI integration merge plans
+
+Now let me read some additional information about the development setup and design constraints:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:51:59,164 - documentation-agent - INFO - 📦 Stored result: 755aa533 (17,153 bytes from historical_compression)
+2026-01-20 10:51:59,165 - documentation-agent - INFO - 📦 Stored result: d875502b (23,252 bytes from historical_compression)
+2026-01-20 10:51:59,165 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:51:59,168 - documentation-agent - WARNING - ⚠️  Large context: ~148,429 tokens (593,719 chars) - approaching limit
+2026-01-20 10:52:06,218 - documentation-agent - INFO - [sub-1] 💭 Thinking (170 chars):
+2026-01-20 10:52:06,218 - documentation-agent - INFO - [sub-1]    Now I have comprehensive information about the AVS package. Let me search for more specific information about the NBAVS (Insight/Natterbox AI) package and custom objects:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Now I have comprehensive information about the AVS package. Let me search for more specific information about the NBAVS (Insight/Natterbox AI) package and custom objects:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:06,221 - documentation-agent - INFO - 📦 Stored result: 50a987ed (23,526 bytes from historical_compression)
+2026-01-20 10:52:06,223 - documentation-agent - INFO - 📦 Stored result: fee93f7f (111,711 bytes from historical_compression)
+2026-01-20 10:52:06,223 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:52:06,226 - documentation-agent - WARNING - ⚠️  Large context: ~112,275 tokens (449,103 chars) - approaching limit
+2026-01-20 10:52:12,783 - documentation-agent - INFO - [sub-1] 💭 Thinking (219 chars):
+2026-01-20 10:52:12,783 - documentation-agent - INFO - [sub-1]    Excellent! I now have comprehensive information about AVS, CTI merger plans, CRO objects, OAuth integration, and development setup. Let me search for more specific information about NBAVS (Natterbox AI/Insight) package:
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Excellent! I now have comprehensive information about AVS, CTI merger plans, CRO objects, OAuth integration, and development setup. Let me search for more specific information about NBAVS (Natterbox AI/Insight) package:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:12,801 - documentation-agent - INFO - [sub-3] Finished: Voice Call Record and Telephony Integration (10 turns, 0 files)
+2026-01-20 10:52:12,802 - documentation-agent - INFO - [sub-4] Starting task: Omni-Channel Routing Integration
+2026-01-20 10:52:12,802 - documentation-agent - INFO - [sub-4] 🚀 Starting: Omni-Channel Routing Integration
+2026-01-20 10:52:12,803 - documentation-agent - INFO - 📊 Context size: ~25,021 tokens
+2026-01-20 10:52:18,655 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:18,663 - documentation-agent - INFO - 📦 Stored result: 6aa48b8f (48,028 bytes from historical_compression)
+2026-01-20 10:52:18,664 - documentation-agent - INFO - 📦 Stored result: 47defe19 (62,690 bytes from historical_compression)
+2026-01-20 10:52:18,664 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:52:18,666 - documentation-agent - INFO - 📊 Context size: ~67,273 tokens
+2026-01-20 10:52:22,645 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:22,645 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:22,656 - documentation-agent - INFO - 📦 Stored result: 9c91029c (1,471 bytes from mcp_github)
+2026-01-20 10:52:22,910 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:23,102 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:23,107 - documentation-agent - INFO - 📦 Stored result: e98652c4 (1,117 bytes from mcp_github)
+2026-01-20 10:52:23,137 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:23,138 - documentation-agent - INFO - 📊 Context size: ~25,644 tokens
+2026-01-20 10:52:26,764 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:26,772 - documentation-agent - INFO - 📦 Stored result: 2a76bb48 (37,069 bytes from historical_compression)
+2026-01-20 10:52:26,773 - documentation-agent - INFO - 📦 Stored result: 855f4175 (12,543 bytes from historical_compression)
+2026-01-20 10:52:26,773 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 10:52:26,773 - documentation-agent - INFO - 📊 Context size: ~48,989 tokens
+2026-01-20 10:52:31,283 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:31,286 - documentation-agent - INFO - 📦 Stored result: 289b4c9e (3,430 bytes from mcp_github)
+2026-01-20 10:52:31,372 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:31,374 - documentation-agent - INFO - 📦 Stored result: 2f827046 (1,779 bytes from mcp_confluence)
+2026-01-20 10:52:31,545 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:31,547 - documentation-agent - INFO - 📦 Stored result: 3915c9ef (5,127 bytes from mcp_confluence)
+2026-01-20 10:52:31,723 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 10:52:31,725 - documentation-agent - INFO - 📦 Stored result: 63c356d9 (1,564 bytes from mcp_github)
+2026-01-20 10:52:31,728 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:52:31,729 - documentation-agent - INFO - 📊 Context size: ~49,204 tokens
+2026-01-20 10:52:36,009 - documentation-agent - INFO - [sub-2] 💭 Thinking (95 chars):
+2026-01-20 10:52:36,009 - documentation-agent - INFO - [sub-2]    Now let me read more source files about call control operations and WebSocket message handling:
+  ❌ [sub-3] Finished: Voice Call Record and Telephony Integration (10 turns, 0 files)
+  ▶️  [sub-4] Starting: Omni-Channel Routing Integration
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read more source files about call control operations and WebSocket message handling:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:36,012 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:52:36,014 - documentation-agent - INFO - 📊 Context size: ~56,247 tokens
+2026-01-20 10:52:40,327 - documentation-agent - INFO - [sub-2] 💭 Thinking (92 chars):
+2026-01-20 10:52:40,327 - documentation-agent - INFO - [sub-2]    Let me continue reading more of the vendor-sdk.js to understand the complete implementation:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me continue reading more of the vendor-sdk.js to understand the complete implementation:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:40,328 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:52:40,330 - documentation-agent - INFO - 📊 Context size: ~64,377 tokens
+2026-01-20 10:52:45,444 - documentation-agent - INFO - [sub-2] 💭 Thinking (97 chars):
+2026-01-20 10:52:45,445 - documentation-agent - INFO - [sub-2]    Let me read more of the source code files including omni-channel.js, active-calls.js, and others:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me read more of the source code files including omni-channel.js, active-calls.js, and others:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:45,447 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:52:45,449 - documentation-agent - INFO - 📊 Context size: ~70,308 tokens
+2026-01-20 10:52:50,707 - documentation-agent - INFO - [sub-2] 💭 Thinking (42 chars):
+2026-01-20 10:52:50,707 - documentation-agent - INFO - [sub-2]    Let me continue reading more source files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me continue reading more source files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:50,711 - documentation-agent - INFO - 📦 Stored result: a1225510 (54,256 bytes from historical_compression)
+2026-01-20 10:52:50,713 - documentation-agent - INFO - 📦 Stored result: 9e629a5e (13,625 bytes from historical_compression)
+2026-01-20 10:52:50,713 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:52:50,714 - documentation-agent - INFO - 📊 Context size: ~59,184 tokens
+2026-01-20 10:52:55,793 - documentation-agent - INFO - [sub-2] 💭 Thinking (72 chars):
+2026-01-20 10:52:55,793 - documentation-agent - INFO - [sub-2]    Now let me read the minerva.js, scv.js helper, and server-related files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the minerva.js, scv.js helper, and server-related files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:52:55,798 - documentation-agent - INFO - 📦 Stored result: 47e91807 (53,303 bytes from historical_compression)
+2026-01-20 10:52:55,798 - documentation-agent - INFO - [sub-2] 📦 Compressed 1 historical tool results
+2026-01-20 10:52:55,800 - documentation-agent - INFO - 📊 Context size: ~49,910 tokens
+2026-01-20 10:53:00,490 - documentation-agent - INFO - [sub-2] 💭 Thinking (69 chars):
+2026-01-20 10:53:00,490 - documentation-agent - INFO - [sub-2]    Let me also read the README, config, and the scrtConnector.mjs files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Let me also read the README, config, and the scrtConnector.mjs files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:00,494 - documentation-agent - INFO - 📦 Stored result: 9eb3c2c5 (16,569 bytes from historical_compression)
+2026-01-20 10:53:00,495 - documentation-agent - INFO - 📦 Stored result: f9416e30 (11,754 bytes from historical_compression)
+2026-01-20 10:53:00,495 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:53:00,497 - documentation-agent - INFO - 📊 Context size: ~44,876 tokens
+2026-01-20 10:53:04,805 - documentation-agent - INFO - [sub-2] 💭 Thinking (106 chars):
+2026-01-20 10:53:04,805 - documentation-agent - INFO - [sub-2]    Now let me continue reading more source files, particularly the omni-channel.js and active-calls.js files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me continue reading more source files, particularly the omni-channel.js and active-calls.js files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:04,808 - documentation-agent - INFO - 📦 Stored result: fa601d20 (6,857 bytes from historical_compression)
+2026-01-20 10:53:04,809 - documentation-agent - INFO - 📦 Stored result: 4bed7b40 (14,891 bytes from historical_compression)
+2026-01-20 10:53:04,811 - documentation-agent - INFO - 📦 Stored result: b3e692cd (5,578 bytes from historical_compression)
+2026-01-20 10:53:04,811 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:53:04,812 - documentation-agent - INFO - 📊 Context size: ~47,404 tokens
+2026-01-20 10:53:10,347 - documentation-agent - INFO - [sub-2] 💭 Thinking (80 chars):
+2026-01-20 10:53:10,347 - documentation-agent - INFO - [sub-2]    Now let me read the agent-status.js, cometd.js, and appsync-connection.js files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the agent-status.js, cometd.js, and appsync-connection.js files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:10,350 - documentation-agent - INFO - 📦 Stored result: a7c23e1d (13,213 bytes from historical_compression)
+2026-01-20 10:53:10,351 - documentation-agent - INFO - 📦 Stored result: 15977ae8 (1,950 bytes from historical_compression)
+2026-01-20 10:53:10,353 - documentation-agent - INFO - 📦 Stored result: c3ac823f (3,415 bytes from historical_compression)
+2026-01-20 10:53:10,353 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:53:10,354 - documentation-agent - INFO - 📊 Context size: ~52,263 tokens
+2026-01-20 10:53:15,150 - documentation-agent - INFO - [sub-2] 💭 Thinking (51 chars):
+2026-01-20 10:53:15,150 - documentation-agent - INFO - [sub-2]    Now let me read the minerva.js file and the README:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the minerva.js file and the README:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:15,152 - documentation-agent - INFO - 📦 Stored result: 726a6ae0 (5,705 bytes from historical_compression)
+2026-01-20 10:53:15,153 - documentation-agent - INFO - 📦 Stored result: ea46d5a4 (1,825 bytes from historical_compression)
+2026-01-20 10:53:15,153 - documentation-agent - INFO - 📦 Stored result: 12f3a076 (1,886 bytes from historical_compression)
+2026-01-20 10:53:15,153 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:53:15,155 - documentation-agent - INFO - 📊 Context size: ~58,560 tokens
+2026-01-20 10:53:20,509 - documentation-agent - INFO - [sub-2] 💭 Thinking (103 chars):
+2026-01-20 10:53:20,510 - documentation-agent - INFO - [sub-2]    Now let me read more details on the vendor-sdk.js, scrtConnector.mjs, the config, and the connector.js:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read more details on the vendor-sdk.js, scrtConnector.mjs, the config, and the connector.js:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:20,515 - documentation-agent - INFO - 📦 Stored result: cc0c55de (18,723 bytes from historical_compression)
+2026-01-20 10:53:20,516 - documentation-agent - INFO - 📦 Stored result: 38144fb2 (13,800 bytes from historical_compression)
+2026-01-20 10:53:20,517 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:53:20,518 - documentation-agent - INFO - 📊 Context size: ~54,264 tokens
+2026-01-20 10:53:25,255 - documentation-agent - INFO - [sub-2] 💭 Thinking (121 chars):
+2026-01-20 10:53:25,255 - documentation-agent - INFO - [sub-2]    Now let me read the omni-channel.js and active-calls.js files to understand more about state management and call control:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the omni-channel.js and active-calls.js files to understand more about state management and call control:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:25,259 - documentation-agent - INFO - 📦 Stored result: 9042ce20 (8,061 bytes from historical_compression)
+2026-01-20 10:53:25,259 - documentation-agent - INFO - 📦 Stored result: 0e4d5c2a (16,893 bytes from historical_compression)
+2026-01-20 10:53:25,260 - documentation-agent - INFO - 📦 Stored result: 59182198 (6,710 bytes from historical_compression)
+2026-01-20 10:53:25,260 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:53:25,261 - documentation-agent - INFO - 📊 Context size: ~58,681 tokens
+2026-01-20 10:53:30,755 - documentation-agent - INFO - [sub-2] 💭 Thinking (132 chars):
+2026-01-20 10:53:30,756 - documentation-agent - INFO - [sub-2]    Now let me read the agent-status.js file and the appsync-connection.js to understand the presence management and WebSocket handling:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the agent-status.js file and the appsync-connection.js to understand the presence management and WebSocket handling:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:30,760 - documentation-agent - INFO - 📦 Stored result: bc6c88c6 (14,895 bytes from historical_compression)
+2026-01-20 10:53:30,762 - documentation-agent - INFO - 📦 Stored result: fd672227 (14,969 bytes from historical_compression)
+2026-01-20 10:53:30,763 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:53:30,764 - documentation-agent - INFO - 📊 Context size: ~63,876 tokens
+2026-01-20 10:53:35,652 - documentation-agent - INFO - [sub-2] 💭 Thinking (65 chars):
+2026-01-20 10:53:35,652 - documentation-agent - INFO - [sub-2]    Now let me read the minerva.js file and the README from the repo:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the minerva.js file and the README from the repo:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:35,656 - documentation-agent - INFO - 📦 Stored result: 73a002c8 (9,130 bytes from historical_compression)
+2026-01-20 10:53:35,658 - documentation-agent - INFO - 📦 Stored result: 6203b5ee (6,745 bytes from historical_compression)
+2026-01-20 10:53:35,660 - documentation-agent - INFO - 📦 Stored result: 18117a17 (2,410 bytes from historical_compression)
+2026-01-20 10:53:35,660 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:53:35,662 - documentation-agent - INFO - 📊 Context size: ~70,180 tokens
+2026-01-20 10:53:41,851 - documentation-agent - INFO - [sub-2] 💭 Thinking (92 chars):
+2026-01-20 10:53:41,851 - documentation-agent - INFO - [sub-2]    Now let me get more details on the connector.js, scrtConnector.mjs, and avs-config.js files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me get more details on the connector.js, scrtConnector.mjs, and avs-config.js files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:41,855 - documentation-agent - INFO - 📦 Stored result: 67afe567 (22,837 bytes from historical_compression)
+2026-01-20 10:53:41,856 - documentation-agent - INFO - 📦 Stored result: 1a097a4f (17,698 bytes from historical_compression)
+2026-01-20 10:53:41,856 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:53:41,858 - documentation-agent - INFO - 📊 Context size: ~64,724 tokens
+2026-01-20 10:53:46,710 - documentation-agent - INFO - [sub-2] 💭 Thinking (125 chars):
+2026-01-20 10:53:46,710 - documentation-agent - INFO - [sub-2]    Now let me get more details on the omni-channel.js and active-calls.js files which contain detailed call control information:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me get more details on the omni-channel.js and active-calls.js files which contain detailed call control information:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:46,712 - documentation-agent - INFO - 📦 Stored result: 0e71f0e9 (10,277 bytes from historical_compression)
+2026-01-20 10:53:46,713 - documentation-agent - INFO - 📦 Stored result: ddd6d6c6 (20,703 bytes from historical_compression)
+2026-01-20 10:53:46,714 - documentation-agent - INFO - 📦 Stored result: 169364ef (8,782 bytes from historical_compression)
+2026-01-20 10:53:46,714 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:53:46,714 - documentation-agent - INFO - 📊 Context size: ~72,958 tokens
+2026-01-20 10:53:52,528 - documentation-agent - INFO - [sub-2] 💭 Thinking (176 chars):
+2026-01-20 10:53:52,528 - documentation-agent - INFO - [sub-2]    Excellent! I now have extensive information about the SCV BYOT connector. Let me also check the agent-status.js, appsync-connection.js, and cometd.js files that I read earlier:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Excellent! I now have extensive information about the SCV BYOT connector. Let me also check the agent-status.js, appsync-connection.js, and cometd.js files that I read earlier:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:52,532 - documentation-agent - INFO - 📦 Stored result: d9ccc185 (18,065 bytes from historical_compression)
+2026-01-20 10:53:52,534 - documentation-agent - INFO - 📦 Stored result: d329bd30 (17,463 bytes from historical_compression)
+2026-01-20 10:53:52,534 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:53:52,536 - documentation-agent - INFO - 📊 Context size: ~83,094 tokens
+2026-01-20 10:53:57,624 - documentation-agent - INFO - [sub-2] 💭 Thinking (55 chars):
+2026-01-20 10:53:57,624 - documentation-agent - INFO - [sub-2]    Now let me read the minerva.js and README file content:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the minerva.js and README file content:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:53:57,629 - documentation-agent - INFO - 📦 Stored result: 6d6ad8b9 (10,550 bytes from historical_compression)
+2026-01-20 10:53:57,629 - documentation-agent - INFO - 📦 Stored result: 881a287b (8,633 bytes from historical_compression)
+2026-01-20 10:53:57,630 - documentation-agent - INFO - 📦 Stored result: 6a0d8c10 (2,365 bytes from historical_compression)
+2026-01-20 10:53:57,631 - documentation-agent - INFO - 📦 Stored result: 7c1b83c3 (3,266 bytes from historical_compression)
+2026-01-20 10:53:57,631 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:53:57,632 - documentation-agent - INFO - 📊 Context size: ~92,104 tokens
+2026-01-20 10:54:04,602 - documentation-agent - INFO - [sub-2] 💭 Thinking (109 chars):
+2026-01-20 10:54:04,602 - documentation-agent - INFO - [sub-2]    Now let me read the connector.js, scrtConnector.mjs, avs-config.js, and config.env files that I read earlier:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the connector.js, scrtConnector.mjs, avs-config.js, and config.env files that I read earlier:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:54:04,605 - documentation-agent - INFO - 📦 Stored result: e488c2e8 (30,871 bytes from historical_compression)
+2026-01-20 10:54:04,606 - documentation-agent - INFO - 📦 Stored result: b404ec0b (25,300 bytes from historical_compression)
+2026-01-20 10:54:04,606 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:54:04,607 - documentation-agent - INFO - 📊 Context size: ~83,060 tokens
+2026-01-20 10:54:09,981 - documentation-agent - INFO - [sub-2] 💭 Thinking (99 chars):
+2026-01-20 10:54:09,981 - documentation-agent - INFO - [sub-2]    Now let me read the omni-channel.js and active-calls.js files for detailed call control operations:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the omni-channel.js and active-calls.js files for detailed call control operations:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:54:09,983 - documentation-agent - INFO - 📦 Stored result: 29e70458 (14,519 bytes from historical_compression)
+2026-01-20 10:54:09,984 - documentation-agent - INFO - 📦 Stored result: 96f657ff (28,129 bytes from historical_compression)
+2026-01-20 10:54:09,985 - documentation-agent - INFO - 📦 Stored result: d9c8e6a9 (12,734 bytes from historical_compression)
+2026-01-20 10:54:09,985 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:54:09,986 - documentation-agent - INFO - 📊 Context size: ~98,967 tokens
+2026-01-20 10:54:17,912 - documentation-agent - INFO - [sub-2] 💭 Thinking (141 chars):
+2026-01-20 10:54:17,912 - documentation-agent - INFO - [sub-2]    Now let me read the agent-status.js, appsync-connection.js, and cometd.js files to understand the presence management and WebSocket handling:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me read the agent-status.js, appsync-connection.js, and cometd.js files to understand the presence management and WebSocket handling:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:54:17,918 - documentation-agent - INFO - 📦 Stored result: c3cbbac8 (24,211 bytes from historical_compression)
+2026-01-20 10:54:17,919 - documentation-agent - INFO - 📦 Stored result: ba4a01b9 (22,257 bytes from historical_compression)
+2026-01-20 10:54:17,919 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:54:17,920 - documentation-agent - WARNING - ⚠️  Large context: ~118,907 tokens (475,631 chars) - approaching limit
+2026-01-20 10:54:25,053 - documentation-agent - INFO - [sub-2] 💭 Thinking (113 chars):
+2026-01-20 10:54:25,053 - documentation-agent - INFO - [sub-2]    Now I have extensive source code information about the SCV BYOT connector. Let me also check the minerva.js file:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now I have extensive source code information about the SCV BYOT connector. Let me also check the minerva.js file:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:54:25,057 - documentation-agent - INFO - 📦 Stored result: e595c218 (13,200 bytes from historical_compression)
+2026-01-20 10:54:25,059 - documentation-agent - INFO - 📦 Stored result: d8830b96 (12,217 bytes from historical_compression)
+2026-01-20 10:54:25,060 - documentation-agent - INFO - 📦 Stored result: 014493a4 (3,253 bytes from historical_compression)
+2026-01-20 10:54:25,062 - documentation-agent - INFO - 📦 Stored result: 4e0d96ca (4,786 bytes from historical_compression)
+2026-01-20 10:54:25,062 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:54:25,064 - documentation-agent - WARNING - ⚠️  Large context: ~134,452 tokens (537,811 chars) - approaching limit
+2026-01-20 10:54:33,330 - documentation-agent - INFO - [sub-2] 💭 Thinking (182 chars):
+2026-01-20 10:54:33,330 - documentation-agent - INFO - [sub-2]    Excellent! I now have comprehensive information about the SCV BYOT connector. Let me now read the connector.js, scrtConnector.mjs, config files, and finally create the documentation:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Excellent! I now have comprehensive information about the SCV BYOT connector. Let me now read the connector.js, scrtConnector.mjs, config files, and finally create the documentation:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:54:33,335 - documentation-agent - INFO - 📦 Stored result: 8d48ba05 (46,745 bytes from historical_compression)
+2026-01-20 10:54:33,337 - documentation-agent - INFO - 📦 Stored result: a8a83797 (40,310 bytes from historical_compression)
+2026-01-20 10:54:33,337 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:54:33,340 - documentation-agent - WARNING - ⚠️  Large context: ~118,146 tokens (472,587 chars) - approaching limit
+2026-01-20 10:54:39,256 - documentation-agent - INFO - [sub-2] 💭 Thinking (173 chars):
+2026-01-20 10:54:39,256 - documentation-agent - INFO - [sub-2]    I now have comprehensive information about the SCV BYOT connector. Let me also read the omni-channel.js and active-calls.js files for more detailed call control information:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+I now have comprehensive information about the SCV BYOT connector. Let me also read the omni-channel.js and active-calls.js files for more detailed call control information:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:54:39,259 - documentation-agent - INFO - 📦 Stored result: 413c5cce (22,809 bytes from historical_compression)
+2026-01-20 10:54:39,261 - documentation-agent - INFO - 📦 Stored result: 7ff41632 (42,787 bytes from historical_compression)
+2026-01-20 10:54:39,263 - documentation-agent - INFO - 📦 Stored result: a5b2c955 (20,448 bytes from historical_compression)
+2026-01-20 10:54:39,263 - documentation-agent - INFO - [sub-2] 📦 Compressed 3 historical tool results
+2026-01-20 10:54:39,265 - documentation-agent - WARNING - ⚠️  Large context: ~149,480 tokens (597,922 chars) - approaching limit
+2026-01-20 10:56:44,126 - documentation-agent - INFO - [sub-2] 💭 Thinking (117 chars):
+2026-01-20 10:56:44,126 - documentation-agent - INFO - [sub-2]    I now have comprehensive information about the SCV BYOT connector. Let me now create the comprehensive documentation:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+I now have comprehensive information about the SCV BYOT connector. Let me now create the comprehensive documentation:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:56:44,128 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/salesforce-integration/scv-byot-connector.md
+2026-01-20 10:56:44,131 - documentation-agent - INFO - 📦 Stored result: 94cd390c (152 bytes from write_file)
+2026-01-20 10:56:44,135 - documentation-agent - INFO - [sub-2] 📦 Truncating result (152 > 0 available) [file_id=94cd390c]
+2026-01-20 10:56:44,138 - documentation-agent - INFO - 📦 Stored result: 6389713f (36,309 bytes from historical_compression)
+2026-01-20 10:56:44,139 - documentation-agent - INFO - 📦 Stored result: 7c2568e1 (31,651 bytes from historical_compression)
+2026-01-20 10:56:44,139 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:56:44,142 - documentation-agent - WARNING - ⚠️  Large context: ~131,533 tokens (526,135 chars) - approaching limit
+2026-01-20 10:57:39,117 - documentation-agent - INFO - [sub-2] 💭 Thinking (60 chars):
+2026-01-20 10:57:39,117 - documentation-agent - INFO - [sub-2]    Now let me create additional supporting documentation files:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me create additional supporting documentation files:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:57:39,118 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/salesforce-integration/scv-byot-api-reference.md
+2026-01-20 10:57:39,120 - documentation-agent - INFO - 📦 Stored result: 1917388b (156 bytes from write_file)
+2026-01-20 10:57:39,124 - documentation-agent - INFO - 📦 Stored result: c3019858 (18,306 bytes from historical_compression)
+2026-01-20 10:57:39,125 - documentation-agent - INFO - 📦 Stored result: fe22fd87 (19,195 bytes from historical_compression)
+2026-01-20 10:57:39,126 - documentation-agent - INFO - 📦 Stored result: 96be533b (4,837 bytes from historical_compression)
+2026-01-20 10:57:39,127 - documentation-agent - INFO - 📦 Stored result: 1b8dd713 (7,634 bytes from historical_compression)
+2026-01-20 10:57:39,128 - documentation-agent - INFO - [sub-2] 📦 Compressed 4 historical tool results
+2026-01-20 10:57:39,129 - documentation-agent - WARNING - ⚠️  Large context: ~115,070 tokens (460,281 chars) - approaching limit
+2026-01-20 10:58:33,153 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/salesforce-integration/scv-byot-troubleshooting.md
+2026-01-20 10:58:33,155 - documentation-agent - INFO - 📦 Stored result: c6361c99 (158 bytes from write_file)
+2026-01-20 10:58:33,158 - documentation-agent - INFO - 📦 Stored result: ccfed7cf (78,299 bytes from historical_compression)
+2026-01-20 10:58:33,160 - documentation-agent - INFO - 📦 Stored result: 3e5b18f3 (70,136 bytes from historical_compression)
+2026-01-20 10:58:33,160 - documentation-agent - INFO - [sub-2] 📦 Compressed 2 historical tool results
+2026-01-20 10:58:33,162 - documentation-agent - INFO - 📊 Context size: ~50,628 tokens
+2026-01-20 10:59:31,060 - documentation-agent - INFO - Wrote file: /Users/jim.page/Documents/github/SemiConscious/platform-documents/architecture/salesforce-integration/scv-byot-deployment.md
+2026-01-20 10:59:31,063 - documentation-agent - INFO - 📦 Stored result: d2af3111 (153 bytes from write_file)
+2026-01-20 10:59:31,065 - documentation-agent - INFO - [sub-2] 📦 Compressed 1 historical tool results
+2026-01-20 10:59:31,066 - documentation-agent - INFO - 📊 Context size: ~54,723 tokens
+2026-01-20 10:59:35,582 - documentation-agent - INFO - [sub-2] 💭 Thinking (85 chars):
+2026-01-20 10:59:35,582 - documentation-agent - INFO - [sub-2]    Now let me check if the directory structure exists and verify the files were created:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+Now let me check if the directory structure exists and verify the files were created:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:59:35,584 - documentation-agent - INFO - 📦 Stored result: cc996d59 (359 bytes from list_directory)
+2026-01-20 10:59:35,585 - documentation-agent - INFO - [sub-2] 📦 Compressed 1 historical tool results
+2026-01-20 10:59:35,586 - documentation-agent - INFO - 📊 Context size: ~54,923 tokens
+2026-01-20 10:59:39,814 - documentation-agent - INFO - [sub-2] 💭 Thinking (89 chars):
+2026-01-20 10:59:39,814 - documentation-agent - INFO - [sub-2]    All files have been created. Let me verify the main document content is properly written:
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+All files have been created. Let me verify the main document content is properly written:
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:59:39,818 - documentation-agent - INFO - 📦 Stored result: e2eb343c (37,482 bytes from read_file)
+2026-01-20 10:59:39,820 - documentation-agent - INFO - [sub-2] 📦 Compressed 1 historical tool results
+2026-01-20 10:59:39,822 - documentation-agent - INFO - 📊 Context size: ~65,056 tokens
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2] 💭 Thinking (3104 chars):
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    The main documentation has been created successfully. Let me provide a summary of what was created:
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    ## Summary of Documentation Created
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    I have created comprehensive documentation for the **Service Cloud Voice (SCV) Bring Your Own Telephony (BYOT) Connector**. The documentation is based on analysis of the actual source code from the `platform-scv-byot-connector` GitHub repository.
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    ### Files Created
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    | File | Size | Description |
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    |------|------|-------------|
+2026-01-20 10:59:59,517 - documentation-agent - INFO - [sub-2]    | `architecture/salesforce-integration/scv-byot-connector.md` | 32KB | Main technical documentation |
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    | `architecture/salesforce-integration/scv-byot-api-reference.md` | 13KB | Complete API reference |
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    | `architecture/salesforce-integration/scv-byot-troubleshooting.md` | 11KB | Troubleshooting guide |
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    | `architecture/salesforce-integration/scv-byot-deployment.md` | 15KB | Deployment procedures |
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    ### Documentation Coverage
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    **1. Main Document (`scv-byot-connector.md`):**
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Complete architecture overview with ASCII diagram
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Core components explained (connector.js, vendor-sdk.js, active-calls.js, omni-channel.js, cometd.js, agent-status.js, minerva.js, scrtConnector.mjs)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Call control operations (accept, hold, transfer, conference)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Supervisor operations (listen-in, barge-in)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Configuration with environment variables
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - JWT authentication flow with certificate generation
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Event types and publishing
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Error handling with retry logic
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Basic deployment steps
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    **2. API Reference (`scv-byot-api-reference.md`):**
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - SCRT2 API endpoints (create/update VoiceCall)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - CTI channel message formats (inbound call, accept, hold, transfer, conference)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Omni-Channel UI channel messages
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Supervisor operation messages
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Agent status messages
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - SCV event type payloads (CALL_STARTED, CALL_CONNECTED, etc.)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Minerva/AppSync messages
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - PhoneCall and Contact object structures
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Constants reference
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - HTTP status code reference
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    **3. Troubleshooting Guide (`scv-byot-troubleshooting.md`):**
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Quick diagnostic commands
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Common issues with solutions (connector not loading, calls not ringing, status sync, JWT failures, transfer/conference failures, supervisor issues, DC switch problems)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Debug logging configuration
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Network diagnostics
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Recovery procedures
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Error code reference
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Support escalation path
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    **4. Deployment Guide (`scv-byot-deployment.md`):**
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Local development setup
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Production build process
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Salesforce Static Resource deployment
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - AWS CloudFront CDN deployment
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Salesforce Managed Package deployment
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Connected App setup
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Environment configuration (dev/staging/prod)
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - CI/CD pipeline with GitHub Actions
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Call Center definition XML template
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - Verification checklist
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    ### Key Technical Details Documented
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **Authentication**: JWT Bearer flow with RS256 signing
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **Real-time**: CometD WebSocket for platform events
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **DC Failover**: Minerva/AppSync with debouncing logic
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **Call States**: Ringing → Connected → Ended flow
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **Participant Types**: Initial caller, third party, supervisor
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **Event Types**: 16 different SCV event types documented
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2]    - **Error Codes**: HTTP status codes with retry guidance
+
+[sub-2] ──────────────────────────────────────────────────
+[sub-2] 💭 Thinking:
+The main documentation has been created successfully. Let me provide a summary of what was created:
+
+## Summary of Documentation Created
+
+I have created comprehensive documentation for the **Service Cloud Voice (SCV) Bring Your Own Telephony (BYOT) Connector**. The documentation is based on analysis of the actual source code from the `platform-scv-byot-connector` GitHub repository.
+
+### Files Created
+
+| File | Size | Description |
+|------|------|-------------|
+| `architecture/salesforce-integration/scv-byot-connector.md` | 32KB | Main technical documentation |
+| `architecture/salesforce-integration/scv-byot-api-reference.md` | 13KB | Complete API reference |
+| `architecture/salesforce-integration/scv-byot-troubleshooting.md` | 11KB | Troubleshooting guide |
+| `architecture/salesforce-integration/scv-byot-deployment.md` | 15KB | Deployment procedures |
+
+### Documentation Coverage
+
+**1. Main Document (`scv-byot-connector.md`):**
+- Complete architecture overview with ASCII diagram
+- Core components explained (connector.js, vendor-sdk.js, active-calls.js, omni-channel.js, cometd.js, agent-status.js, minerva.js, scrtConnector.mjs)
+- Call control operations (accept, hold, transfer, conference)
+- Supervisor operations (listen-in, barge-in)
+- Configuration with environment variables
+- JWT authentication flow with certificate generation
+- Event types and publishing
+- Error handling with retry logic
+- Basic deployment steps
+
+**2. API Reference (`scv-byot-api-reference.md`):**
+- SCRT2 API endpoints (create/update VoiceCall)
+- CTI channel message formats (inbound call, accept, hold, transfer, conference)
+- Omni-Channel UI channel messages
+- Supervisor operation messages
+- Agent status messages
+- SCV event type payloads (CALL_STARTED, CALL_CONNECTED, etc.)
+- Minerva/AppSync messages
+- PhoneCall and Contact object structures
+- Constants reference
+- HTTP status code reference
+
+**3. Troubleshooting Guide (`scv-byot-troubleshooting.md`):**
+- Quick diagnostic commands
+- Common issues with solutions (connector not loading, calls not ringing, status sync, JWT failures, transfer/conference failures, supervisor issues, DC switch problems)
+- Debug logging configuration
+- Network diagnostics
+- Recovery procedures
+- Error code reference
+- Support escalation path
+
+**4. Deployment Guide (`scv-byot-deployment.md`):**
+- Local development setup
+- Production build process
+- Salesforce Static Resource deployment
+- AWS CloudFront CDN deployment
+- Salesforce Managed Package deployment
+- Connected App setup
+- Environment configuration (dev/staging/prod)
+- CI/CD pipeline with GitHub Actions
+- Call Center definition XML template
+- Verification checklist
+
+### Key Technical Details Documented
+
+- **Authentication**: JWT Bearer flow with RS256 signing
+- **Real-time**: CometD WebSocket for platform events
+- **DC Failover**: Minerva/AppSync with debouncing logic
+- **Call States**: Ringing → Connected → Ended flow
+- **Participant Types**: Initial caller, third party, supervisor
+- **Event Types**: 16 different SCV event types documented
+- **Error Codes**: HTTP status codes with retry guidance
+[sub-2] ──────────────────────────────────────────────────
+
+2026-01-20 10:59:59,518 - documentation-agent - INFO - [sub-2] ✅ Complete: SCV BYOT Connector Implementation (37 turns, 4 files)
+2026-01-20 10:59:59,519 - documentation-agent - INFO - [sub-2] Finished: SCV BYOT Connector Implementation (37 turns, 4 files)
+2026-01-20 10:59:59,519 - documentation-agent - INFO - [sub-5] Starting task: CTI Adapter and Softphone Integration
+2026-01-20 10:59:59,519 - documentation-agent - INFO - [sub-5] 🚀 Starting: CTI Adapter and Softphone Integration
+2026-01-20 10:59:59,520 - documentation-agent - INFO - 📊 Context size: ~24,992 tokens
+2026-01-20 11:00:03,676 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:03,677 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:03,679 - documentation-agent - INFO - 📦 Stored result: 6fd208f4 (967 bytes from mcp_confluence)
+2026-01-20 11:00:03,682 - documentation-agent - INFO - 📦 Stored result: e43fb0ec (21,451 bytes from historical_compression)
+2026-01-20 11:00:03,683 - documentation-agent - INFO - 📦 Stored result: 2c5c85bd (29,174 bytes from historical_compression)
+2026-01-20 11:00:03,683 - documentation-agent - INFO - [sub-1] 📦 Compressed 2 historical tool results
+2026-01-20 11:00:03,684 - documentation-agent - INFO - 📊 Context size: ~32,512 tokens
+2026-01-20 11:00:08,462 - documentation-agent - INFO - [sub-1] 💭 Thinking (87 chars):
+2026-01-20 11:00:08,463 - documentation-agent - INFO - [sub-1]    Let me get more detail about Insight, prompts handling, and Natterbox App Architecture:
+  ✅ [sub-2] Finished: SCV BYOT Connector Implementation (37 turns, 4 files)
+  ▶️  [sub-5] Starting: CTI Adapter and Softphone Integration
+
+[sub-1] ──────────────────────────────────────────────────
+[sub-1] 💭 Thinking:
+Let me get more detail about Insight, prompts handling, and Natterbox App Architecture:
+[sub-1] ──────────────────────────────────────────────────
+
+2026-01-20 11:00:08,482 - documentation-agent - INFO - 📦 Stored result: 0bc7e198 (5,394 bytes from mcp_confluence)
+2026-01-20 11:00:08,963 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:09,146 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:09,149 - documentation-agent - INFO - 📦 Stored result: 75429d22 (13,885 bytes from mcp_confluence)
+2026-01-20 11:00:09,199 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:09,454 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:09,457 - documentation-agent - INFO - 📊 Context size: ~25,615 tokens
+2026-01-20 11:00:13,045 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:13,046 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:13,049 - documentation-agent - INFO - 📦 Stored result: d2f8e3ba (1,073 bytes from mcp_confluence)
+2026-01-20 11:00:13,051 - documentation-agent - INFO - 📊 Context size: ~29,384 tokens
+2026-01-20 11:00:17,959 - documentation-agent - INFO - [sub-4] 💭 Thinking (98 chars):
+2026-01-20 11:00:17,959 - documentation-agent - INFO - [sub-4]    I found several relevant Confluence pages. Let me retrieve the key pages for detailed information:
+
+[sub-4] ──────────────────────────────────────────────────
+[sub-4] 💭 Thinking:
+I found several relevant Confluence pages. Let me retrieve the key pages for detailed information:
+[sub-4] ──────────────────────────────────────────────────
+
+2026-01-20 11:00:18,369 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:18,376 - documentation-agent - INFO - 📦 Stored result: 11c1782e (12,448 bytes from mcp_confluence)
+2026-01-20 11:00:18,608 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:18,611 - documentation-agent - INFO - 📦 Stored result: 0df0991b (1,186 bytes from mcp_confluence)
+2026-01-20 11:00:18,754 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:18,758 - documentation-agent - INFO - 📦 Stored result: 417d4316 (8,899 bytes from mcp_confluence)
+2026-01-20 11:00:18,840 - httpx - INFO - HTTP Request: POST https://avatar.natterbox-dev03.net/mcp/sse "HTTP/1.1 200 OK"
+2026-01-20 11:00:18,861 - documentation-agent - INFO - 📦 Stored result: 15b6aba9 (38,651 bytes from mcp_confluence)
+2026-01-20 11:00:18,862 - documentation-agent - INFO - [sub-1] 📦 Compressed 1 historical tool results
+2026-01-20 11:00:18,864 - documentation-agent - WARNING - ⚠️  Large context: ~125,196 tokens (500,787 chars) - approaching limit
