@@ -981,6 +981,578 @@ class BedrockClient:
 
 
 # =============================================================================
+# Sub-Agent for Parallel Task Execution
+# =============================================================================
+
+
+@dataclass
+class PlanTask:
+    """A single task from the planning phase."""
+
+    id: str
+    title: str
+    description: str
+    target_files: list[str]
+    dependencies: list[str] = field(default_factory=list)
+    priority: int = 1
+
+
+@dataclass
+class TaskResult:
+    """Result from a sub-agent task execution."""
+
+    task_id: str
+    success: bool
+    files_created: list[str]
+    summary: str
+    error: Optional[str] = None
+    turns_used: int = 0
+
+
+class SubAgent:
+    """
+    Lightweight agent for executing a single task in parallel.
+    Shares tools and file store with parent but has own message history.
+    """
+
+    MAX_TURNS = 50  # Sub-agents get fewer turns for focused tasks
+
+    def __init__(
+        self,
+        task: PlanTask,
+        shell: ShellTool,
+        mcp: MCPClient,
+        bedrock: BedrockClient,
+        file_store: FileStore,
+        tools: list[dict],
+        work_dir: Path,
+    ):
+        self.task = task
+        self.shell = shell
+        self.mcp = mcp
+        self.bedrock = bedrock
+        self.file_store = file_store
+        self.tools = tools
+        self.work_dir = work_dir
+        self.messages: list[dict] = []
+        self._files_written: set[str] = set()
+        self._consecutive_errors = 0
+
+    def _get_system_prompt(self) -> str:
+        """Get focused system prompt for sub-agent."""
+        return f"""You are a documentation specialist working on a SINGLE FOCUSED TASK.
+
+## Your Task
+{self.task.title}
+
+## Task Description
+{self.task.description}
+
+## Target Files
+You should create/update these files: {', '.join(self.task.target_files)}
+
+## Available Tools
+You have access to shell tools (bash, read_file, write_file, list_directory),
+file store tools (read_from_store, list_store_files), and MCP tools for
+Confluence, GitHub, Document360, etc.
+
+## Instructions
+1. Research the topic using available MCP tools
+2. Verify information by reading source code when possible
+3. Create comprehensive documentation in the target files
+4. Keep your work FOCUSED on this specific task only
+
+## Important
+- Do NOT update STATUS.md or BACKLOG.md - that's handled by the coordinator
+- Focus ONLY on your assigned task
+- When done, provide a clear summary of what you created
+
+Current date: {datetime.now().strftime('%Y-%m-%d')}
+"""
+
+    async def _handle_tool_use(self, tool_use: dict) -> dict:
+        """Execute a tool - same logic as main agent."""
+        tool_name = tool_use["name"]
+        tool_input = tool_use.get("input", {})
+
+        if tool_name == "bash":
+            result = self.shell.execute(tool_input.get("command", ""), tool_input.get("description", ""))
+        elif tool_name == "read_file":
+            result = self.shell.read_file(tool_input.get("path", ""))
+        elif tool_name == "write_file":
+            path = tool_input.get("path", "")
+            result = self.shell.write_file(path, tool_input.get("content", ""))
+            if result.get("success"):
+                self._files_written.add(path)
+        elif tool_name == "list_directory":
+            result = self.shell.list_directory(tool_input.get("path", "."))
+        elif tool_name == "read_from_store":
+            result = self.file_store.read(tool_input.get("file_id", ""), tool_input.get("offset", 0), tool_input.get("limit"))
+        elif tool_name == "list_store_files":
+            result = self.file_store.list_files()
+        elif tool_name.startswith("mcp_"):
+            mcp_tool_name = tool_name[4:]
+            result = await self.mcp.call_tool(mcp_tool_name, tool_input)
+        else:
+            result = {"error": f"Unknown tool: {tool_name}"}
+
+        return result
+
+    def _truncate_result(self, result: dict, source: str = "unknown") -> dict:
+        """Store large results in file store."""
+        if result.get("stored_in_file_store"):
+            return result
+
+        result_str = json.dumps(result)
+        if len(result_str) > FileStore.INLINE_THRESHOLD:
+            content = result_str
+            if "content" in result and isinstance(result["content"], str):
+                content = result["content"]
+            store_info = self.file_store.store(content, source, "json")
+            return {
+                "stored_in_file_store": True,
+                "file_id": store_info["file_id"],
+                "size_bytes": store_info["size_bytes"],
+                "message": f"Result stored. Use read_from_store(file_id='{store_info['file_id']}') to read.",
+            }
+        return result
+
+    async def run(self) -> TaskResult:
+        """Execute the task and return result."""
+        logger.info(f"🚀 SubAgent starting: {self.task.title}")
+
+        self.messages = [
+            {
+                "role": "user",
+                "content": f"""Execute this documentation task:
+
+**Task**: {self.task.title}
+
+**Description**: {self.task.description}
+
+**Target Files**: {', '.join(self.task.target_files)}
+
+Research thoroughly using Confluence and GitHub, then create comprehensive documentation.
+When complete, provide a summary of what was created.""",
+            }
+        ]
+
+        turns = 0
+        while turns < self.MAX_TURNS:
+            turns += 1
+
+            try:
+                response = self.bedrock.create_message(
+                    messages=self.messages,
+                    system=self._get_system_prompt(),
+                    tools=self.tools,
+                )
+                self._consecutive_errors = 0
+            except Exception as e:
+                self._consecutive_errors += 1
+                if self._consecutive_errors >= 3:
+                    return TaskResult(
+                        task_id=self.task.id,
+                        success=False,
+                        files_created=list(self._files_written),
+                        summary="",
+                        error=f"API errors: {e}",
+                        turns_used=turns,
+                    )
+                await asyncio.sleep(2**self._consecutive_errors)
+                continue
+
+            content = response.get("content", [])
+            stop_reason = response.get("stop_reason")
+
+            # Handle max_tokens
+            if stop_reason == "max_tokens":
+                content = [b for b in content if not (b.get("type") == "tool_use" and not b.get("id"))]
+                if content:
+                    self.messages.append({"role": "assistant", "content": content})
+                    self.messages.append({"role": "user", "content": "Continue where you left off."})
+                continue
+
+            self.messages.append({"role": "assistant", "content": content})
+
+            # Check for completion
+            if stop_reason == "end_turn":
+                summary = ""
+                for block in content:
+                    if block.get("type") == "text":
+                        summary = block.get("text", "")
+
+                logger.info(f"✅ SubAgent complete: {self.task.title} ({turns} turns, {len(self._files_written)} files)")
+                return TaskResult(
+                    task_id=self.task.id,
+                    success=True,
+                    files_created=list(self._files_written),
+                    summary=summary,
+                    turns_used=turns,
+                )
+
+            # Handle tool use
+            if stop_reason == "tool_use":
+                tool_results = []
+                for block in content:
+                    if block.get("type") == "tool_use":
+                        result = await self._handle_tool_use(block)
+                        if block["name"] not in ("read_from_store", "list_store_files"):
+                            result = self._truncate_result(result, block["name"])
+                        tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": json.dumps(result)})
+
+                self.messages.append({"role": "user", "content": tool_results})
+
+        # Max turns reached
+        return TaskResult(
+            task_id=self.task.id,
+            success=len(self._files_written) > 0,
+            files_created=list(self._files_written),
+            summary=f"Reached max turns ({self.MAX_TURNS})",
+            turns_used=turns,
+        )
+
+
+# =============================================================================
+# Planning Coordinator - Manages parallel sub-agents
+# =============================================================================
+
+
+class PlanningCoordinator:
+    """
+    Coordinates planning phase, parallel execution, and review.
+
+    Flow:
+    1. PLAN: Ask Claude to create a TODO list for the iteration
+    2. EXECUTE: Spawn sub-agents in parallel for each task
+    3. REVIEW: Check results and update STATUS/BACKLOG
+    """
+
+    MAX_PARALLEL = 3  # Limit concurrent sub-agents to avoid rate limits
+
+    PLANNING_PROMPT = """Analyze the current documentation project state and create a DETAILED PLAN for this iteration.
+
+Read .project/STATUS.md and .project/BACKLOG.md to understand what needs to be done.
+
+Create a plan with 2-5 SPECIFIC, INDEPENDENT tasks that can be executed in PARALLEL.
+Each task should:
+- Be focused on a single documentation topic
+- Have clear target file(s) to create/update
+- NOT overlap with other tasks (avoid file conflicts)
+
+Respond with a JSON array of tasks in this EXACT format:
+```json
+[
+  {
+    "id": "task_1",
+    "title": "Short title",
+    "description": "Detailed description of what to research and document",
+    "target_files": ["path/to/file.md"],
+    "priority": 1
+  }
+]
+```
+
+IMPORTANT:
+- Do NOT include STATUS.md or BACKLOG.md as target files
+- Each task gets its own sub-agent running in parallel
+- Keep tasks independent - no dependencies between them
+- Choose HIGH PRIORITY items first (not deferred/complex)
+"""
+
+    REVIEW_PROMPT = """Review the results from parallel documentation tasks and update the project tracking files.
+
+## Original Plan
+{plan_summary}
+
+## Task Results
+{results_summary}
+
+## Instructions
+1. Read current .project/STATUS.md and .project/BACKLOG.md
+2. Update STATUS.md to reflect completed work
+3. Update BACKLOG.md to mark completed items with [x]
+4. Note any failures or incomplete work
+
+Provide a summary of what was accomplished this iteration.
+"""
+
+    def __init__(
+        self,
+        shell: ShellTool,
+        mcp: MCPClient,
+        bedrock: BedrockClient,
+        file_store: FileStore,
+        tools: list[dict],
+        work_dir: Path,
+    ):
+        self.shell = shell
+        self.mcp = mcp
+        self.bedrock = bedrock
+        self.file_store = file_store
+        self.tools = tools
+        self.work_dir = work_dir
+
+    async def create_plan(self) -> list[PlanTask]:
+        """Ask Claude to create a plan for this iteration."""
+        logger.info("📋 PLANNING PHASE: Creating task plan...")
+        print(f"\n{'=' * 60}")
+        print("  PLANNING PHASE")
+        print(f"{'=' * 60}\n")
+
+        messages = [{"role": "user", "content": self.PLANNING_PROMPT}]
+
+        # Allow Claude to read files for planning
+        planning_tools = self.shell.get_tool_definitions()
+
+        try:
+            # First call - may need to read files
+            response = self.bedrock.create_message(
+                messages=messages,
+                system="You are a documentation project planner. Create actionable, parallelizable task plans.",
+                tools=planning_tools,
+            )
+
+            # Handle tool use (reading STATUS/BACKLOG)
+            max_planning_turns = 5
+            for _ in range(max_planning_turns):
+                if response.get("stop_reason") != "tool_use":
+                    break
+
+                content = response.get("content", [])
+                messages.append({"role": "assistant", "content": content})
+
+                tool_results = []
+                for block in content:
+                    if block.get("type") == "tool_use":
+                        if block["name"] == "read_file":
+                            result = self.shell.read_file(block["input"].get("path", ""))
+                        elif block["name"] == "list_directory":
+                            result = self.shell.list_directory(block["input"].get("path", "."))
+                        else:
+                            result = {"error": "Only read operations allowed in planning"}
+                        tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": json.dumps(result)})
+
+                messages.append({"role": "user", "content": tool_results})
+                response = self.bedrock.create_message(messages=messages, system="You are a documentation project planner.", tools=planning_tools)
+
+            # Extract plan from response
+            plan_text = ""
+            for block in response.get("content", []):
+                if block.get("type") == "text":
+                    plan_text = block.get("text", "")
+
+            # Parse JSON from response
+            tasks = self._parse_plan(plan_text)
+
+            if tasks:
+                logger.info(f"📋 Plan created with {len(tasks)} tasks:")
+                for t in tasks:
+                    logger.info(f"   - {t.title} → {', '.join(t.target_files)}")
+                    print(f"  📌 {t.title}")
+                    print(f"     Files: {', '.join(t.target_files)}")
+            else:
+                logger.warning("Failed to parse plan - no tasks extracted")
+
+            return tasks
+
+        except Exception as e:
+            logger.error(f"Planning failed: {e}")
+            return []
+
+    def _parse_plan(self, text: str) -> list[PlanTask]:
+        """Parse plan JSON from Claude's response."""
+        try:
+            # Find JSON in response
+            json_match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1)
+            else:
+                # Try to find raw JSON array
+                json_match = re.search(r"\[[\s\S]*\]", text)
+                if json_match:
+                    json_str = json_match.group(0)
+                else:
+                    return []
+
+            tasks_data = json.loads(json_str)
+
+            tasks = []
+            for t in tasks_data:
+                tasks.append(
+                    PlanTask(
+                        id=t.get("id", f"task_{len(tasks)}"),
+                        title=t.get("title", "Untitled"),
+                        description=t.get("description", ""),
+                        target_files=t.get("target_files", []),
+                        dependencies=t.get("dependencies", []),
+                        priority=t.get("priority", 1),
+                    )
+                )
+
+            return tasks
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse plan JSON: {e}")
+            return []
+
+    async def execute_parallel(self, tasks: list[PlanTask]) -> list[TaskResult]:
+        """Execute tasks in parallel using sub-agents."""
+        logger.info(f"🚀 EXECUTION PHASE: Running {len(tasks)} tasks in parallel (max {self.MAX_PARALLEL} concurrent)")
+        print(f"\n{'=' * 60}")
+        print(f"  EXECUTION PHASE - {len(tasks)} parallel tasks")
+        print(f"{'=' * 60}\n")
+
+        # Create semaphore to limit concurrency
+        semaphore = asyncio.Semaphore(self.MAX_PARALLEL)
+
+        async def run_with_semaphore(task: PlanTask) -> TaskResult:
+            async with semaphore:
+                print(f"  ▶️  Starting: {task.title}")
+                sub_agent = SubAgent(
+                    task=task,
+                    shell=self.shell,
+                    mcp=self.mcp,
+                    bedrock=self.bedrock,
+                    file_store=self.file_store,
+                    tools=self.tools,
+                    work_dir=self.work_dir,
+                )
+                result = await sub_agent.run()
+                status = "✅" if result.success else "❌"
+                print(f"  {status} Finished: {task.title} ({result.turns_used} turns, {len(result.files_created)} files)")
+                return result
+
+        # Run all tasks in parallel
+        results = await asyncio.gather(*[run_with_semaphore(t) for t in tasks], return_exceptions=True)
+
+        # Convert exceptions to failed results
+        final_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                final_results.append(
+                    TaskResult(
+                        task_id=tasks[i].id,
+                        success=False,
+                        files_created=[],
+                        summary="",
+                        error=str(result),
+                    )
+                )
+            else:
+                final_results.append(result)
+
+        return final_results
+
+    async def review_results(self, tasks: list[PlanTask], results: list[TaskResult]) -> tuple[bool, list[str]]:
+        """Review results and update STATUS/BACKLOG."""
+        logger.info("📝 REVIEW PHASE: Updating project tracking...")
+        print(f"\n{'=' * 60}")
+        print("  REVIEW PHASE")
+        print(f"{'=' * 60}\n")
+
+        # Build summaries
+        plan_summary = "\n".join([f"- {t.title}: {', '.join(t.target_files)}" for t in tasks])
+
+        results_summary = ""
+        all_files = []
+        for r in results:
+            status = "SUCCESS" if r.success else "FAILED"
+            results_summary += f"\n### {r.task_id}: {status}\n"
+            results_summary += f"Files created: {r.files_created}\n"
+            results_summary += f"Turns used: {r.turns_used}\n"
+            if r.error:
+                results_summary += f"Error: {r.error}\n"
+            if r.summary:
+                results_summary += f"Summary: {r.summary[:500]}...\n" if len(r.summary) > 500 else f"Summary: {r.summary}\n"
+            all_files.extend(r.files_created)
+
+        # Ask Claude to review and update tracking files
+        review_prompt = self.REVIEW_PROMPT.format(plan_summary=plan_summary, results_summary=results_summary)
+
+        messages = [{"role": "user", "content": review_prompt}]
+
+        try:
+            response = self.bedrock.create_message(
+                messages=messages,
+                system="You are updating project tracking files based on completed documentation work.",
+                tools=self.shell.get_tool_definitions(),
+            )
+
+            # Handle tool use for reading/writing STATUS and BACKLOG
+            max_review_turns = 10
+            for _ in range(max_review_turns):
+                if response.get("stop_reason") != "tool_use":
+                    break
+
+                content = response.get("content", [])
+                messages.append({"role": "assistant", "content": content})
+
+                tool_results = []
+                for block in content:
+                    if block.get("type") == "tool_use":
+                        tool_name = block["name"]
+                        tool_input = block.get("input", {})
+
+                        if tool_name == "read_file":
+                            result = self.shell.read_file(tool_input.get("path", ""))
+                        elif tool_name == "write_file":
+                            path = tool_input.get("path", "")
+                            # Only allow writing to .project/ files in review
+                            if ".project/" in path:
+                                result = self.shell.write_file(path, tool_input.get("content", ""))
+                                if result.get("success"):
+                                    all_files.append(path)
+                            else:
+                                result = {"error": "Review phase can only write to .project/ files"}
+                        elif tool_name == "list_directory":
+                            result = self.shell.list_directory(tool_input.get("path", "."))
+                        else:
+                            result = {"error": f"Tool {tool_name} not allowed in review phase"}
+
+                        tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": json.dumps(result)})
+
+                messages.append({"role": "user", "content": tool_results})
+                response = self.bedrock.create_message(
+                    messages=messages, system="You are updating project tracking files.", tools=self.shell.get_tool_definitions()
+                )
+
+            # Extract summary
+            for block in response.get("content", []):
+                if block.get("type") == "text":
+                    print(f"\n📋 Review summary:\n{block.get('text', '')[:500]}")
+
+            # Check if any tasks succeeded
+            any_success = any(r.success for r in results)
+            return any_success, all_files
+
+        except Exception as e:
+            logger.error(f"Review phase failed: {e}")
+            return False, all_files
+
+    async def run_iteration(self) -> tuple[bool, list[str]]:
+        """
+        Run a complete iteration: plan -> execute -> review.
+
+        Returns:
+            (success, files_modified)
+        """
+        # Phase 1: Planning
+        tasks = await self.create_plan()
+        if not tasks:
+            logger.info("No tasks to execute this iteration")
+            return False, []
+
+        # Phase 2: Parallel Execution
+        results = await self.execute_parallel(tasks)
+
+        # Phase 3: Review
+        success, all_files = await self.review_results(tasks, results)
+
+        return success, all_files
+
+
+# =============================================================================
 # Documentation Agent
 # =============================================================================
 
@@ -1394,7 +1966,7 @@ Keep it SHORT (under 500 words). Start with "CONTINUATION:"
                 if "## Next Up" in status_content:
                     next_up = status_content.split("## Next Up")[1].split("##")[0].strip()
                     status_hint = f"\nFrom STATUS.md Next Up:\n{next_up[:500]}"
-        except:
+        except Exception:
             pass
 
         files_list = ", ".join(self._files_written) if self._files_written else "none yet"
@@ -2103,13 +2675,72 @@ Update .project/STATUS.md and .project/BACKLOG.md to reflect your progress."""
 
 async def run_continuous(agent: "DocumentationAgent", task: str, max_iterations: int = 10):
     """
-    Run the agent continuously until no more work to do.
+    Run the agent continuously with parallel task execution.
 
     Each iteration:
-    1. Run the task
-    2. If files were written, generate commit message and commit/push
-    3. Check if more work remains
-    4. If no files written or task complete, stop
+    1. PLAN: Create a TODO list of parallelizable tasks
+    2. EXECUTE: Run sub-agents in parallel for each task
+    3. REVIEW: Check results and update STATUS/BACKLOG
+    4. COMMIT: Generate commit message and push
+    """
+    iteration = 0
+    total_files = []
+
+    # Create the planning coordinator
+    coordinator = PlanningCoordinator(
+        shell=agent.shell,
+        mcp=agent.mcp,
+        bedrock=agent.bedrock,
+        file_store=agent.file_store,
+        tools=agent.tools,
+        work_dir=agent.config.work_dir,
+    )
+
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"\n{'=' * 70}")
+        print(f"  ITERATION {iteration}/{max_iterations} - PARALLEL EXECUTION MODE")
+        print(f"{'=' * 70}\n")
+
+        # Run the full plan -> execute -> review cycle
+        success, files_this_iteration = await coordinator.run_iteration()
+
+        if not files_this_iteration:
+            print(f"\n✅ No files modified in iteration {iteration} - work complete!")
+            break
+
+        total_files.extend(files_this_iteration)
+        print(f"\n📁 Files modified this iteration: {files_this_iteration}")
+
+        # Generate commit message and commit/push
+        commit_result = await _generate_and_commit(agent, files_this_iteration, iteration)
+        if not commit_result:
+            print("⚠️  Commit failed, stopping continuous mode")
+            break
+
+        # Check if there's more work
+        more_work = await _check_more_work(agent)
+        if not more_work:
+            print(f"\n✅ No more high-priority work remaining - stopping")
+            break
+
+        print(f"\n🔄 More work available, continuing to iteration {iteration + 1}...")
+
+    # Final summary
+    print(f"\n{'=' * 70}")
+    print(f"  CONTINUOUS RUN COMPLETE")
+    print(f"{'=' * 70}")
+    print(f"  Iterations: {iteration}")
+    print(f"  Total files modified: {len(set(total_files))}")
+    for f in sorted(set(total_files)):
+        print(f"    - {f}")
+    print(f"{'=' * 70}\n")
+
+
+async def run_continuous_single(agent: "DocumentationAgent", task: str, max_iterations: int = 10):
+    """
+    Original single-agent continuous mode (fallback).
+    Use --single flag to run this instead of parallel mode.
     """
     iteration = 0
     total_files = []
@@ -2117,20 +2748,17 @@ async def run_continuous(agent: "DocumentationAgent", task: str, max_iterations:
     while iteration < max_iterations:
         iteration += 1
         print(f"\n{'=' * 70}")
-        print(f"  ITERATION {iteration}/{max_iterations}")
+        print(f"  ITERATION {iteration}/{max_iterations} (SINGLE AGENT)")
         print(f"{'=' * 70}\n")
 
-        # Reset agent state for new iteration
         agent.messages = []
         agent._tool_call_history = []
         agent._consecutive_errors = 0
         files_before = set(agent._files_written)
 
-        # Run the task
         result = await agent.run_task(task)
         print(f"\n📋 Iteration {iteration} result:\n{result[:500]}..." if len(result) > 500 else f"\n📋 Iteration {iteration} result:\n{result}")
 
-        # Check what files were written this iteration
         files_this_iteration = agent._files_written - files_before
 
         if not files_this_iteration:
@@ -2140,13 +2768,11 @@ async def run_continuous(agent: "DocumentationAgent", task: str, max_iterations:
         total_files.extend(files_this_iteration)
         print(f"\n📁 Files modified this iteration: {list(files_this_iteration)}")
 
-        # Generate commit message using the agent
         commit_result = await _generate_and_commit(agent, list(files_this_iteration), iteration)
         if not commit_result:
             print("⚠️  Commit failed, stopping continuous mode")
             break
 
-        # Check if there's more work by asking the agent
         more_work = await _check_more_work(agent)
         if not more_work:
             print(f"\n✅ Agent indicates no more high-priority work - stopping")
@@ -2154,7 +2780,6 @@ async def run_continuous(agent: "DocumentationAgent", task: str, max_iterations:
 
         print(f"\n🔄 More work available, continuing to iteration {iteration + 1}...")
 
-    # Final summary
     print(f"\n{'=' * 70}")
     print(f"  CONTINUOUS RUN COMPLETE")
     print(f"{'=' * 70}")
@@ -2342,8 +2967,10 @@ Examples:
 
     parser.add_argument("--task", type=str, help="Documentation task to perform")
     parser.add_argument("--interactive", "-i", action="store_true", help="Run in interactive mode")
-    parser.add_argument("--continuous", "-c", action="store_true", help="Run continuously until no more work (commits after each iteration)")
+    parser.add_argument("--continuous", "-c", action="store_true", help="Run continuously with parallel task execution")
+    parser.add_argument("--single", "-s", action="store_true", help="Use single-agent mode (no parallel execution)")
     parser.add_argument("--max-iterations", type=int, default=10, help="Maximum iterations for continuous mode (default: 10)")
+    parser.add_argument("--max-parallel", type=int, default=3, help="Maximum parallel sub-agents (default: 3)")
     parser.add_argument("--region", type=str, default="us-east-1", help="AWS region for Bedrock (default: us-east-1)")
     parser.add_argument("--model", type=str, default="anthropic.claude-sonnet-4-20250514-v1:0", help="Bedrock model ID")
     parser.add_argument("--mcp-url", type=str, default="https://avatar.natterbox-dev03.net/mcp/sse", help="Natterbox MCP server URL")
@@ -2369,9 +2996,15 @@ Examples:
     if args.interactive:
         await agent.interactive_mode()
     elif args.continuous:
-        # Continuous mode - run until done
         task = args.task or DEFAULT_CONTINUOUS_TASK
-        await run_continuous(agent, task, args.max_iterations)
+        if args.single:
+            # Single-agent continuous mode (original behavior)
+            await run_continuous_single(agent, task, args.max_iterations)
+        else:
+            # Parallel execution mode (new default)
+            # Update max parallel setting if specified
+            PlanningCoordinator.MAX_PARALLEL = args.max_parallel
+            await run_continuous(agent, task, args.max_iterations)
     elif args.task:
         result = await agent.run_task(args.task)
         print(result)
