@@ -1820,6 +1820,229 @@ Please continue from where you left off. Files in the file store are still acces
 # Main Entry Point
 # =============================================================================
 
+DEFAULT_CONTINUOUS_TASK = """Read .project/STATUS.md and .project/BACKLOG.md to understand the project state.
+Choose the single highest-priority incomplete item and create documentation for it.
+Use Confluence (mcp_confluence) and GitHub (mcp_github) to research.
+Write the documentation to the appropriate location in the repository.
+Update .project/STATUS.md and .project/BACKLOG.md to reflect your progress."""
+
+
+async def run_continuous(agent: 'DocumentationAgent', task: str, max_iterations: int = 10):
+    """
+    Run the agent continuously until no more work to do.
+    
+    Each iteration:
+    1. Run the task
+    2. If files were written, generate commit message and commit/push
+    3. Check if more work remains
+    4. If no files written or task complete, stop
+    """
+    iteration = 0
+    total_files = []
+    
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"\n{'='*70}")
+        print(f"  ITERATION {iteration}/{max_iterations}")
+        print(f"{'='*70}\n")
+        
+        # Reset agent state for new iteration
+        agent.messages = []
+        agent._tool_call_history = []
+        agent._consecutive_errors = 0
+        files_before = set(agent._files_written)
+        
+        # Run the task
+        result = await agent.run_task(task)
+        print(f"\n📋 Iteration {iteration} result:\n{result[:500]}..." if len(result) > 500 else f"\n📋 Iteration {iteration} result:\n{result}")
+        
+        # Check what files were written this iteration
+        files_this_iteration = agent._files_written - files_before
+        
+        if not files_this_iteration:
+            print(f"\n✅ No files modified in iteration {iteration} - work complete!")
+            break
+        
+        total_files.extend(files_this_iteration)
+        print(f"\n📁 Files modified this iteration: {list(files_this_iteration)}")
+        
+        # Generate commit message using the agent
+        commit_result = await _generate_and_commit(agent, list(files_this_iteration), iteration)
+        if not commit_result:
+            print("⚠️  Commit failed, stopping continuous mode")
+            break
+        
+        # Check if there's more work by asking the agent
+        more_work = await _check_more_work(agent)
+        if not more_work:
+            print(f"\n✅ Agent indicates no more high-priority work - stopping")
+            break
+        
+        print(f"\n🔄 More work available, continuing to iteration {iteration + 1}...")
+    
+    # Final summary
+    print(f"\n{'='*70}")
+    print(f"  CONTINUOUS RUN COMPLETE")
+    print(f"{'='*70}")
+    print(f"  Iterations: {iteration}")
+    print(f"  Total files modified: {len(total_files)}")
+    for f in sorted(set(total_files)):
+        print(f"    - {f}")
+    print(f"{'='*70}\n")
+
+
+async def _generate_and_commit(agent: 'DocumentationAgent', files: list[str], iteration: int) -> bool:
+    """Generate a commit message and commit/push the changes."""
+    
+    # Ask agent to generate commit message
+    commit_prompt = f"""Generate a concise git commit message for these documentation changes:
+    
+Files modified: {files}
+
+The commit message should:
+1. Start with a type prefix (docs:, feat:, fix:, etc.)
+2. Be one line summary (max 72 chars)
+3. Optionally include bullet points for details
+
+Reply with ONLY the commit message, nothing else."""
+
+    agent.messages = [{
+        "role": "user", 
+        "content": commit_prompt
+    }]
+    
+    try:
+        response = agent.bedrock.create_message(
+            messages=agent.messages,
+            system="You are a helpful assistant that generates concise git commit messages.",
+            tools=[],
+        )
+        
+        commit_msg = ""
+        for block in response.get("content", []):
+            if block.get("type") == "text":
+                commit_msg = block.get("text", "").strip()
+                break
+        
+        if not commit_msg:
+            commit_msg = f"docs: iteration {iteration} - update documentation"
+        
+        # Truncate if too long
+        lines = commit_msg.split('\n')
+        if len(lines[0]) > 72:
+            lines[0] = lines[0][:69] + "..."
+        commit_msg = '\n'.join(lines)
+        
+        print(f"\n📝 Commit message:\n{commit_msg}")
+        
+        # Execute git commands
+        work_dir = agent.config.work_dir
+        
+        # git add
+        add_result = subprocess.run(
+            ["git", "add", "-A"],
+            cwd=work_dir,
+            capture_output=True,
+            text=True
+        )
+        if add_result.returncode != 0:
+            logger.error(f"git add failed: {add_result.stderr}")
+            return False
+        
+        # git commit
+        commit_result = subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            cwd=work_dir,
+            capture_output=True,
+            text=True
+        )
+        if commit_result.returncode != 0:
+            if "nothing to commit" in commit_result.stdout:
+                print("ℹ️  Nothing to commit")
+                return True
+            logger.error(f"git commit failed: {commit_result.stderr}")
+            return False
+        
+        print(f"✅ Committed: {commit_result.stdout.strip()}")
+        
+        # git push
+        push_result = subprocess.run(
+            ["git", "push"],
+            cwd=work_dir,
+            capture_output=True,
+            text=True
+        )
+        if push_result.returncode != 0:
+            logger.error(f"git push failed: {push_result.stderr}")
+            return False
+        
+        print(f"✅ Pushed to remote")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Commit/push failed: {e}")
+        return False
+
+
+async def _check_more_work(agent: 'DocumentationAgent') -> bool:
+    """Ask the agent if there's more high-priority work to do."""
+    
+    check_prompt = """Based on the project status and backlog, is there more high-priority documentation work to do?
+
+Read .project/STATUS.md and .project/BACKLOG.md if needed.
+
+Reply with ONLY one word: YES or NO"""
+
+    agent.messages = [{
+        "role": "user",
+        "content": check_prompt
+    }]
+    
+    try:
+        response = agent.bedrock.create_message(
+            messages=agent.messages,
+            system="You are checking if more documentation work remains. Be concise.",
+            tools=agent.shell.get_tool_definitions(),  # Allow file reading
+        )
+        
+        # Handle tool use if agent wants to read files
+        content = response.get("content", [])
+        if response.get("stop_reason") == "tool_use":
+            # Execute tool and get response
+            for block in content:
+                if block.get("type") == "tool_use":
+                    result = await agent._handle_tool_use(block)
+                    agent.messages.append({"role": "assistant", "content": content})
+                    agent.messages.append({
+                        "role": "user",
+                        "content": [{
+                            "type": "tool_result",
+                            "tool_use_id": block.get("id"),
+                            "content": json.dumps(result)
+                        }]
+                    })
+            
+            # Get final answer
+            response = agent.bedrock.create_message(
+                messages=agent.messages,
+                system="You are checking if more documentation work remains. Reply YES or NO.",
+                tools=[],
+            )
+            content = response.get("content", [])
+        
+        # Extract answer
+        for block in content:
+            if block.get("type") == "text":
+                answer = block.get("text", "").strip().upper()
+                return "YES" in answer
+        
+        return False
+        
+    except Exception as e:
+        logger.error(f"Check more work failed: {e}")
+        return False
+
+
 async def main():
     parser = argparse.ArgumentParser(
         description="Natterbox Platform Documentation Agent",
@@ -1831,6 +2054,9 @@ Examples:
     
     # Interactive mode
     python agent.py --interactive
+    
+    # Continuous mode - run until done
+    python agent.py --continuous
     
     # Custom configuration
     python agent.py --task "..." --region us-west-2 --model anthropic.claude-3-opus-20240229-v1:0
@@ -1846,6 +2072,17 @@ Examples:
         "--interactive", "-i",
         action="store_true",
         help="Run in interactive mode"
+    )
+    parser.add_argument(
+        "--continuous", "-c",
+        action="store_true",
+        help="Run continuously until no more work (commits after each iteration)"
+    )
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=10,
+        help="Maximum iterations for continuous mode (default: 10)"
     )
     parser.add_argument(
         "--region",
@@ -1896,6 +2133,10 @@ Examples:
     # Run task or interactive mode
     if args.interactive:
         await agent.interactive_mode()
+    elif args.continuous:
+        # Continuous mode - run until done
+        task = args.task or DEFAULT_CONTINUOUS_TASK
+        await run_continuous(agent, task, args.max_iterations)
     elif args.task:
         result = await agent.run_task(args.task)
         print(result)

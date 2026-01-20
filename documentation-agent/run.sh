@@ -109,7 +109,28 @@ run_task() {
     fi
     setup_venv
     log_info "Running task with aws-vault ($AWS_VAULT_PROFILE): $task"
-    aws-vault exec "$AWS_VAULT_PROFILE" -- python agent.py --task "$task" --work-dir "$(pwd)/workspace" --output-dir "$(pwd)/output"
+    aws-vault exec "$AWS_VAULT_PROFILE" -- python agent.py --task "$task" --work-dir "$(pwd)/../" --output-dir "$(pwd)/../"
+}
+
+# Run continuously until done (commits after each iteration)
+run_continuous() {
+    local max_iterations="${1:-10}"
+    local log_file="logs/agent-continuous-$(date +%Y%m%d-%H%M%S).log"
+    mkdir -p logs
+    
+    setup_venv
+    log_info "Starting continuous mode (max $max_iterations iterations)"
+    log_info "Log file: $log_file"
+    log_info "Press Ctrl+C to stop"
+    echo ""
+    
+    aws-vault exec "$AWS_VAULT_PROFILE" -- python agent.py \
+        --continuous \
+        --max-iterations "$max_iterations" \
+        --work-dir "$(pwd)/../" \
+        --output-dir "$(pwd)/../" \
+        --model "${BEDROCK_MODEL_ID:-us.anthropic.claude-opus-4-5-20251101-v1:0}" \
+        2>&1 | tee "$log_file"
 }
 
 # Run in Docker interactive mode
@@ -163,6 +184,7 @@ Usage:
 Commands (Local Python + aws-vault):
     (none)          Start in interactive mode
     task "..."      Run a specific documentation task
+    continuous [N]  Run until done, committing after each iteration (max N, default 10)
 
 Commands (Docker):
     docker          Start Docker interactive mode
@@ -178,12 +200,14 @@ Utility:
 Examples:
     $0                                          # Interactive mode (local)
     $0 task "Create emergency response runbook" # Run specific task (local)
+    $0 continuous                               # Run until done (default 10 iterations)
+    $0 continuous 5                             # Run max 5 iterations
     $0 docker                                   # Interactive mode (Docker)
     $0 build                                    # Build Docker image
 
 AWS Authentication:
     Uses aws-vault with profile: $AWS_VAULT_PROFILE
-    Bedrock model: ${BEDROCK_MODEL_ID:-anthropic.claude-sonnet-4-20250514-v1:0}
+    Bedrock model: ${BEDROCK_MODEL_ID:-us.anthropic.claude-opus-4-5-20251101-v1:0}
 
 Environment Variables (from .env):
     AWS_PROFILE         AWS credentials profile (default: sso-dev03-admin)
@@ -204,6 +228,11 @@ main() {
             check_prerequisites
             shift
             run_task "$*"
+            ;;
+        continuous)
+            check_prerequisites
+            shift
+            run_continuous "${1:-10}"
             ;;
         docker)
             check_prerequisites
