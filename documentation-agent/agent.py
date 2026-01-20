@@ -1075,6 +1075,12 @@ You have access to the following tool categories:
 - Focus on actionable, practical content
 - Reference original sources for detailed information
 
+## THINKING OUT LOUD
+
+IMPORTANT: Before making tool calls, briefly explain what you're doing and why.
+Share your reasoning, decisions, and progress updates in text blocks between tool calls.
+This helps the human operator understand your thought process and monitor progress.
+
 ## Task Completion
 
 When you have completed the requested task:
@@ -1661,19 +1667,13 @@ Please continue from where you left off. Files in the file store are still acces
                     text = block.get("text", "")
                     response_text += text
                     
-                    # Print Claude's thinking/reasoning (truncated if very long)
+                    # Print ALL of Claude's thinking/reasoning - no truncation
                     if text.strip():
-                        # Show first part of thinking for context
-                        display_text = text.strip()
-                        if len(display_text) > 500:
-                            # For long text, show beginning and note it's truncated
-                            lines = display_text.split('\n')
-                            if len(lines) > 10:
-                                display_text = '\n'.join(lines[:10]) + f"\n... ({len(lines) - 10} more lines)"
-                            else:
-                                display_text = display_text[:500] + "..."
-                        
-                        print(f"\n💭 Claude's thinking:\n{display_text}\n")
+                        print(f"\n{'─'*60}")
+                        print(f"💭 Claude's thinking:")
+                        print(f"{'─'*60}")
+                        print(text.strip())
+                        print(f"{'─'*60}\n")
             
             # If no more tool use, we're done
             if stop_reason == "end_turn":
@@ -1824,6 +1824,8 @@ Please continue from where you left off. Files in the file store are still acces
 
 DEFAULT_CONTINUOUS_TASK = """Read .project/STATUS.md and .project/BACKLOG.md to understand the project state.
 Choose the single highest-priority incomplete item and create documentation for it.
+PRIORITIZATION: Work on items NOT marked as 'deferred' or 'complex' first. 
+Leave 'deferred' and 'complex' items until all other work is complete.
 Use Confluence (mcp_confluence) and GitHub (mcp_github) to research.
 Write the documentation to the appropriate location in the repository.
 Update .project/STATUS.md and .project/BACKLOG.md to reflect your progress."""
