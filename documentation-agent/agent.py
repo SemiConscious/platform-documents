@@ -83,19 +83,24 @@ class Config:
 
 class FileStore:
     """
-    A file-based cache for storing large tool results.
+    A file-based cache for storing ALL tool results.
     
-    When a tool returns data too large for the context window, it's saved here
-    and the agent can read it in chunks using the store access tool.
+    Strategy:
+    - Store ALL tool results with content hashing for deduplication
+    - For current requests: return full content if < 50K, else reference
+    - For historical messages: compact references replace full content
+    - This optimizes context by not re-sending data Claude has already processed
     """
     
     STORE_DIR = ".agent-store"
+    INLINE_THRESHOLD = 50000  # Return inline if < 50K chars
     
     def __init__(self, work_dir: Path):
         self.work_dir = Path(work_dir).resolve()
         self.store_path = self.work_dir / self.STORE_DIR
         self.store_path.mkdir(parents=True, exist_ok=True)
         self._index: dict[str, dict] = {}  # file_id -> metadata
+        self._content_hash_to_id: dict[str, str] = {}  # hash -> file_id for dedup
         self._load_index()
     
     def _index_path(self) -> Path:
@@ -106,6 +111,10 @@ class FileStore:
         try:
             if self._index_path().exists():
                 self._index = json.loads(self._index_path().read_text())
+                # Rebuild hash lookup
+                for file_id, meta in self._index.items():
+                    if "content_hash" in meta:
+                        self._content_hash_to_id[meta["content_hash"]] = file_id
         except Exception as e:
             logger.warning(f"Failed to load file store index: {e}")
             self._index = {}
@@ -117,9 +126,15 @@ class FileStore:
         except Exception as e:
             logger.warning(f"Failed to save file store index: {e}")
     
+    def _hash_content(self, content: str) -> str:
+        """Generate a short hash of content for deduplication."""
+        import hashlib
+        return hashlib.sha256(content.encode()).hexdigest()[:12]
+    
     def store(self, content: str, source: str, content_type: str = "text") -> dict:
         """
         Store content and return a reference.
+        Uses content hashing for deduplication - same content returns same ID.
         
         Args:
             content: The content to store
@@ -127,35 +142,56 @@ class FileStore:
             content_type: Type of content (text, json, etc.)
             
         Returns:
-            Dict with file_id, size, and info message
+            Dict with file_id, size, lines, and info message
         """
         import uuid
         
+        content_hash = self._hash_content(content)
+        size = len(content)
+        lines = content.count('\n') + 1
+        
+        # Check if we already have this content (dedup)
+        if content_hash in self._content_hash_to_id:
+            existing_id = self._content_hash_to_id[content_hash]
+            if existing_id in self._index:
+                # Already stored - return existing reference
+                return {
+                    "file_id": existing_id,
+                    "size_bytes": size,
+                    "lines": lines,
+                    "stored_in_file_store": True,
+                    "deduplicated": True,
+                    "message": f"Content ({size:,} bytes, {lines} lines) available via read_from_store(file_id='{existing_id}')"
+                }
+        
+        # New content - store it
         file_id = str(uuid.uuid4())[:8]
         file_path = self.store_path / f"{file_id}.txt"
         
         # Write content
         file_path.write_text(content)
-        size = len(content)
         
         # Update index
         self._index[file_id] = {
             "source": source,
             "content_type": content_type,
+            "content_hash": content_hash,
             "size": size,
-            "lines": content.count('\n') + 1,
+            "lines": lines,
             "created": datetime.now().isoformat(),
             "path": str(file_path.relative_to(self.work_dir)),
         }
+        self._content_hash_to_id[content_hash] = file_id
         self._save_index()
         
-        logger.info(f"📦 Stored large result: {file_id} ({size:,} bytes from {source})")
+        logger.info(f"📦 Stored result: {file_id} ({size:,} bytes from {source})")
         
         return {
             "file_id": file_id,
-            "size": size,
-            "lines": self._index[file_id]["lines"],
-            "source": source,
+            "size_bytes": size,
+            "lines": lines,
+            "stored_in_file_store": True,
+            "message": f"Content ({size:,} bytes, {lines} lines) available via read_from_store(file_id='{file_id}')"
         }
     
     def read(self, file_id: str, offset: int = 0, limit: Optional[int] = None) -> dict:
@@ -196,16 +232,24 @@ class FileStore:
             
             end = total_lines if limit is None else min(offset + limit, total_lines)
             selected_lines = lines[offset:end]
+            remaining_lines = total_lines - end
             
-            return {
+            result = {
                 "content": '\n'.join(selected_lines),
                 "file_id": file_id,
                 "offset": offset,
                 "lines_returned": len(selected_lines),
                 "total_lines": total_lines,
+                "total_size_bytes": metadata["size"],
                 "has_more": end < total_lines,
-                "source": metadata["source"],
+                "source": metadata.get("source", "unknown"),
             }
+            
+            if remaining_lines > 0:
+                result["remaining_lines"] = remaining_lines
+                result["hint"] = f"Use read_from_store(file_id='{file_id}', offset={end}) to get more"
+            
+            return result
             
         except Exception as e:
             return {"error": f"Failed to read file: {e}"}
@@ -1374,19 +1418,26 @@ Review the project status (.project/STATUS.md) and continue with the next logica
     
     def _truncate_result(self, result: dict, source: str = "unknown") -> dict:
         """
-        Handle large tool results by storing them in the file store.
-        Returns a reference if too large, or the original result if small enough.
+        Store ALL tool results and return appropriately sized response.
+        
+        Strategy:
+        - Always store the result in file store (with deduplication)
+        - If < INLINE_THRESHOLD (50K): return full content + file_id reference
+        - If >= INLINE_THRESHOLD: return only the file store reference
+        
+        This enables historical compression - older results can be replaced
+        with just the reference since they're stored.
         
         Args:
             result: The tool result dict
             source: Description of the source (tool name)
         """
-        result_str = json.dumps(result)
-        if len(result_str) <= self.MAX_TOOL_RESULT_CHARS:
+        # Skip if already a file store reference
+        if result.get("stored_in_file_store"):
             return result
         
-        # Result is too large - store it and return a reference
-        logger.info(f"📦 Result too large ({len(result_str):,} chars), storing in file store...")
+        result_str = json.dumps(result)
+        result_size = len(result_str)
         
         # Determine what content to store
         if "content" in result and isinstance(result["content"], str):
@@ -1396,31 +1447,131 @@ Review the project status (.project/STATUS.md) and continue with the next logica
             content = json.dumps(result["result"], indent=2)
             content_type = "json"
         else:
-            content = json.dumps(result, indent=2)
+            content = result_str
             content_type = "json"
         
-        # Store it
+        # Always store for later reference/historical compression
         store_info = self.file_store.store(content, source, content_type)
+        file_id = store_info["file_id"]
         
-        # Return a reference instead of the content
+        # Check threshold - use FileStore's INLINE_THRESHOLD
+        threshold = FileStore.INLINE_THRESHOLD
+        
+        if result_size <= threshold:
+            # Small enough - return full content with file_id for reference
+            result["_file_store_ref"] = {
+                "file_id": file_id,
+                "size_bytes": store_info["size_bytes"],
+                "lines": store_info["lines"],
+            }
+            return result
+        
+        # Too large - return only reference
+        logger.info(f"📦 Result too large ({result_size:,} chars > {threshold:,}), returning file store reference...")
+        
         return {
             "stored_in_file_store": True,
-            "file_id": store_info["file_id"],
-            "size_bytes": store_info["size"],
+            "file_id": file_id,
+            "size_bytes": store_info["size_bytes"],
             "lines": store_info["lines"],
             "source": source,
             "message": (
-                f"This result was too large ({store_info['size']:,} bytes, {store_info['lines']:,} lines) "
-                f"to include directly. Use the 'read_from_store' tool with file_id='{store_info['file_id']}' "
-                f"to read the content. You can specify offset and limit to read in chunks."
+                f"Result ({store_info['size_bytes']:,} bytes, {store_info['lines']:,} lines) "
+                f"stored in file store. Use read_from_store(file_id='{file_id}') to read. "
+                f"You can specify offset and limit to read in chunks."
             ),
-            "example_usage": {
-                "tool": "read_from_store",
-                "file_id": store_info["file_id"],
-                "offset": 0,
-                "limit": 100
-            }
         }
+    
+    def _compress_historical_messages(self, keep_recent: int = 2) -> None:
+        """
+        Compress older tool results in message history to save context space.
+        
+        Replaces full tool result content with compact file store references,
+        since the LLM has already processed this data and can retrieve it
+        if needed.
+        
+        Args:
+            keep_recent: Number of recent tool result messages to keep full
+        """
+        # Find all user messages with tool_result content
+        tool_result_indices = []
+        for i, msg in enumerate(self.messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict) and item.get("type") == "tool_result":
+                            tool_result_indices.append(i)
+                            break
+        
+        # Keep the most recent ones full, compress the rest
+        if len(tool_result_indices) <= keep_recent:
+            return  # Nothing to compress
+        
+        indices_to_compress = tool_result_indices[:-keep_recent]
+        compressed_count = 0
+        
+        for msg_idx in indices_to_compress:
+            msg = self.messages[msg_idx]
+            content = msg.get("content", [])
+            
+            if not isinstance(content, list):
+                continue
+            
+            new_content = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "tool_result":
+                    # Parse the tool result content
+                    try:
+                        result_content = item.get("content", "{}")
+                        if isinstance(result_content, str):
+                            result_data = json.loads(result_content)
+                        else:
+                            result_data = result_content
+                        
+                        # Check if it has a file store reference
+                        file_ref = result_data.get("_file_store_ref")
+                        if file_ref:
+                            # Replace with compact reference
+                            compact = {
+                                "stored_in_file_store": True,
+                                "file_id": file_ref["file_id"],
+                                "size_bytes": file_ref["size_bytes"],
+                                "lines": file_ref["lines"],
+                                "note": "Historical result - use read_from_store if needed"
+                            }
+                            item["content"] = json.dumps(compact)
+                            compressed_count += 1
+                        elif result_data.get("stored_in_file_store"):
+                            # Already a reference, keep as is
+                            pass
+                        else:
+                            # No file store ref - check if content is large
+                            if len(result_content) > 1000:
+                                # Store it now for future reference
+                                store_info = self.file_store.store(
+                                    result_content, 
+                                    "historical_compression",
+                                    "json"
+                                )
+                                compact = {
+                                    "stored_in_file_store": True,
+                                    "file_id": store_info["file_id"],
+                                    "size_bytes": store_info["size_bytes"],
+                                    "lines": store_info["lines"],
+                                    "note": "Historical result - use read_from_store if needed"
+                                }
+                                item["content"] = json.dumps(compact)
+                                compressed_count += 1
+                    except (json.JSONDecodeError, TypeError):
+                        pass  # Keep original if we can't parse
+                
+                new_content.append(item)
+            
+            msg["content"] = new_content
+        
+        if compressed_count > 0:
+            logger.info(f"📦 Compressed {compressed_count} historical tool results")
     
     def _format_mcp_call_details(self, tool_name: str, tool_input: dict) -> str:
         """Format MCP tool call details for human-readable logging."""
@@ -1626,6 +1777,9 @@ Please continue from where you left off. Files in the file store are still acces
                 
                 logger.info(f"🔄 Soft reset complete - context cleared, continuing with {len(continuation_prompt)} char summary")
                 print(f"\n✅ Soft reset complete - continuing with fresh context\n")
+            
+            # Compress historical tool results to save context space
+            self._compress_historical_messages(keep_recent=3)
             
             try:
                 # Get Claude's response
