@@ -348,7 +348,7 @@ class ShellTool:
         r"\brm\s+-rf\s+/",
         r"\bchmod\s+.*/",
         r"\bchown\s+.*/",
-        r">\s*/(?!workspace)",  # Redirect to absolute path outside workspace
+        r">\s*/(?!dev/null|workspace)",  # Redirect to absolute path (allow /dev/null)
         r"\bmkdir\s+-p\s+/",
         r"\bln\s+-s",  # Symlinks could escape sandbox
     ]
