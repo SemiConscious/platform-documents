@@ -1033,6 +1033,7 @@ class SubAgent:
     def __init__(
         self,
         task: PlanTask,
+        agent_id: str,
         shell: ShellTool,
         mcp: MCPClient,
         bedrock: BedrockClient,
@@ -1041,6 +1042,7 @@ class SubAgent:
         work_dir: Path,
     ):
         self.task = task
+        self.agent_id = agent_id  # Unique identifier for logging (e.g., "sub-1")
         self.shell = shell
         self.mcp = mcp
         self.bedrock = bedrock
@@ -1052,8 +1054,8 @@ class SubAgent:
         self._consecutive_errors = 0
 
     def _get_system_prompt(self) -> str:
-        """Get focused system prompt for sub-agent."""
-        return f"""You are a documentation specialist working on a SINGLE FOCUSED TASK.
+        """Get comprehensive system prompt for sub-agent."""
+        return f"""You are a documentation specialist creating COMPREHENSIVE technical documentation.
 
 ## Your Task
 {self.task.title}
@@ -1061,23 +1063,51 @@ class SubAgent:
 ## Task Description
 {self.task.description}
 
-## Target Files
-You should create/update these files: {", ".join(self.task.target_files)}
+## Suggested Files
+{", ".join(self.task.target_files)}
 
-## Available Tools
-You have access to shell tools (bash, read_file, write_file, list_directory),
-file store tools (read_from_store, list_store_files), and MCP tools for
-Confluence, GitHub, Document360, etc.
+## CRITICAL: Documentation Depth Requirements
 
-## Instructions
-1. Research the topic using available MCP tools
-2. Verify information by reading source code when possible
-3. Create comprehensive documentation in the target files
-4. Keep your work FOCUSED on this specific task only
+You MUST document with FULL TECHNICAL DETAIL:
+
+### For APIs/Services:
+- **Every endpoint**: Method, path, description, authentication required
+- **Request format**: All parameters (path, query, body), types, required/optional, defaults
+- **Response format**: Full schema with all fields, types, and example values
+- **Error responses**: All error codes, when they occur, error body format
+- **Example requests/responses**: Complete curl examples or code snippets
+
+### For Data Models:
+- **Database schemas**: All tables, columns, types, constraints, indexes
+- **Relationships**: Foreign keys, joins, cascade behavior
+- **Data flow**: How data moves through the system
+
+### For Service Integration:
+- **Dependencies**: What other services are called
+- **When**: Under what conditions calls are made
+- **Data exchanged**: Request/response formats for inter-service calls
+- **Failure handling**: What happens if dependency fails
+
+### For Configuration:
+- **All options**: Every config value, environment variable
+- **Defaults**: What happens if not set
+- **Examples**: Sample configuration files
+
+## You May Create Additional Files
+If the topic is large, subdivide into multiple files:
+- Main overview file
+- Separate API reference
+- Configuration guide
+- Troubleshooting guide
+
+## Research Process
+1. Search Confluence for existing documentation
+2. Find the GitHub repository
+3. READ THE ACTUAL SOURCE CODE - controllers, routes, models, services
+4. Document what the CODE does, not just what docs claim
 
 ## Important
 - Do NOT update STATUS.md or BACKLOG.md - that's handled by the coordinator
-- Focus ONLY on your assigned task
 - When done, provide a clear summary of what you created
 
 Current date: {datetime.now().strftime("%Y-%m-%d")}
@@ -1169,7 +1199,7 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
         target = obj
         for part in parts[:-1]:
             target = target[part] if isinstance(part, int) else target[part]
-        
+
         last_part = parts[-1]
         if isinstance(last_part, int):
             target[last_part] = value
@@ -1203,7 +1233,7 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
         truncated = copy.deepcopy(result)
         truncated_value = largest_value[:chars_for_content]
         self._set_nested_field(truncated, largest_field, truncated_value)
-        
+
         truncated["_truncated"] = {
             "field": largest_field,
             "shown": len(truncated_value),
@@ -1223,11 +1253,7 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
 
         store_info = self.file_store.store(result_str, source, "json")
 
-        available = self.bedrock.available_for_result(
-            self.messages, 
-            self._get_system_prompt(), 
-            self.tools
-        )
+        available = self.bedrock.available_for_result(self.messages, self._get_system_prompt(), self.tools)
 
         if result_size <= available:
             result["_file_store_ref"] = {
@@ -1236,11 +1262,8 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
             }
             return result
 
-        logger.info(
-            f"📦 SubAgent truncating result ({result_size:,} > {available:,} available) "
-            f"[file_id={store_info['file_id']}]"
-        )
-        
+        logger.info(f"[{self.agent_id}] 📦 Truncating result ({result_size:,} > {available:,} available) [file_id={store_info['file_id']}]")
+
         return self._truncate_to_fit(result, available, store_info)
 
     def _compress_historical_messages(self, keep_recent: int = 2) -> None:
@@ -1287,7 +1310,7 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
                         file_ref = result_data.get("_file_store_ref")
                         # Also check for truncated results which have file_id in _truncated
                         truncated_ref = result_data.get("_truncated")
-                        
+
                         if file_ref:
                             compact = {
                                 "compressed": True,
@@ -1328,11 +1351,11 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
             msg["content"] = new_content
 
         if compressed_count > 0:
-            logger.info(f"📦 SubAgent compressed {compressed_count} historical tool results")
+            logger.info(f"[{self.agent_id}] 📦 Compressed {compressed_count} historical tool results")
 
     async def run(self) -> TaskResult:
         """Execute the task and return result."""
-        logger.info(f"🚀 SubAgent starting: {self.task.title}")
+        logger.info(f"[{self.agent_id}] 🚀 Starting: {self.task.title}")
 
         self.messages = [
             {
@@ -1381,6 +1404,19 @@ When complete, provide a summary of what was created.""",
             content = response.get("content", [])
             stop_reason = response.get("stop_reason")
 
+            # Log thinking output
+            for block in content:
+                if block.get("type") == "text":
+                    text = block.get("text", "").strip()
+                    if text:
+                        logger.info(f"[{self.agent_id}] 💭 Thinking ({len(text)} chars):")
+                        for line in text.split("\n"):
+                            logger.info(f"[{self.agent_id}]    {line}")
+                        print(f"\n[{self.agent_id}] {'─' * 50}", flush=True)
+                        print(f"[{self.agent_id}] 💭 Thinking:", flush=True)
+                        print(text, flush=True)
+                        print(f"[{self.agent_id}] {'─' * 50}\n", flush=True)
+
             # Handle max_tokens
             if stop_reason == "max_tokens":
                 content = [b for b in content if not (b.get("type") == "tool_use" and not b.get("id"))]
@@ -1398,7 +1434,7 @@ When complete, provide a summary of what was created.""",
                     if block.get("type") == "text":
                         summary = block.get("text", "")
 
-                logger.info(f"✅ SubAgent complete: {self.task.title} ({turns} turns, {len(self._files_written)} files)")
+                logger.info(f"[{self.agent_id}] ✅ Complete: {self.task.title} ({turns} turns, {len(self._files_written)} files)")
                 return TaskResult(
                     task_id=self.task.id,
                     success=True,
@@ -1446,34 +1482,59 @@ class PlanningCoordinator:
 
     MAX_PARALLEL = 3  # Limit concurrent sub-agents to avoid rate limits
 
-    PLANNING_PROMPT = """Analyze the current documentation project state and create a DETAILED PLAN for this iteration.
+    PLANNING_PROMPT = """Analyze the project and select ONE high-priority item for COMPREHENSIVE documentation.
 
-Read .project/STATUS.md and .project/BACKLOG.md to understand what needs to be done.
+Read .project/STATUS.md and .project/BACKLOG.md first.
 
-Create a plan with 2-5 SPECIFIC, INDEPENDENT tasks that can be executed in PARALLEL.
-Each task should:
-- Be focused on a single documentation topic
-- Have clear target file(s) to create/update
-- NOT overlap with other tasks (avoid file conflicts)
+## Your Task
+1. Select the HIGHEST PRIORITY item (not 'deferred' or 'complex')
+2. Create a DEEP PLAN with as many subtasks as the topic requires
+3. Identify ADDITIONAL FILES needed for complete coverage
 
-Respond with a JSON array of tasks in this EXACT format:
+## Detail Requirements - BE COMPREHENSIVE
+Each subtask should aim to document:
+- **API Endpoints**: ALL routes, methods, parameters, headers
+- **Data Formats**: Complete request/response schemas with examples
+- **Database Effects**: Tables affected, queries performed, transactions
+- **Service Dependencies**: Which other services are called, when, why
+- **Configuration**: All config options, environment variables, defaults
+- **Error Handling**: Error codes, failure modes, retry behavior
+- **Authentication**: Auth requirements, token handling, permissions
+
+## Subtask Guidelines
+- Create as many subtasks as needed to fully cover the topic
+- Break down by logical component (e.g., "Auth API", "Data Models", "Integration Points")
+- Subtasks should be parallelizable (no dependencies between them)
+- Each subtask should produce DETAILED documentation, not summaries
+- Sub-agents will read actual source code to verify accuracy
+
+Respond with JSON:
 ```json
-[
-  {
-    "id": "task_1",
-    "title": "Short title",
-    "description": "Detailed description of what to research and document",
-    "target_files": ["path/to/file.md"],
-    "priority": 1
-  }
-]
+{
+  "main_topic": {
+    "title": "The backlog item",
+    "backlog_reference": "Exact text from BACKLOG.md"
+  },
+  "subtasks": [
+    {
+      "id": "subtask_1",
+      "title": "Short title",
+      "description": "Detailed description including WHAT to document and WHAT DETAIL to include",
+      "suggested_files": ["path/to/file.md"],
+      "priority": 1
+    }
+  ],
+  "additional_files": [
+    {"path": "path/to/extra.md", "purpose": "Why needed"}
+  ]
+}
 ```
 
 IMPORTANT:
 - Do NOT include STATUS.md or BACKLOG.md as target files
-- Each task gets its own sub-agent running in parallel
-- Keep tasks independent - no dependencies between them
-- Choose HIGH PRIORITY items first (not deferred/complex)
+- Each subtask gets its own sub-agent running in parallel
+- Keep subtasks independent - no dependencies between them
+- Focus on ONE main topic with deep, comprehensive coverage
 """
 
     REVIEW_PROMPT = """Review the results from parallel documentation tasks and update the project tracking files.
@@ -1508,6 +1569,22 @@ Provide a summary of what was accomplished this iteration.
         self.file_store = file_store
         self.tools = tools
         self.work_dir = work_dir
+        self._current_main_topic: Optional[dict] = None
+        self._additional_files: list[dict] = []
+
+    def _log_thinking(self, response: dict, agent_id: str) -> None:
+        """Log thinking/reasoning output from Claude."""
+        for block in response.get("content", []):
+            if block.get("type") == "text":
+                text = block.get("text", "").strip()
+                if text:
+                    logger.info(f"[{agent_id}] 💭 Thinking ({len(text)} chars):")
+                    for line in text.split("\n"):
+                        logger.info(f"[{agent_id}]    {line}")
+                    print(f"\n[{agent_id}] {'─' * 50}", flush=True)
+                    print(f"[{agent_id}] 💭 Thinking:", flush=True)
+                    print(text, flush=True)
+                    print(f"[{agent_id}] {'─' * 50}\n", flush=True)
 
     async def create_plan(self) -> list[PlanTask]:
         """Ask Claude to create a plan for this iteration."""
@@ -1529,6 +1606,9 @@ Provide a summary of what was accomplished this iteration.
                 tools=planning_tools,
             )
 
+            # Log any thinking from the planner
+            self._log_thinking(response, "planner")
+
             # Handle tool use (reading STATUS/BACKLOG)
             max_planning_turns = 5
             for _ in range(max_planning_turns):
@@ -1541,6 +1621,7 @@ Provide a summary of what was accomplished this iteration.
                 tool_results = []
                 for block in content:
                     if block.get("type") == "tool_use":
+                        logger.info(f"[planner] Tool: {block['name']}")
                         if block["name"] == "read_file":
                             result = self.shell.read_file(block["input"].get("path", ""))
                         elif block["name"] == "list_directory":
@@ -1551,6 +1632,9 @@ Provide a summary of what was accomplished this iteration.
 
                 messages.append({"role": "user", "content": tool_results})
                 response = self.bedrock.create_message(messages=messages, system="You are a documentation project planner.", tools=planning_tools)
+                
+                # Log thinking after each turn
+                self._log_thinking(response, "planner")
 
             # Extract plan from response
             plan_text = ""
@@ -1559,16 +1643,31 @@ Provide a summary of what was accomplished this iteration.
                     plan_text = block.get("text", "")
 
             # Parse JSON from response
-            tasks = self._parse_plan(plan_text)
+            main_topic, tasks, additional_files = self._parse_plan(plan_text)
+
+            if main_topic:
+                logger.info(f"📋 Main topic: {main_topic.get('title', 'Unknown')}")
+                print(f"\n  🎯 MAIN TOPIC: {main_topic.get('title', 'Unknown')}")
+                if main_topic.get("backlog_reference"):
+                    print(f"     Backlog: {main_topic.get('backlog_reference')}")
 
             if tasks:
-                logger.info(f"📋 Plan created with {len(tasks)} tasks:")
+                logger.info(f"📋 Plan created with {len(tasks)} subtasks:")
                 for t in tasks:
                     logger.info(f"   - {t.title} → {', '.join(t.target_files)}")
                     print(f"  📌 {t.title}")
                     print(f"     Files: {', '.join(t.target_files)}")
             else:
-                logger.warning("Failed to parse plan - no tasks extracted")
+                logger.warning("Failed to parse plan - no subtasks extracted")
+
+            if additional_files:
+                logger.info(f"📋 Additional files suggested: {len(additional_files)}")
+                for af in additional_files:
+                    logger.info(f"   - {af.get('path')}: {af.get('purpose')}")
+
+            # Store main_topic for review phase
+            self._current_main_topic = main_topic
+            self._additional_files = additional_files
 
             return tasks
 
@@ -1576,41 +1675,55 @@ Provide a summary of what was accomplished this iteration.
             logger.error(f"Planning failed: {e}")
             return []
 
-    def _parse_plan(self, text: str) -> list[PlanTask]:
-        """Parse plan JSON from Claude's response."""
+    def _parse_plan(self, text: str) -> Tuple[Optional[dict], list[PlanTask], list[dict]]:
+        """Parse plan JSON from Claude's response.
+        
+        Returns:
+            Tuple of (main_topic, subtasks, additional_files)
+        """
         try:
             # Find JSON in response
             json_match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1)
             else:
-                # Try to find raw JSON array
-                json_match = re.search(r"\[[\s\S]*\]", text)
+                # Try to find raw JSON object
+                json_match = re.search(r"\{[\s\S]*\}", text)
                 if json_match:
                     json_str = json_match.group(0)
                 else:
-                    return []
+                    return None, [], []
 
-            tasks_data = json.loads(json_str)
+            plan_data = json.loads(json_str)
+
+            # Handle new format with main_topic
+            main_topic = plan_data.get("main_topic")
+            additional_files = plan_data.get("additional_files", [])
+            
+            # Get subtasks (new format) or fall back to old array format
+            subtasks_data = plan_data.get("subtasks", [])
+            if not subtasks_data and isinstance(plan_data, list):
+                # Old format - array of tasks
+                subtasks_data = plan_data
 
             tasks = []
-            for t in tasks_data:
+            for t in subtasks_data:
                 tasks.append(
                     PlanTask(
-                        id=t.get("id", f"task_{len(tasks)}"),
+                        id=t.get("id", f"subtask_{len(tasks)}"),
                         title=t.get("title", "Untitled"),
                         description=t.get("description", ""),
-                        target_files=t.get("target_files", []),
+                        target_files=t.get("suggested_files", t.get("target_files", [])),
                         dependencies=t.get("dependencies", []),
                         priority=t.get("priority", 1),
                     )
                 )
 
-            return tasks
+            return main_topic, tasks, additional_files
 
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse plan JSON: {e}")
-            return []
+            return None, [], []
 
     async def execute_parallel(self, tasks: list[PlanTask]) -> list[TaskResult]:
         """Execute tasks in parallel using sub-agents."""
@@ -1622,11 +1735,13 @@ Provide a summary of what was accomplished this iteration.
         # Create semaphore to limit concurrency
         semaphore = asyncio.Semaphore(self.MAX_PARALLEL)
 
-        async def run_with_semaphore(task: PlanTask) -> TaskResult:
+        async def run_with_semaphore(task: PlanTask, agent_id: str) -> TaskResult:
             async with semaphore:
-                print(f"  ▶️  Starting: {task.title}")
+                print(f"  ▶️  [{agent_id}] Starting: {task.title}")
+                logger.info(f"[{agent_id}] Starting task: {task.title}")
                 sub_agent = SubAgent(
                     task=task,
+                    agent_id=agent_id,
                     shell=self.shell,
                     mcp=self.mcp,
                     bedrock=self.bedrock,
@@ -1636,11 +1751,15 @@ Provide a summary of what was accomplished this iteration.
                 )
                 result = await sub_agent.run()
                 status = "✅" if result.success else "❌"
-                print(f"  {status} Finished: {task.title} ({result.turns_used} turns, {len(result.files_created)} files)")
+                print(f"  {status} [{agent_id}] Finished: {task.title} ({result.turns_used} turns, {len(result.files_created)} files)")
+                logger.info(f"[{agent_id}] Finished: {task.title} ({result.turns_used} turns, {len(result.files_created)} files)")
                 return result
 
-        # Run all tasks in parallel
-        results = await asyncio.gather(*[run_with_semaphore(t) for t in tasks], return_exceptions=True)
+        # Run all tasks in parallel with unique agent IDs
+        results = await asyncio.gather(
+            *[run_with_semaphore(task, f"sub-{i+1}") for i, task in enumerate(tasks)],
+            return_exceptions=True
+        )
 
         # Convert exceptions to failed results
         final_results = []
@@ -2299,7 +2418,7 @@ Original task: {original_task}"""
     def _find_largest_string_field(self, obj: Any, path: str = "") -> Tuple[Optional[str], str]:
         """
         Recursively find the largest string field in a dict.
-        
+
         Returns:
             Tuple of (field_path, field_value) for the largest string field.
             Returns (None, "") if no string field found.
@@ -2365,7 +2484,7 @@ Original task: {original_task}"""
                 target = target[part]
             else:
                 target = target[part]
-        
+
         last_part = parts[-1]
         if isinstance(last_part, int):
             target[last_part] = value
@@ -2375,7 +2494,7 @@ Original task: {original_task}"""
     def _truncate_to_fit(self, result: dict, max_chars: int, store_info: dict) -> dict:
         """
         Truncate the largest text field to fit in available context space.
-        
+
         Returns the truncated result with _truncated metadata added.
         """
         # Find the largest string field
@@ -2409,7 +2528,7 @@ Original task: {original_task}"""
         truncated = copy.deepcopy(result)
         truncated_value = largest_value[:chars_for_content]
         self._set_nested_field(truncated, largest_field, truncated_value)
-        
+
         truncated["_truncated"] = {
             "field": largest_field,
             "shown": len(truncated_value),
@@ -2422,17 +2541,17 @@ Original task: {original_task}"""
     def _process_tool_result(self, result: dict, source: str = "unknown") -> dict:
         """
         Process tool result: store in file store, truncate only if needed.
-        
+
         Strategy:
         - Always store the full result in file store for later retrieval
         - Calculate available context space
         - If result fits: return as-is with _file_store_ref for later compression
         - If result too big: truncate largest text field and add _truncated metadata
-        
+
         Args:
             result: The tool result dict
             source: Description of the source (tool name)
-        
+
         Returns:
             The result, possibly truncated with _truncated metadata if it was too large
         """
@@ -2447,11 +2566,7 @@ Original task: {original_task}"""
         store_info = self.file_store.store(result_str, source, "json")
 
         # Calculate available context space
-        available = self.bedrock.available_for_result(
-            self.messages, 
-            self._get_system_prompt(), 
-            self.tools
-        )
+        available = self.bedrock.available_for_result(self.messages, self._get_system_prompt(), self.tools)
 
         # If result fits, return as-is with file reference for later compression
         if result_size <= available:
@@ -2462,11 +2577,8 @@ Original task: {original_task}"""
             return result
 
         # Result too big for context - need to truncate
-        logger.info(
-            f"📦 Truncating result ({result_size:,} chars > {available:,} available) "
-            f"[file_id={store_info['file_id']}]"
-        )
-        
+        logger.info(f"📦 Truncating result ({result_size:,} chars > {available:,} available) [file_id={store_info['file_id']}]")
+
         return self._truncate_to_fit(result, available, store_info)
 
     def _compress_historical_messages(self, keep_recent: int = 2) -> None:
@@ -2520,7 +2632,7 @@ Original task: {original_task}"""
                         file_ref = result_data.get("_file_store_ref")
                         # Also check for truncated results which have file_id in _truncated
                         truncated_ref = result_data.get("_truncated")
-                        
+
                         if file_ref:
                             # Replace with compact reference
                             compact = {
