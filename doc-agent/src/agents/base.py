@@ -1,17 +1,19 @@
 """Base agent class with Claude integration."""
 
 import asyncio
+import json
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional, TypeVar, Generic
+from typing import Any, Optional, TypeVar, Generic, Union
 from pathlib import Path
 
 from anthropic import AsyncAnthropic
 
 from ..knowledge import KnowledgeGraph, KnowledgeStore
 from ..mcp import MCPClient
+from ..context import FileStore, FileReference
 
 logger = logging.getLogger("doc-agent.agents.base")
 
@@ -34,11 +36,12 @@ class AgentContext:
     Shared context passed to all agents.
     
     Contains references to shared resources like the knowledge graph,
-    MCP client, and configuration.
+    MCP client, file store, and configuration.
     """
     knowledge_graph: KnowledgeGraph
     store: KnowledgeStore
     mcp_client: MCPClient
+    file_store: FileStore
     output_dir: Path
     config: dict[str, Any]
     
@@ -99,6 +102,83 @@ class BaseAgent(ABC):
     def mcp(self) -> MCPClient:
         """Access to the MCP client."""
         return self.context.mcp_client
+    
+    @property
+    def file_store(self) -> FileStore:
+        """Access to the file store for context management."""
+        return self.context.file_store
+    
+    def store_large_content(
+        self,
+        content: str,
+        source: Optional[str] = None,
+    ) -> Union[str, FileReference]:
+        """
+        Store content if it exceeds the threshold.
+        
+        Use this to wrap large tool responses or intermediate results
+        to keep the conversation context manageable.
+        
+        Args:
+            content: The content to potentially store
+            source: Optional source identifier
+            
+        Returns:
+            Original content if small, FileReference if stored
+        """
+        return self.file_store.store_if_large(
+            content,
+            source=source or self.name,
+        )
+    
+    async def store_large_content_with_summary(
+        self,
+        content: str,
+        source: Optional[str] = None,
+    ) -> Union[str, FileReference]:
+        """
+        Store content with AI-generated summary if it exceeds threshold.
+        
+        Args:
+            content: The content to potentially store
+            source: Optional source identifier
+            
+        Returns:
+            Original content if small, FileReference with summary if stored
+        """
+        return await self.file_store.store_if_large_async(
+            content,
+            source=source or self.name,
+            generate_summary=True,
+        )
+    
+    def format_for_context(
+        self,
+        data: Any,
+        source: Optional[str] = None,
+    ) -> str:
+        """
+        Format data for inclusion in conversation context.
+        
+        Automatically stores large content and returns a reference.
+        
+        Args:
+            data: Data to format (will be JSON-serialized if not string)
+            source: Optional source identifier
+            
+        Returns:
+            String suitable for conversation context
+        """
+        if isinstance(data, str):
+            content = data
+        else:
+            content = json.dumps(data, indent=2, default=str)
+        
+        result = self.store_large_content(content, source)
+        
+        if isinstance(result, FileReference):
+            return result.to_context_string()
+        return result
     
     @abstractmethod
     async def run(self) -> AgentResult:

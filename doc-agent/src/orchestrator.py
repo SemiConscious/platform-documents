@@ -6,9 +6,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from anthropic import AsyncAnthropic
+
 from .agents.base import AgentContext, AgentResult, ParallelAgentRunner
 from .knowledge import KnowledgeGraph, KnowledgeStore
 from .mcp import MCPClient
+from .context import FileStore, FileStoreTool
 from .utils.logging import get_logger
 
 logger = get_logger("orchestrator")
@@ -74,6 +77,13 @@ class Orchestrator:
             timeout=config.get("mcp", {}).get("timeout", 30),
         )
         
+        # Initialize file store for context management (session-only)
+        self.file_store = FileStore(threshold_bytes=1024)  # 1KB threshold
+        self.file_store_tool = FileStoreTool(self.file_store)
+        
+        # Anthropic client for summary generation
+        self.anthropic: Optional[AsyncAnthropic] = None
+        
         # Phase results
         self.phase_results: dict[str, PhaseResult] = {}
         
@@ -90,7 +100,49 @@ class Orchestrator:
         # Connect to MCP
         await self.mcp_client.connect()
         
+        # Initialize Anthropic client and set up summary generator
+        self.anthropic = AsyncAnthropic()
+        self.file_store.set_summary_generator(self._generate_summary)
+        
         logger.info(f"Initialized with {self.store.graph.node_count} existing entities")
+    
+    async def _generate_summary(self, content: str) -> str:
+        """
+        Generate an AI summary of content for the file store.
+        
+        Args:
+            content: The content to summarize
+            
+        Returns:
+            A concise summary
+        """
+        if not self.anthropic:
+            return ""
+        
+        # Truncate very long content for summary generation
+        content_for_summary = content[:8000] if len(content) > 8000 else content
+        
+        try:
+            llm_config = self.config.get("llm", {})
+            model = llm_config.get("model", "claude-sonnet-4-20250514")
+            
+            response = await self.anthropic.messages.create(
+                model=model,
+                max_tokens=200,
+                temperature=0.3,
+                messages=[{
+                    "role": "user",
+                    "content": f"Summarize this content in 1-2 sentences, focusing on what it contains and its key information:\n\n{content_for_summary}"
+                }],
+            )
+            
+            if response.content and len(response.content) > 0:
+                return response.content[0].text
+            return ""
+            
+        except Exception as e:
+            logger.warning(f"Failed to generate summary: {e}")
+            return ""
     
     async def shutdown(self) -> None:
         """Shutdown the orchestrator and save state."""
@@ -101,6 +153,11 @@ class Orchestrator:
         
         # Disconnect from MCP
         await self.mcp_client.disconnect()
+        
+        # Clear file store (session-only)
+        file_store_stats = self.file_store.get_stats()
+        logger.info(f"Clearing file store: {file_store_stats['file_count']} files, {file_store_stats['total_size_bytes']} bytes")
+        self.file_store.clear()
     
     def create_context(self, dry_run: bool = False, verbose: bool = False) -> AgentContext:
         """Create an agent context with current state."""
@@ -108,6 +165,7 @@ class Orchestrator:
             knowledge_graph=self.store.graph,
             store=self.store,
             mcp_client=self.mcp_client,
+            file_store=self.file_store,
             output_dir=self.output_dir,
             config=self.config,
             dry_run=dry_run,
@@ -378,6 +436,7 @@ class Orchestrator:
             "documents": {
                 "total": len(self.store.get_all_document_paths()),
             },
+            "file_store": self.file_store.get_stats(),
             "phases": {
                 name: {
                     "success": result.success,
@@ -388,3 +447,7 @@ class Orchestrator:
                 for name, result in self.phase_results.items()
             },
         }
+    
+    def get_file_store_tool(self) -> FileStoreTool:
+        """Get the file store tool for LLM tool use."""
+        return self.file_store_tool
