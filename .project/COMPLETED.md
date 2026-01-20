@@ -4,4 +4,4 @@ Items completed during this documentation project, with dates.
 
 ---
 
-*Items are moved here from BACKLOG.md when completed*
+*No items completed yet. Items will be moved here from BACKLOG.md as they are finished.*
