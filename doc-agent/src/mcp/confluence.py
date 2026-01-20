@@ -99,20 +99,20 @@ class ConfluenceClient:
         Search for Confluence pages.
         
         Args:
-            query: Search query (CQL or natural language)
+            query: Search query (natural language or keywords)
             space_key: Optional space to limit search
             
         Returns:
             List of matching pages
         """
-        search_query = query
+        args = {
+            "operation": "search_content",
+            "query": query,
+        }
         if space_key:
-            search_query = f'space = "{space_key}" AND ({query})'
+            args["spaceKey"] = space_key
         
-        response = await self.mcp.call_tool(self.TOOL_NAME, {
-            "operation": "search_pages",
-            "query": search_query,
-        })
+        response = await self.mcp.call_tool(self.TOOL_NAME, args)
         
         if not response.success:
             logger.error(f"Search failed: {response.error}")
@@ -121,12 +121,15 @@ class ConfluenceClient:
         pages = []
         data = response.data
         
-        # Handle various response formats
-        results = []
-        if isinstance(data, list):
-            results = data
-        elif isinstance(data, dict):
+        # Handle nested response format
+        if isinstance(data, dict):
+            if "data" in data:
+                data = data["data"]
             results = data.get("results", data.get("pages", []))
+        elif isinstance(data, list):
+            results = data
+        else:
+            results = []
         
         for page_data in results:
             try:
@@ -222,7 +225,35 @@ class ConfluenceClient:
         space_key: str,
     ) -> list[ConfluencePage]:
         """Get all pages in a space."""
-        return await self.search(f'space = "{space_key}"')
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "get_space_content",
+            "spaceKey": space_key,
+        })
+        
+        if not response.success:
+            logger.error(f"Get pages in space failed: {response.error}")
+            return []
+        
+        pages = []
+        data = response.data
+        
+        # Handle nested response format
+        if isinstance(data, dict):
+            if "data" in data:
+                data = data["data"]
+            results = data.get("pages", data.get("results", []))
+        elif isinstance(data, list):
+            results = data
+        else:
+            results = []
+        
+        for page_data in results:
+            try:
+                pages.append(ConfluencePage.from_dict(page_data))
+            except Exception as e:
+                logger.warning(f"Failed to parse page: {e}")
+        
+        return pages
     
     async def get_pages_by_label(
         self,
@@ -240,7 +271,7 @@ class ConfluenceClient:
         """
         Find architecture-related documentation across spaces.
         
-        Searches for pages with architecture-related labels or titles.
+        Searches for pages with architecture-related terms.
         """
         all_pages = []
         
@@ -251,19 +282,24 @@ class ConfluenceClient:
             "system diagram",
             "technical spec",
             "integration",
-            "API",
+            "API documentation",
         ]
         
+        for term in search_terms:
+            try:
+                # Search across all spaces
+                pages = await self.search(term)
+                all_pages.extend(pages)
+            except Exception as e:
+                logger.warning(f"Search failed for {term}: {e}")
+        
+        # Also get pages from specific spaces
         for space_key in space_keys:
-            for term in search_terms:
-                try:
-                    pages = await self.search(
-                        f'title ~ "{term}" OR text ~ "{term}"',
-                        space_key=space_key,
-                    )
-                    all_pages.extend(pages)
-                except Exception as e:
-                    logger.warning(f"Search failed for {term} in {space_key}: {e}")
+            try:
+                pages = await self.get_pages_in_space(space_key)
+                all_pages.extend(pages)
+            except Exception as e:
+                logger.warning(f"Failed to get pages from space {space_key}: {e}")
         
         # Deduplicate by page ID
         seen_ids = set()

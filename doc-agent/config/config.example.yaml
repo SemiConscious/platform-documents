@@ -91,10 +91,10 @@ sources:
     trust_level: low         # Content may be outdated
     disclaimer: "Note: This information is sourced from Confluence and may not reflect current implementation. Refer to source code for authoritative details."
     spaces:
-      - ARCH
-      - ENG
-      - OPS
-      - PLAT
+      - A          # Architecture (actual key, not ARCH)
+      - CO         # Platform Support and Engineering
+      - OPs        # Operations (case sensitive!)
+      - SRE        # SRE
     exclude_labels:
       - draft
       - deprecated

@@ -92,10 +92,9 @@ class ConfluenceHarvesterAgent(BaseAgent):
                 
                 for page in pages:
                     try:
-                        # Skip if already processed and not updated
-                        if page.id in processed_pages and last_run:
-                            if page.modified and page.modified < datetime.fromisoformat(last_run):
-                                continue
+                        # Skip if already processed (we don't have modification dates from list)
+                        if page.id in processed_pages:
+                            continue
                         
                         # Process the page
                         document = await self._process_page(page)
@@ -163,11 +162,11 @@ class ConfluenceHarvesterAgent(BaseAgent):
         """
         self.logger.debug(f"Processing page: {page.title}")
         
-        # Get full content if not already loaded
-        content = page.content
+        # Get full content if not already loaded (body is the HTML content)
+        content = page.body
         if not content:
             full_page = await self.confluence.get_page(page.id)
-            content = full_page.content if full_page else None
+            content = full_page.body if full_page else None
         
         # Classify the document
         doc_type = await self._classify_document(page, content, is_architecture)
@@ -189,15 +188,15 @@ class ConfluenceHarvesterAgent(BaseAgent):
             content=content,
             labels=page.labels + [doc_type],
             linked_services=doc_info.get("services", []),
-            last_modified=page.modified,
-            sources=[page.url],
+            last_modified=None,  # Not available from list response
+            sources=[page.url] if page.url else [],
             # Trust level: Confluence content may be outdated
             trust_level=self.trust_level,
             disclaimer=self.disclaimer,
             metadata={
                 "space": page.space_key,
                 "doc_type": doc_type,
-                "author": page.author,
+                "page_version": page.version,
                 "key_topics": doc_info.get("topics", []),
                 "is_architecture": is_architecture,
                 "is_outdated": doc_info.get("is_outdated", False),

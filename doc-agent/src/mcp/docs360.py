@@ -17,252 +17,108 @@ class Docs360Article:
     content: Optional[str] = None
     url: Optional[str] = None
     category: Optional[str] = None
-    subcategory: Optional[str] = None
-    tags: list[str] = None
-    last_modified: Optional[str] = None
-    
-    def __post_init__(self):
-        if self.tags is None:
-            self.tags = []
+    score: float = 0.0
     
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Docs360Article":
         """Create from dictionary response."""
+        # Handle various response formats
         return cls(
-            id=data.get("id", data.get("articleId", "")),
+            id=str(data.get("id", data.get("articleId", data.get("slug", "")))),
             title=data.get("title", data.get("name", "")),
-            content=data.get("content", data.get("body", "")),
-            url=data.get("url", data.get("link", "")),
-            category=data.get("category", data.get("categoryName", "")),
-            subcategory=data.get("subcategory", data.get("subcategoryName", "")),
-            tags=data.get("tags", data.get("keywords", [])),
-            last_modified=data.get("lastModified", data.get("updatedAt", "")),
-        )
-
-
-@dataclass
-class Docs360Category:
-    """A category in Docs360."""
-    id: str
-    name: str
-    description: Optional[str] = None
-    article_count: int = 0
-    subcategories: list[str] = None
-    
-    def __post_init__(self):
-        if self.subcategories is None:
-            self.subcategories = []
-    
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Docs360Category":
-        """Create from dictionary response."""
-        return cls(
-            id=data.get("id", data.get("categoryId", "")),
-            name=data.get("name", data.get("title", "")),
-            description=data.get("description", ""),
-            article_count=data.get("articleCount", data.get("count", 0)),
-            subcategories=data.get("subcategories", []),
+            content=data.get("content", data.get("body", data.get("snippet", data.get("description", "")))),
+            url=data.get("url", data.get("link", data.get("public_url", ""))),
+            category=data.get("category", data.get("categoryName", data.get("category_name", ""))),
+            score=float(data.get("score", data.get("relevance", 0.0))),
         )
 
 
 class Docs360Client:
     """
-    Docs360 operations via the Natterbox MCP server.
+    Docs360 semantic search via the Natterbox MCP server.
     
-    Docs360 is Natterbox's public-facing documentation portal.
+    Docs360 is Natterbox's public-facing documentation portal (Document360).
     Content here should be accurate and up-to-date.
     
-    Uses the 'docs360' MCP tool with operation parameter.
+    Uses the 'docs360_search' MCP tool which provides AI-powered semantic
+    vector search using Google Cloud Vertex AI.
+    
+    Key features:
+    - Semantic search that understands meaning and intent
+    - Returns up to 5 results per query
+    - Results include direct links to original articles
+    - Best used with natural language questions
     """
     
-    TOOL_NAME = "docs360"
+    TOOL_NAME = "docs360_search"
     
     def __init__(self, mcp_client: MCPClient):
         self.mcp = mcp_client
     
-    async def list_categories(self) -> list[Docs360Category]:
+    async def search(self, query: str) -> list[Docs360Article]:
         """
-        List all documentation categories.
+        Perform semantic search on Docs360 knowledge base.
         
+        Args:
+            query: Natural language search query (questions work best)
+            
         Returns:
-            List of Docs360Category objects
+            List of up to 5 matching Docs360Article objects
         """
         response = await self.mcp.call_tool(self.TOOL_NAME, {
-            "operation": "list_categories",
-        })
-        
-        if not response.success:
-            logger.error(f"Failed to list categories: {response.error}")
-            return []
-        
-        categories = []
-        data = response.data
-        
-        # Handle nested response format
-        if isinstance(data, dict):
-            if "data" in data and isinstance(data["data"], dict):
-                data = data["data"].get("categories", [])
-            elif "categories" in data:
-                data = data["categories"]
-        
-        if isinstance(data, list):
-            for cat_data in data:
-                try:
-                    categories.append(Docs360Category.from_dict(cat_data))
-                except Exception as e:
-                    logger.warning(f"Failed to parse category: {e}")
-        
-        return categories
-    
-    async def get_category(self, category_id: str) -> Optional[Docs360Category]:
-        """
-        Get a specific category with its details.
-        
-        Args:
-            category_id: The category ID
-            
-        Returns:
-            Docs360Category or None if not found
-        """
-        response = await self.mcp.call_tool(self.TOOL_NAME, {
-            "operation": "get_category",
-            "categoryId": category_id,
-        })
-        
-        if not response.success:
-            logger.error(f"Failed to get category: {response.error}")
-            return None
-        
-        if response.data:
-            data = response.data
-            if isinstance(data, dict) and "data" in data:
-                data = data["data"]
-            return Docs360Category.from_dict(data)
-        
-        return None
-    
-    async def list_articles(
-        self,
-        category_id: Optional[str] = None,
-        limit: int = 100,
-    ) -> list[Docs360Article]:
-        """
-        List documentation articles.
-        
-        Args:
-            category_id: Optional category to filter by
-            limit: Maximum number of articles to return
-            
-        Returns:
-            List of Docs360Article objects
-        """
-        args = {
-            "operation": "list_articles",
-            "limit": limit,
-        }
-        if category_id:
-            args["categoryId"] = category_id
-        
-        response = await self.mcp.call_tool(self.TOOL_NAME, args)
-        
-        if not response.success:
-            logger.error(f"Failed to list articles: {response.error}")
-            return []
-        
-        articles = []
-        data = response.data
-        
-        # Handle nested response format
-        if isinstance(data, dict):
-            if "data" in data and isinstance(data["data"], dict):
-                data = data["data"].get("articles", [])
-            elif "articles" in data:
-                data = data["articles"]
-        
-        if isinstance(data, list):
-            for article_data in data:
-                try:
-                    articles.append(Docs360Article.from_dict(article_data))
-                except Exception as e:
-                    logger.warning(f"Failed to parse article: {e}")
-        
-        return articles
-    
-    async def get_article(self, article_id: str) -> Optional[Docs360Article]:
-        """
-        Get a specific article with full content.
-        
-        Args:
-            article_id: The article ID
-            
-        Returns:
-            Docs360Article with content or None
-        """
-        response = await self.mcp.call_tool(self.TOOL_NAME, {
-            "operation": "get_article",
-            "articleId": article_id,
-        })
-        
-        if not response.success:
-            logger.error(f"Failed to get article: {response.error}")
-            return None
-        
-        if response.data:
-            data = response.data
-            if isinstance(data, dict) and "data" in data:
-                data = data["data"]
-            return Docs360Article.from_dict(data)
-        
-        return None
-    
-    async def search(
-        self,
-        query: str,
-        category_id: Optional[str] = None,
-        limit: int = 50,
-    ) -> list[Docs360Article]:
-        """
-        Search documentation articles.
-        
-        Args:
-            query: Search query
-            category_id: Optional category to filter results
-            limit: Maximum results to return
-            
-        Returns:
-            List of matching Docs360Article objects
-        """
-        args = {
-            "operation": "search",
             "query": query,
-            "limit": limit,
-        }
-        if category_id:
-            args["categoryId"] = category_id
-        
-        response = await self.mcp.call_tool(self.TOOL_NAME, args)
+        })
         
         if not response.success:
-            logger.error(f"Search failed: {response.error}")
+            logger.error(f"Docs360 search failed: {response.error}")
             return []
         
         articles = []
         data = response.data
         
-        # Handle nested response format
+        # Handle various response formats
+        if isinstance(data, str):
+            # Sometimes returns as raw text - try to parse it
+            logger.debug(f"Got string response: {data[:200]}...")
+            return []
+        
         if isinstance(data, dict):
-            if "data" in data and isinstance(data["data"], dict):
-                data = data["data"].get("results", data["data"].get("articles", []))
-            elif "results" in data:
+            # Could be nested in results/articles/items
+            if "results" in data:
                 data = data["results"]
             elif "articles" in data:
                 data = data["articles"]
+            elif "items" in data:
+                data = data["items"]
+            elif "data" in data:
+                data = data["data"]
         
         if isinstance(data, list):
-            for article_data in data:
+            for item in data:
                 try:
-                    articles.append(Docs360Article.from_dict(article_data))
+                    if isinstance(item, dict):
+                        articles.append(Docs360Article.from_dict(item))
+                    elif isinstance(item, str):
+                        # Sometimes results are just text/URLs
+                        logger.debug(f"Got string item: {item[:100]}...")
                 except Exception as e:
                     logger.warning(f"Failed to parse search result: {e}")
         
+        logger.debug(f"Docs360 search for '{query}' returned {len(articles)} results")
         return articles
+    
+    async def search_topics(self, topics: list[str]) -> dict[str, list[Docs360Article]]:
+        """
+        Search for multiple topics and return results grouped by topic.
+        
+        Args:
+            topics: List of topics/queries to search for
+            
+        Returns:
+            Dict mapping topic to list of articles
+        """
+        results = {}
+        for topic in topics:
+            articles = await self.search(topic)
+            results[topic] = articles
+        return results
