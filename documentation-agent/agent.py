@@ -18,16 +18,16 @@ Usage:
 
 import argparse
 import asyncio
+import copy
 import json
 import logging
 import os
 import re
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional, Tuple
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -216,7 +216,7 @@ class FileStore:
         Returns:
             Dict with content, metadata, and whether there's more
         """
-        DEFAULT_LIMIT = 10000  # ~2500 tokens worth
+        DEFAULT_LIMIT = 50000  # ~12500 tokens worth
 
         if file_id not in self._index:
             return {"error": f"File ID '{file_id}' not found in store"}
@@ -314,18 +314,18 @@ class FileStore:
             {
                 "name": "read_from_store",
                 "description": (
-                    "Read content from the file store using CHARACTER-based offsets. "
-                    "Use this to access large results that were too big to return directly. "
-                    "Returns a 'text' field with the content (extracted from original result). "
-                    "ALWAYS check 'has_more' in the response - if true, call again with "
-                    "the 'next_offset' value to get the remaining content."
+                    "Read data from the file store. Use this to:\n"
+                    "1. Continue reading a truncated result (see _truncated.file_id in tool results)\n"
+                    "2. Retrieve a compressed historical result (see compressed.file_id)\n"
+                    "Specify offset and limit for chunked reading (CHARACTER-based, not lines).\n"
+                    "ALWAYS check 'has_more' in the response - if true, use next_offset to continue."
                 ),
                 "input_schema": {
                     "type": "object",
                     "properties": {
-                        "file_id": {"type": "string", "description": "The file ID returned when the result was stored"},
-                        "offset": {"type": "integer", "description": "Character position to start from (0-based). Use next_offset from previous response to continue. Default: 0"},
-                        "limit": {"type": "integer", "description": "Maximum characters to return. Default: 10000 chars (~2500 tokens)"},
+                        "file_id": {"type": "string", "description": "The file ID from _truncated.file_id or compressed.file_id"},
+                        "offset": {"type": "integer", "description": "Character position to start from (0-based). Use next_offset from previous response. Default: 0"},
+                        "limit": {"type": "integer", "description": "Maximum characters to return. Default: 50000 chars (~12500 tokens)"},
                     },
                     "required": ["file_id"],
                 },
@@ -908,6 +908,7 @@ class BedrockClient:
     # Opus has 200K token context, ~4 chars per token = ~800K chars
     CONTEXT_WARNING_CHARS = 400000  # Warn at ~100K tokens
     CONTEXT_LIMIT_CHARS = 700000  # Hard limit at ~175K tokens
+    SAFETY_BUFFER = 100000  # Reserve for response + safety margin
 
     def __init__(self, config: Config):
         self.config = config
@@ -927,6 +928,11 @@ class BedrockClient:
         size += len(json.dumps(tools))
         size += len(json.dumps(messages))
         return size
+
+    def available_for_result(self, messages: list[dict], system: str, tools: list[dict]) -> int:
+        """Calculate how many chars are available for a new tool result."""
+        current = self.estimate_context_size(messages, system, tools)
+        return max(0, self.CONTEXT_LIMIT_CHARS - current - self.SAFETY_BUFFER)
 
     def create_message(
         self,
@@ -1105,53 +1111,137 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
 
         return result
 
-    def _truncate_result(self, result: dict, source: str = "unknown") -> dict:
-        """Store large results in file store, extracting text content when possible."""
-        if result.get("stored_in_file_store"):
+    def _find_largest_string_field(self, obj: Any, path: str = "") -> Tuple[Optional[str], str]:
+        """Recursively find the largest string field in a dict."""
+        largest_path: Optional[str] = None
+        largest_value = ""
+
+        if isinstance(obj, str):
+            return path or "root", obj
+        elif isinstance(obj, dict):
+            for key, value in obj.items():
+                if key.startswith("_"):
+                    continue
+                current_path = f"{path}.{key}" if path else key
+                if isinstance(value, str) and len(value) > len(largest_value):
+                    largest_path = current_path
+                    largest_value = value
+                elif isinstance(value, dict):
+                    sub_path, sub_value = self._find_largest_string_field(value, current_path)
+                    if len(sub_value) > len(largest_value):
+                        largest_path = sub_path
+                        largest_value = sub_value
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                current_path = f"{path}[{i}]"
+                sub_path, sub_value = self._find_largest_string_field(item, current_path)
+                if len(sub_value) > len(largest_value):
+                    largest_path = sub_path
+                    largest_value = sub_value
+
+        return largest_path, largest_value
+
+    def _set_nested_field(self, obj: Any, path: str, value: Any) -> None:
+        """Set a nested field by path."""
+        parts = []
+        current = ""
+        i = 0
+        while i < len(path):
+            if path[i] == ".":
+                if current:
+                    parts.append(current)
+                current = ""
+            elif path[i] == "[":
+                if current:
+                    parts.append(current)
+                current = ""
+                j = i + 1
+                while j < len(path) and path[j] != "]":
+                    j += 1
+                parts.append(int(path[i + 1 : j]))
+                i = j
+            else:
+                current += path[i]
+            i += 1
+        if current:
+            parts.append(current)
+
+        target = obj
+        for part in parts[:-1]:
+            target = target[part] if isinstance(part, int) else target[part]
+        
+        last_part = parts[-1]
+        if isinstance(last_part, int):
+            target[last_part] = value
+        else:
+            target[last_part] = value
+
+    def _truncate_to_fit(self, result: dict, max_chars: int, store_info: dict) -> dict:
+        """Truncate the largest text field to fit in available context space."""
+        largest_field, largest_value = self._find_largest_string_field(result)
+
+        if not largest_field or len(largest_value) == 0:
+            result_str = json.dumps(result)
+            if len(result_str) <= max_chars:
+                return result
+            return {
+                "_truncated": {
+                    "field": "entire_result",
+                    "shown": max_chars,
+                    "total": len(result_str),
+                    "file_id": store_info["file_id"],
+                },
+                "partial_json": result_str[:max_chars],
+            }
+
+        result_without_field = copy.deepcopy(result)
+        self._set_nested_field(result_without_field, largest_field, "")
+        overhead = len(json.dumps(result_without_field))
+        truncated_metadata_size = 250
+        chars_for_content = max(0, max_chars - overhead - truncated_metadata_size)
+
+        truncated = copy.deepcopy(result)
+        truncated_value = largest_value[:chars_for_content]
+        self._set_nested_field(truncated, largest_field, truncated_value)
+        
+        truncated["_truncated"] = {
+            "field": largest_field,
+            "shown": len(truncated_value),
+            "total": len(largest_value),
+            "file_id": store_info["file_id"],
+        }
+
+        return truncated
+
+    def _process_tool_result(self, result: dict, source: str = "unknown") -> dict:
+        """Process tool result: store in file store, truncate only if needed."""
+        if result.get("_truncated") or result.get("_file_store_ref"):
             return result
 
         result_str = json.dumps(result)
-        if len(result_str) > FileStore.INLINE_THRESHOLD:
-            # Extract text content when possible (avoid storing JSON that's hard to parse in chunks)
-            if "content" in result and isinstance(result["content"], str):
-                content = result["content"]
-                content_type = "text"
-            elif "result" in result:
-                # MCP results often have nested structure - try to extract text
-                inner = result["result"]
-                if isinstance(inner, dict) and "content" in inner:
-                    # Common pattern: {"result": {"content": [{"text": "..."}]}}
-                    inner_content = inner.get("content", [])
-                    if isinstance(inner_content, list):
-                        texts = [item.get("text", "") for item in inner_content if isinstance(item, dict) and "text" in item]
-                        if texts:
-                            content = "\n".join(texts)
-                            content_type = "text"
-                        else:
-                            content = json.dumps(inner, indent=2)
-                            content_type = "json"
-                    elif isinstance(inner_content, str):
-                        content = inner_content
-                        content_type = "text"
-                    else:
-                        content = json.dumps(inner, indent=2)
-                        content_type = "json"
-                else:
-                    content = json.dumps(inner, indent=2)
-                    content_type = "json"
-            else:
-                content = result_str
-                content_type = "json"
+        result_size = len(result_str)
 
-            store_info = self.file_store.store(content, source, content_type)
-            return {
-                "stored_in_file_store": True,
+        store_info = self.file_store.store(result_str, source, "json")
+
+        available = self.bedrock.available_for_result(
+            self.messages, 
+            self._get_system_prompt(), 
+            self.tools
+        )
+
+        if result_size <= available:
+            result["_file_store_ref"] = {
                 "file_id": store_info["file_id"],
                 "size_bytes": store_info["size_bytes"],
-                "content_type": content_type,
-                "message": f"Result stored as {content_type}. Use read_from_store(file_id='{store_info['file_id']}') to read.",
             }
-        return result
+            return result
+
+        logger.info(
+            f"📦 SubAgent truncating result ({result_size:,} > {available:,} available) "
+            f"[file_id={store_info['file_id']}]"
+        )
+        
+        return self._truncate_to_fit(result, available, store_info)
 
     def _compress_historical_messages(self, keep_recent: int = 2) -> None:
         """
@@ -1193,28 +1283,40 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
                         else:
                             result_data = result_content
 
-                        # Check if it has a file store reference
+                        # Check for file store reference (from full results)
                         file_ref = result_data.get("_file_store_ref")
+                        # Also check for truncated results which have file_id in _truncated
+                        truncated_ref = result_data.get("_truncated")
+                        
                         if file_ref:
                             compact = {
-                                "stored_in_file_store": True,
+                                "compressed": True,
                                 "file_id": file_ref["file_id"],
-                                "size_bytes": file_ref["size_bytes"],
-                                "note": "Historical result - use read_from_store if needed",
+                                "size_bytes": file_ref.get("size_bytes", 0),
+                                "note": "Use read_from_store(file_id) if needed",
                             }
                             item["content"] = json.dumps(compact)
                             compressed_count += 1
-                        elif result_data.get("stored_in_file_store"):
+                        elif truncated_ref and truncated_ref.get("file_id"):
+                            compact = {
+                                "compressed": True,
+                                "file_id": truncated_ref["file_id"],
+                                "original_size": truncated_ref.get("total", 0),
+                                "note": "Use read_from_store(file_id) if needed",
+                            }
+                            item["content"] = json.dumps(compact)
+                            compressed_count += 1
+                        elif result_data.get("stored_in_file_store") or result_data.get("compressed"):
                             pass  # Already a reference
                         else:
                             # No file store ref - store it now if large
                             if len(result_content) > 1000:
                                 store_info = self.file_store.store(result_content, "historical_compression", "json")
                                 compact = {
-                                    "stored_in_file_store": True,
+                                    "compressed": True,
                                     "file_id": store_info["file_id"],
                                     "size_bytes": store_info["size_bytes"],
-                                    "note": "Historical result - use read_from_store if needed",
+                                    "note": "Use read_from_store(file_id) if needed",
                                 }
                                 item["content"] = json.dumps(compact)
                                 compressed_count += 1
@@ -1312,7 +1414,7 @@ When complete, provide a summary of what was created.""",
                     if block.get("type") == "tool_use":
                         result = await self._handle_tool_use(block)
                         if block["name"] not in ("read_from_store", "list_store_files"):
-                            result = self._truncate_result(result, block["name"])
+                            result = self._process_tool_result(result, block["name"])
                         tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": json.dumps(result)})
 
                 self.messages.append({"role": "user", "content": tool_results})
@@ -1698,20 +1800,33 @@ You have access to the following tool categories:
    - Create and edit documentation files
    - Manage the file system
 
-2. **File Store Tools** (read_from_store, list_store_files):
-   - Large tool results are automatically stored here to save context space
-   - Text is EXTRACTED from results (not raw JSON) for easier reading
-   - Use read_from_store(file_id, offset, limit) - offsets are in CHARACTERS not lines!
-   - Response contains a `text` field with the actual content
+2. **Tool Result Handling**:
+   - Results are returned in their natural JSON format
+   - When a result is too large for context, the largest text field is truncated
+   - Look for `_truncated` metadata in results:
+     ```
+     {
+       "text": "first N characters...",
+       "_truncated": {
+         "field": "text",
+         "shown": 50000,
+         "total": 152000,
+         "file_id": "abc123"
+       }
+     }
+     ```
+   - To read more of a truncated field, use: read_from_store(file_id="abc123", offset=50000, limit=50000)
+   - Older tool results may be compressed to `{"compressed": true, "file_id": "..."}` - use read_from_store to retrieve
+
+3. **File Store Tools** (read_from_store, list_store_files):
+   - Use read_from_store(file_id, offset, limit) to read truncated or compressed results
+   - Offsets are in CHARACTERS not lines!
    - **CRITICAL**: ALWAYS check `has_more` in the response!
    - If `has_more` is true, you have NOT seen all the data
    - Use `next_offset` from the response to continue reading
-   - Keep reading until `has_more` is false to get complete information
-   - Example: First call returns 10000 chars with has_more=true, next_offset=10000
-     -> Call read_from_store(file_id, offset=10000) to get the next chunk
-   - Default limit is 10000 chars (~2500 tokens)
+   - Default limit is 50000 chars (~12500 tokens)
 
-3. **MCP Tools** (prefixed with mcp_):
+4. **MCP Tools** (prefixed with mcp_):
    - mcp_confluence: Search and read Confluence wiki pages
    - mcp_github: Access GitHub repositories and files  
    - mcp_docs360_search: Search Document360 knowledge base
@@ -2181,92 +2296,178 @@ Original task: {original_task}"""
         text_lower = response_text.lower()
         return any(indicator in text_lower for indicator in completion_indicators)
 
-    def _truncate_result(self, result: dict, source: str = "unknown") -> dict:
+    def _find_largest_string_field(self, obj: Any, path: str = "") -> Tuple[Optional[str], str]:
         """
-        Store ALL tool results and return appropriately sized response.
+        Recursively find the largest string field in a dict.
+        
+        Returns:
+            Tuple of (field_path, field_value) for the largest string field.
+            Returns (None, "") if no string field found.
+        """
+        largest_path: Optional[str] = None
+        largest_value = ""
 
+        if isinstance(obj, str):
+            return path or "root", obj
+        elif isinstance(obj, dict):
+            for key, value in obj.items():
+                if key.startswith("_"):  # Skip metadata fields
+                    continue
+                current_path = f"{path}.{key}" if path else key
+                if isinstance(value, str) and len(value) > len(largest_value):
+                    largest_path = current_path
+                    largest_value = value
+                elif isinstance(value, dict):
+                    sub_path, sub_value = self._find_largest_string_field(value, current_path)
+                    if len(sub_value) > len(largest_value):
+                        largest_path = sub_path
+                        largest_value = sub_value
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                current_path = f"{path}[{i}]"
+                sub_path, sub_value = self._find_largest_string_field(item, current_path)
+                if len(sub_value) > len(largest_value):
+                    largest_path = sub_path
+                    largest_value = sub_value
+
+        return largest_path, largest_value
+
+    def _set_nested_field(self, obj: Any, path: str, value: Any) -> None:
+        """Set a nested field by path (e.g., 'result.content' or 'items[0].text')."""
+        parts = []
+        current = ""
+        i = 0
+        while i < len(path):
+            if path[i] == ".":
+                if current:
+                    parts.append(current)
+                current = ""
+            elif path[i] == "[":
+                if current:
+                    parts.append(current)
+                current = ""
+                # Find closing bracket
+                j = i + 1
+                while j < len(path) and path[j] != "]":
+                    j += 1
+                parts.append(int(path[i + 1 : j]))
+                i = j
+            else:
+                current += path[i]
+            i += 1
+        if current:
+            parts.append(current)
+
+        # Navigate to parent and set value
+        target = obj
+        for part in parts[:-1]:
+            if isinstance(part, int):
+                target = target[part]
+            else:
+                target = target[part]
+        
+        last_part = parts[-1]
+        if isinstance(last_part, int):
+            target[last_part] = value
+        else:
+            target[last_part] = value
+
+    def _truncate_to_fit(self, result: dict, max_chars: int, store_info: dict) -> dict:
+        """
+        Truncate the largest text field to fit in available context space.
+        
+        Returns the truncated result with _truncated metadata added.
+        """
+        # Find the largest string field
+        largest_field, largest_value = self._find_largest_string_field(result)
+
+        if not largest_field or len(largest_value) == 0:
+            # No string field to truncate - return truncated JSON
+            result_str = json.dumps(result)
+            if len(result_str) <= max_chars:
+                return result
+            # Best effort: truncate the JSON string itself
+            return {
+                "_truncated": {
+                    "field": "entire_result",
+                    "shown": max_chars,
+                    "total": len(result_str),
+                    "file_id": store_info["file_id"],
+                },
+                "partial_json": result_str[:max_chars],
+            }
+
+        # Calculate how much content we can keep
+        # Account for overhead of other fields + _truncated metadata
+        result_without_field = copy.deepcopy(result)
+        self._set_nested_field(result_without_field, largest_field, "")
+        overhead = len(json.dumps(result_without_field))
+        truncated_metadata_size = 250  # Approximate size of _truncated field
+        chars_for_content = max(0, max_chars - overhead - truncated_metadata_size)
+
+        # Create truncated copy
+        truncated = copy.deepcopy(result)
+        truncated_value = largest_value[:chars_for_content]
+        self._set_nested_field(truncated, largest_field, truncated_value)
+        
+        truncated["_truncated"] = {
+            "field": largest_field,
+            "shown": len(truncated_value),
+            "total": len(largest_value),
+            "file_id": store_info["file_id"],
+        }
+
+        return truncated
+
+    def _process_tool_result(self, result: dict, source: str = "unknown") -> dict:
+        """
+        Process tool result: store in file store, truncate only if needed.
+        
         Strategy:
-        - Always store the result in file store (with deduplication)
-        - Extract TEXT content when possible (avoids storing JSON that's hard to parse in chunks)
-        - If < INLINE_THRESHOLD (50K): return full content + file_id reference
-        - If >= INLINE_THRESHOLD: return only the file store reference
-
-        This enables historical compression - older results can be replaced
-        with just the reference since they're stored.
-
+        - Always store the full result in file store for later retrieval
+        - Calculate available context space
+        - If result fits: return as-is with _file_store_ref for later compression
+        - If result too big: truncate largest text field and add _truncated metadata
+        
         Args:
             result: The tool result dict
             source: Description of the source (tool name)
+        
+        Returns:
+            The result, possibly truncated with _truncated metadata if it was too large
         """
-        # Skip if already a file store reference
-        if result.get("stored_in_file_store"):
+        # Skip if already processed
+        if result.get("_truncated") or result.get("_file_store_ref"):
             return result
 
         result_str = json.dumps(result)
         result_size = len(result_str)
 
-        # Determine what content to store - prefer extracting TEXT over storing JSON
-        content_type = "json"
-        content = result_str
+        # Always store full result for later retrieval
+        store_info = self.file_store.store(result_str, source, "json")
 
-        if "content" in result and isinstance(result["content"], str):
-            # Direct content field (e.g., file read results)
-            content = result["content"]
-            content_type = "text"
-        elif "result" in result:
-            # MCP results often have nested structure - try to extract text
-            inner = result["result"]
-            if isinstance(inner, dict):
-                # Check for content array with text items
-                inner_content = inner.get("content", [])
-                if isinstance(inner_content, list):
-                    texts = [item.get("text", "") for item in inner_content if isinstance(item, dict) and "text" in item]
-                    if texts:
-                        content = "\n".join(texts)
-                        content_type = "text"
-                    else:
-                        content = json.dumps(inner, indent=2)
-                elif isinstance(inner_content, str):
-                    content = inner_content
-                    content_type = "text"
-                else:
-                    content = json.dumps(inner, indent=2)
-            else:
-                content = json.dumps(inner, indent=2)
+        # Calculate available context space
+        available = self.bedrock.available_for_result(
+            self.messages, 
+            self._get_system_prompt(), 
+            self.tools
+        )
 
-        # Always store for later reference/historical compression
-        store_info = self.file_store.store(content, source, content_type)
-        file_id = store_info["file_id"]
-
-        # Check threshold - use FileStore's INLINE_THRESHOLD
-        threshold = FileStore.INLINE_THRESHOLD
-
-        if result_size <= threshold:
-            # Small enough - return full content with file_id for reference
+        # If result fits, return as-is with file reference for later compression
+        if result_size <= available:
             result["_file_store_ref"] = {
-                "file_id": file_id,
+                "file_id": store_info["file_id"],
                 "size_bytes": store_info["size_bytes"],
-                "lines": store_info["lines"],
-                "content_type": content_type,
             }
             return result
 
-        # Too large - return only reference
-        logger.info(f"📦 Result too large ({result_size:,} chars > {threshold:,}), returning file store reference...")
-
-        return {
-            "stored_in_file_store": True,
-            "file_id": file_id,
-            "size_bytes": store_info["size_bytes"],
-            "lines": store_info["lines"],
-            "content_type": content_type,
-            "source": source,
-            "message": (
-                f"Result ({store_info['size_bytes']:,} bytes, {store_info['lines']:,} lines) "
-                f"stored as {content_type}. Use read_from_store(file_id='{file_id}') to read. "
-                f"You can specify offset and limit to read in chunks."
-            ),
-        }
+        # Result too big for context - need to truncate
+        logger.info(
+            f"📦 Truncating result ({result_size:,} chars > {available:,} available) "
+            f"[file_id={store_info['file_id']}]"
+        )
+        
+        return self._truncate_to_fit(result, available, store_info)
 
     def _compress_historical_messages(self, keep_recent: int = 2) -> None:
         """
@@ -2315,20 +2516,32 @@ Original task: {original_task}"""
                         else:
                             result_data = result_content
 
-                        # Check if it has a file store reference
+                        # Check for file store reference (from full results)
                         file_ref = result_data.get("_file_store_ref")
+                        # Also check for truncated results which have file_id in _truncated
+                        truncated_ref = result_data.get("_truncated")
+                        
                         if file_ref:
                             # Replace with compact reference
                             compact = {
-                                "stored_in_file_store": True,
+                                "compressed": True,
                                 "file_id": file_ref["file_id"],
-                                "size_bytes": file_ref["size_bytes"],
-                                "lines": file_ref["lines"],
-                                "note": "Historical result - use read_from_store if needed",
+                                "size_bytes": file_ref.get("size_bytes", 0),
+                                "note": "Use read_from_store(file_id) if needed",
                             }
                             item["content"] = json.dumps(compact)
                             compressed_count += 1
-                        elif result_data.get("stored_in_file_store"):
+                        elif truncated_ref and truncated_ref.get("file_id"):
+                            # Was already truncated, compress to just reference
+                            compact = {
+                                "compressed": True,
+                                "file_id": truncated_ref["file_id"],
+                                "original_size": truncated_ref.get("total", 0),
+                                "note": "Use read_from_store(file_id) if needed",
+                            }
+                            item["content"] = json.dumps(compact)
+                            compressed_count += 1
+                        elif result_data.get("stored_in_file_store") or result_data.get("compressed"):
                             # Already a reference, keep as is
                             pass
                         else:
@@ -2337,11 +2550,10 @@ Original task: {original_task}"""
                                 # Store it now for future reference
                                 store_info = self.file_store.store(result_content, "historical_compression", "json")
                                 compact = {
-                                    "stored_in_file_store": True,
+                                    "compressed": True,
                                     "file_id": store_info["file_id"],
                                     "size_bytes": store_info["size_bytes"],
-                                    "lines": store_info["lines"],
-                                    "note": "Historical result - use read_from_store if needed",
+                                    "note": "Use read_from_store(file_id) if needed",
                                 }
                                 item["content"] = json.dumps(compact)
                                 compressed_count += 1
@@ -2675,10 +2887,10 @@ Please continue from where you left off. Files in the file store are still acces
                         if not result.get("success", True) or result.get("error"):
                             tool_errors += 1
 
-                        # Store large results in file store to prevent context overflow
+                        # Process result: store in file store, truncate only if context is tight
                         # (but don't re-store results from file store reads)
                         if tool_name not in ("read_from_store", "list_store_files"):
-                            result = self._truncate_result(result, source=tool_name)
+                            result = self._process_tool_result(result, source=tool_name)
 
                         tool_results.append({"type": "tool_result", "tool_use_id": tool_id, "content": json.dumps(result)})
 
