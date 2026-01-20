@@ -223,6 +223,7 @@ class FileStore:
 
         metadata = self._index[file_id]
         file_path = self.work_dir / metadata["path"]
+        content_type = metadata.get("content_type", "text")
 
         if not file_path.exists():
             return {"error": f"File for ID '{file_id}' no longer exists"}
@@ -234,7 +235,7 @@ class FileStore:
             # Apply offset and limit (character-based)
             if offset >= total_chars:
                 return {
-                    "content": "",
+                    "text": "",
                     "file_id": file_id,
                     "offset_chars": offset,
                     "chars_returned": 0,
@@ -250,11 +251,12 @@ class FileStore:
 
             result = {
                 "file_id": file_id,
+                "content_type": content_type,
                 "offset_chars": offset,
                 "chars_returned": len(selected_content),
                 "total_chars": total_chars,
                 "source": metadata.get("source", "unknown"),
-                "content": selected_content,
+                "text": selected_content,  # Changed from "content" to "text" for clarity
             }
 
             if remaining_chars > 0:
@@ -265,6 +267,10 @@ class FileStore:
                 result["remaining_chars"] = remaining_chars
                 result["next_offset"] = end
                 result["to_continue"] = f"read_from_store(file_id='{file_id}', offset={end}, limit={actual_limit})"
+                
+                # Warn about partial JSON
+                if content_type == "json":
+                    result["⚠️_JSON_NOTE"] = "This is partial JSON data. Read the complete file to parse it properly."
             else:
                 result["has_more"] = False
                 result["status"] = "COMPLETE - all data returned"
@@ -310,6 +316,7 @@ class FileStore:
                 "description": (
                     "Read content from the file store using CHARACTER-based offsets. "
                     "Use this to access large results that were too big to return directly. "
+                    "Returns a 'text' field with the content (extracted from original result). "
                     "ALWAYS check 'has_more' in the response - if true, call again with "
                     "the 'next_offset' value to get the remaining content."
                 ),
@@ -1049,7 +1056,7 @@ class SubAgent:
 {self.task.description}
 
 ## Target Files
-You should create/update these files: {', '.join(self.task.target_files)}
+You should create/update these files: {", ".join(self.task.target_files)}
 
 ## Available Tools
 You have access to shell tools (bash, read_file, write_file, list_directory),
@@ -1067,7 +1074,7 @@ Confluence, GitHub, Document360, etc.
 - Focus ONLY on your assigned task
 - When done, provide a clear summary of what you created
 
-Current date: {datetime.now().strftime('%Y-%m-%d')}
+Current date: {datetime.now().strftime("%Y-%m-%d")}
 """
 
     async def _handle_tool_use(self, tool_use: dict) -> dict:
@@ -1099,21 +1106,50 @@ Current date: {datetime.now().strftime('%Y-%m-%d')}
         return result
 
     def _truncate_result(self, result: dict, source: str = "unknown") -> dict:
-        """Store large results in file store."""
+        """Store large results in file store, extracting text content when possible."""
         if result.get("stored_in_file_store"):
             return result
 
         result_str = json.dumps(result)
         if len(result_str) > FileStore.INLINE_THRESHOLD:
-            content = result_str
+            # Extract text content when possible (avoid storing JSON that's hard to parse in chunks)
             if "content" in result and isinstance(result["content"], str):
                 content = result["content"]
-            store_info = self.file_store.store(content, source, "json")
+                content_type = "text"
+            elif "result" in result:
+                # MCP results often have nested structure - try to extract text
+                inner = result["result"]
+                if isinstance(inner, dict) and "content" in inner:
+                    # Common pattern: {"result": {"content": [{"text": "..."}]}}
+                    inner_content = inner.get("content", [])
+                    if isinstance(inner_content, list):
+                        texts = [item.get("text", "") for item in inner_content if isinstance(item, dict) and "text" in item]
+                        if texts:
+                            content = "\n".join(texts)
+                            content_type = "text"
+                        else:
+                            content = json.dumps(inner, indent=2)
+                            content_type = "json"
+                    elif isinstance(inner_content, str):
+                        content = inner_content
+                        content_type = "text"
+                    else:
+                        content = json.dumps(inner, indent=2)
+                        content_type = "json"
+                else:
+                    content = json.dumps(inner, indent=2)
+                    content_type = "json"
+            else:
+                content = result_str
+                content_type = "json"
+
+            store_info = self.file_store.store(content, source, content_type)
             return {
                 "stored_in_file_store": True,
                 "file_id": store_info["file_id"],
                 "size_bytes": store_info["size_bytes"],
-                "message": f"Result stored. Use read_from_store(file_id='{store_info['file_id']}') to read.",
+                "content_type": content_type,
+                "message": f"Result stored as {content_type}. Use read_from_store(file_id='{store_info['file_id']}') to read.",
             }
         return result
 
@@ -1130,7 +1166,7 @@ Current date: {datetime.now().strftime('%Y-%m-%d')}
 
 **Description**: {self.task.description}
 
-**Target Files**: {', '.join(self.task.target_files)}
+**Target Files**: {", ".join(self.task.target_files)}
 
 Research thoroughly using Confluence and GitHub, then create comprehensive documentation.
 When complete, provide a summary of what was created.""",
@@ -1513,9 +1549,7 @@ Provide a summary of what was accomplished this iteration.
                         tool_results.append({"type": "tool_result", "tool_use_id": block["id"], "content": json.dumps(result)})
 
                 messages.append({"role": "user", "content": tool_results})
-                response = self.bedrock.create_message(
-                    messages=messages, system="You are updating project tracking files.", tools=self.shell.get_tool_definitions()
-                )
+                response = self.bedrock.create_message(messages=messages, system="You are updating project tracking files.", tools=self.shell.get_tool_definitions())
 
             # Extract summary
             for block in response.get("content", []):
@@ -1588,7 +1622,9 @@ You have access to the following tool categories:
 
 2. **File Store Tools** (read_from_store, list_store_files):
    - Large tool results are automatically stored here to save context space
+   - Text is EXTRACTED from results (not raw JSON) for easier reading
    - Use read_from_store(file_id, offset, limit) - offsets are in CHARACTERS not lines!
+   - Response contains a `text` field with the actual content
    - **CRITICAL**: ALWAYS check `has_more` in the response!
    - If `has_more` is true, you have NOT seen all the data
    - Use `next_offset` from the response to continue reading
@@ -2073,6 +2109,7 @@ Original task: {original_task}"""
 
         Strategy:
         - Always store the result in file store (with deduplication)
+        - Extract TEXT content when possible (avoids storing JSON that's hard to parse in chunks)
         - If < INLINE_THRESHOLD (50K): return full content + file_id reference
         - If >= INLINE_THRESHOLD: return only the file store reference
 
@@ -2090,16 +2127,34 @@ Original task: {original_task}"""
         result_str = json.dumps(result)
         result_size = len(result_str)
 
-        # Determine what content to store
+        # Determine what content to store - prefer extracting TEXT over storing JSON
+        content_type = "json"
+        content = result_str
+
         if "content" in result and isinstance(result["content"], str):
+            # Direct content field (e.g., file read results)
             content = result["content"]
             content_type = "text"
         elif "result" in result:
-            content = json.dumps(result["result"], indent=2)
-            content_type = "json"
-        else:
-            content = result_str
-            content_type = "json"
+            # MCP results often have nested structure - try to extract text
+            inner = result["result"]
+            if isinstance(inner, dict):
+                # Check for content array with text items
+                inner_content = inner.get("content", [])
+                if isinstance(inner_content, list):
+                    texts = [item.get("text", "") for item in inner_content if isinstance(item, dict) and "text" in item]
+                    if texts:
+                        content = "\n".join(texts)
+                        content_type = "text"
+                    else:
+                        content = json.dumps(inner, indent=2)
+                elif isinstance(inner_content, str):
+                    content = inner_content
+                    content_type = "text"
+                else:
+                    content = json.dumps(inner, indent=2)
+            else:
+                content = json.dumps(inner, indent=2)
 
         # Always store for later reference/historical compression
         store_info = self.file_store.store(content, source, content_type)
@@ -2114,6 +2169,7 @@ Original task: {original_task}"""
                 "file_id": file_id,
                 "size_bytes": store_info["size_bytes"],
                 "lines": store_info["lines"],
+                "content_type": content_type,
             }
             return result
 
@@ -2125,10 +2181,11 @@ Original task: {original_task}"""
             "file_id": file_id,
             "size_bytes": store_info["size_bytes"],
             "lines": store_info["lines"],
+            "content_type": content_type,
             "source": source,
             "message": (
                 f"Result ({store_info['size_bytes']:,} bytes, {store_info['lines']:,} lines) "
-                f"stored in file store. Use read_from_store(file_id='{file_id}') to read. "
+                f"stored as {content_type}. Use read_from_store(file_id='{file_id}') to read. "
                 f"You can specify offset and limit to read in chunks."
             ),
         }
@@ -2702,6 +2759,10 @@ async def run_continuous(agent: "DocumentationAgent", task: str, max_iterations:
         print(f"  ITERATION {iteration}/{max_iterations} - PARALLEL EXECUTION MODE")
         print(f"{'=' * 70}\n")
 
+        # Clear file store at start of each iteration to free memory
+        agent.file_store.clear()
+        logger.info("🗑️  Cleared file store for new iteration")
+
         # Run the full plan -> execute -> review cycle
         success, files_this_iteration = await coordinator.run_iteration()
 
@@ -2750,6 +2811,10 @@ async def run_continuous_single(agent: "DocumentationAgent", task: str, max_iter
         print(f"\n{'=' * 70}")
         print(f"  ITERATION {iteration}/{max_iterations} (SINGLE AGENT)")
         print(f"{'=' * 70}\n")
+
+        # Clear file store at start of each iteration
+        agent.file_store.clear()
+        logger.info("🗑️  Cleared file store for new iteration")
 
         agent.messages = []
         agent._tool_call_history = []
