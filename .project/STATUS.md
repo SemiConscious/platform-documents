@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-01-20  
 **Current Phase:** Phase 2 - Documentation Creation  
-**Overall Progress:** ██████████████████░░ 95%
+**Overall Progress:** ██████████████████░░ 96%
 
 ---
 
 ## 🎯 Current Focus
 
-Platform core services documentation in progress. Continuing deep-dive documentation on voice routing services.
+Platform core services documentation in progress. Voice Routing Subsystem now complete!
 
 ## 🔄 What's Complete
 
@@ -30,7 +30,8 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 - [x] **CDR processing pipeline (cdrmunch)** ✅
 - [x] **TTS Gateway service documentation** ✅
 - [x] **Dialplan structure and logic** ✅
-- [x] **PBX component documentation** ✅ (NEW)
+- [x] **PBX component documentation** ✅
+- [x] **Routing policies documentation** ✅ (NEW)
 
 ## 🚧 Blocked On
 
@@ -38,7 +39,7 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 
 ## ✅ Ready for Review
 
-### Architecture (13 docs)
+### Architecture (14 docs)
 - `/architecture/overview.md` - Architecture index
 - `/architecture/global-architecture.md` - Platform architecture overview
 - `/architecture/voice-routing/overview.md` - Voice routing subsystem
@@ -46,7 +47,8 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 - `/architecture/voice-routing/cdr-processing.md` - CDR processing pipeline
 - `/architecture/voice-routing/tts-gateway.md` - TTS Gateway service
 - `/architecture/voice-routing/dialplan.md` - Dialplan structure and logic
-- `/architecture/voice-routing/pbx.md` - **PBX component documentation** (NEW)
+- `/architecture/voice-routing/pbx.md` - PBX component documentation
+- `/architecture/voice-routing/routing-policies.md` - **Routing policies documentation** (NEW)
 - `/architecture/salesforce-integration/overview.md` - Salesforce integration
 - `/architecture/omnichannel/overview.md` - Omnichannel architecture
 - `/architecture/ai-cai/overview.md` - Conversational AI
@@ -78,10 +80,10 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 
 ## ⏭️ Next Up
 
-1. **Voice routing deep-dive** (remaining items):
-   - Routing policies documentation
+1. **Voice Routing subsystem** - ✅ COMPLETE
 
 2. **Deep-dive documentation** (detailed docs beyond overviews):
+   - Infrastructure: Salt Stack, Guardian, Networking deep-dive
    - Salesforce: AVS package details, SCV connector, CTI adapter
    - Omnichannel: Omniservice, chat widget, message templates
    - AI/CAI: Bedrock integration, prompt pipeline, WebSocket service
@@ -95,6 +97,23 @@ Platform core services documentation in progress. Continuing deep-dive documenta
    - Support team onboarding guide
 
 ## 💡 Recent Updates
+
+### 2026-01-20 (Session 9)
+- **Routing Policies documentation created:**
+  - Comprehensive routing policies documentation (~400 lines)
+  - Policy types (Voice, Data Analytics, Digital, AI Workforce)
+  - Complete node/component reference with IDs
+  - Visual editor architecture (React app)
+  - Policy storage and execution flow
+  - LCR (Least Cost Routing) and carrier failover
+  - Ghost channel mechanism for CDR tracking
+  - Digital routing policies flow
+  - Policy configuration best practices
+  - Non-call policy chaining
+  - Microservice integration points
+  - Key repository references
+  - Feature flags documentation
+  - **Voice Routing Subsystem now COMPLETE**
 
 ### 2026-01-20 (Session 8)
 - **PBX component documentation created:**
@@ -212,18 +231,18 @@ Platform core services documentation in progress. Continuing deep-dive documenta
 | Metric | Count |
 |--------|-------|
 | Repos Inventoried | ~450 ✅ |
-| Architecture Docs | 13 ✅ |
+| Architecture Docs | 14 ✅ |
 | Services Documented | 4 ✅ |
 | Terraform Docs | 1 ✅ |
 | Runbooks Created | 4 ✅ |
 | Onboarding Guides | 3 ✅ |
-| **Total Docs** | **~32** |
+| **Total Docs** | **~33** |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
-| 2026-01-20 | PBX docs, Dialplan docs, TTS Gateway docs, CDR processing docs, Database architecture, Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
+| 2026-01-20 | Routing policies, PBX docs, Dialplan docs, TTS Gateway docs, CDR processing docs, Database architecture, Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
 
 ---
