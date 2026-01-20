@@ -33,7 +33,10 @@ auth:
     use_aws_vault: true  # Use aws-vault for credential management
 
 sources:
+  # GitHub is the authoritative source - code is truth
   github:
+    priority: authoritative  # Gold standard for documentation
+    trust_level: high        # Content is always current
     organizations:
       - redmatter      # Main Natterbox GitHub org
       - natterbox      # Additional Natterbox org
@@ -42,24 +45,43 @@ sources:
       - ".*-deprecated"
       - ".*-archive"
       - "internal-tools"
+    # Patterns for code analysis (in addition to metadata)
+    code_analysis:
+      graphql_patterns:
+        - "**/*.graphql"
+        - "**/schema.graphql"
+        - "**/schema/*.graphql"
+        - "**/graphql/**/*.graphql"
+      openapi_patterns:
+        - "openapi*.json"
+        - "openapi*.yaml"
+        - "openapi*.yml"
+        - "swagger*.json"
+        - "swagger*.yaml"
+        - "**/api-spec/**"
+      route_patterns:
+        - "**/routes/**/*.ts"
+        - "**/routes/**/*.js"
+        - "**/controllers/**/*.ts"
+        - "**/handlers/**/*.go"
+        - "**/api/**/*.py"
     include_patterns:
       - "README.md"
       - "docs/**/*.md"
       - "*.yaml"
       - "*.yml"
-      - "openapi*.json"
-      - "openapi*.yaml"
-      - "swagger*.json"
-      - "swagger*.yaml"
-      - "**/migrations/**"
-      - "**/schema*.sql"
       - "package.json"
       - "requirements.txt"
       - "go.mod"
       - "Cargo.toml"
       - "pom.xml"
       
+  # Confluence is reference only - may be outdated
   confluence:
+    enabled: true
+    priority: reference      # Use as guide, not authoritative
+    trust_level: low         # Content may be outdated
+    disclaimer: "Note: This information is sourced from Confluence and may not reflect current implementation. Refer to source code for authoritative details."
     spaces:
       - ARCH
       - ENG
@@ -69,17 +91,15 @@ sources:
       - draft
       - deprecated
       
+  # Jira disabled - not useful for architectural documentation
   jira:
+    enabled: false  # Trouble tickets, not architecture
+    # Kept for reference if needed later
     projects:
       - PLAT
       - VOICE
       - INT
       - INFRA
-    issue_types:
-      - Epic
-      - Story
-      - Bug
-      - "Technical Debt"
 
 output:
   directory: ./docs

@@ -275,27 +275,40 @@ class Orchestrator:
         Run the discovery phase.
         
         Agents scan GitHub, Confluence, and Jira to gather raw data.
+        Then deep code analysis extracts actual API and schema details.
+        
+        Priority: GitHub (authoritative) > Confluence (reference) > Jira (disabled)
         """
         from .agents.discovery import (
             RepositoryScannerAgent,
             ConfluenceHarvesterAgent,
             JiraAnalyzerAgent,
+            CodeAnalyzerAgent,
         )
         
         logger.info("Starting discovery phase")
         start_time = datetime.utcnow()
         
-        # Create discovery agents
-        agents = [
+        # Phase 1: Scan sources in parallel
+        # GitHub is authoritative, Confluence is reference, Jira is typically disabled
+        source_agents = [
             RepositoryScannerAgent(context),
             ConfluenceHarvesterAgent(context),
             JiraAnalyzerAgent(context),
         ]
         
-        # Run in parallel
         parallelism = self.config.get("agents", {}).get("discovery", {}).get("parallelism", 5)
         runner = ParallelAgentRunner(max_concurrency=parallelism)
-        results = await runner.run_agents(agents)
+        source_results = await runner.run_agents(source_agents)
+        
+        # Phase 2: Deep code analysis (runs after repos are discovered)
+        # This extracts GraphQL schemas, OpenAPI specs, and routes from source code
+        logger.info("Starting deep code analysis")
+        code_analyzer = CodeAnalyzerAgent(context)
+        code_result = await code_analyzer.execute()
+        
+        # Combine results
+        results = source_results + [code_result]
         
         duration = (datetime.utcnow() - start_time).total_seconds()
         success = all(r.success for r in results)
@@ -310,7 +323,7 @@ class Orchestrator:
         self.phase_results["discovery"] = phase_result
         logger.info(
             f"Discovery phase completed in {duration:.2f}s "
-            f"({phase_result.successful_agents}/{len(agents)} agents succeeded)"
+            f"({phase_result.successful_agents}/{len(results)} agents succeeded)"
         )
         
         return phase_result

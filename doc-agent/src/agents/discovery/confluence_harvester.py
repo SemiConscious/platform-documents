@@ -40,12 +40,34 @@ class ConfluenceHarvesterAgent(BaseAgent):
         
         # Configuration
         source_config = context.config.get("sources", {}).get("confluence", {})
+        self.enabled = source_config.get("enabled", True)
         self.spaces = source_config.get("spaces", [])
         self.exclude_labels = source_config.get("exclude_labels", [])
+        
+        # Trust level configuration - Confluence is reference-only
+        self.priority = source_config.get("priority", "reference")
+        self.trust_level = source_config.get("trust_level", "low")
+        self.disclaimer = source_config.get(
+            "disclaimer",
+            "Note: This information is sourced from Confluence and may not reflect "
+            "current implementation. Refer to source code for authoritative details."
+        )
     
     async def run(self) -> AgentResult:
         """Execute the Confluence harvesting process."""
-        self.logger.info(f"Harvesting documentation from {len(self.spaces)} Confluence spaces")
+        # Check if Confluence is enabled
+        if not self.enabled:
+            self.logger.info("Confluence harvesting is disabled in configuration")
+            return AgentResult(
+                success=True,
+                data={"discovered_documents": 0, "skipped": True},
+                metadata={"reason": "disabled"},
+            )
+        
+        self.logger.info(
+            f"Harvesting documentation from {len(self.spaces)} Confluence spaces "
+            f"(trust_level: {self.trust_level}, priority: {self.priority})"
+        )
         
         # Load checkpoint for incremental updates
         checkpoint = await self.load_checkpoint()
@@ -156,7 +178,8 @@ class ConfluenceHarvesterAgent(BaseAgent):
         # Extract key information using Claude
         doc_info = await self._analyze_document(page, content)
         
-        # Create document entity
+        # Create document entity with trust level and disclaimer
+        # Confluence content is marked as reference-only, not authoritative
         document = Document(
             id=f"confluence:{page.id}",
             name=page.title,
@@ -168,12 +191,17 @@ class ConfluenceHarvesterAgent(BaseAgent):
             linked_services=doc_info.get("services", []),
             last_modified=page.modified,
             sources=[page.url],
+            # Trust level: Confluence content may be outdated
+            trust_level=self.trust_level,
+            disclaimer=self.disclaimer,
             metadata={
                 "space": page.space_key,
                 "doc_type": doc_type,
                 "author": page.author,
                 "key_topics": doc_info.get("topics", []),
                 "is_architecture": is_architecture,
+                "is_outdated": doc_info.get("is_outdated", False),
+                "priority": self.priority,
             },
         )
         

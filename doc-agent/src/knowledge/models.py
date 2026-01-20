@@ -103,13 +103,17 @@ class Endpoint(BaseEntity):
 
 
 class Schema(BaseEntity):
-    """A data schema (database, event, or API)."""
+    """A data schema (database, event, API, or GraphQL type)."""
     entity_type: EntityType = EntityType.SCHEMA
-    schema_type: str  # database, event, request, response
+    # Schema types: database, event, request, response, graphql, openapi
+    schema_type: str
     service_id: Optional[str] = None
     definition: Optional[dict[str, Any]] = None
+    # Fields with structure: {name, type, description, required, ...}
     fields: list[dict[str, Any]] = Field(default_factory=list)
     relationships: list[dict[str, str]] = Field(default_factory=list)
+    # For GraphQL types: type, input, enum, interface, union, scalar
+    graphql_kind: Optional[str] = None
 
 
 class Document(BaseEntity):
@@ -122,6 +126,9 @@ class Document(BaseEntity):
     labels: list[str] = Field(default_factory=list)
     linked_services: list[str] = Field(default_factory=list)
     last_modified: Optional[datetime] = None
+    # Trust level for source reliability
+    trust_level: str = "high"  # high, medium, low, reference
+    disclaimer: Optional[str] = None  # Warning message for low-trust content
 
 
 class Person(BaseEntity):

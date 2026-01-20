@@ -40,11 +40,22 @@ class JiraAnalyzerAgent(BaseAgent):
         
         # Configuration
         source_config = context.config.get("sources", {}).get("jira", {})
+        self.enabled = source_config.get("enabled", True)
         self.projects = source_config.get("projects", [])
         self.issue_types = source_config.get("issue_types", ["Epic", "Story", "Bug"])
     
     async def run(self) -> AgentResult:
         """Execute the Jira analysis process."""
+        # Check if Jira is enabled - typically disabled for architecture documentation
+        # as Jira contains trouble tickets, not architectural information
+        if not self.enabled:
+            self.logger.info("Jira analysis is disabled in configuration (not useful for architecture docs)")
+            return AgentResult(
+                success=True,
+                data={"discovered_features": 0, "skipped": True},
+                metadata={"reason": "disabled - Jira is for tickets, not architecture"},
+            )
+        
         self.logger.info(f"Analyzing Jira projects: {self.projects}")
         
         # Load checkpoint for incremental updates

@@ -1,6 +1,5 @@
 """Schema Documenter Agent - generates data model documentation."""
 
-import asyncio
 import json
 import logging
 from pathlib import Path
@@ -21,14 +20,15 @@ class SchemaDocumenterAgent(BaseAgent):
     
     Generates:
     - Database model documentation
+    - GraphQL type documentation
+    - OpenAPI schema documentation
     - Event schema documentation
     - Data dictionary entries
-    - Side-effect documentation (what writes where)
     """
     
     name = "schema_documenter"
     description = "Generates data model and schema documentation"
-    version = "0.1.0"
+    version = "0.2.0"
     
     def __init__(self, context: AgentContext, service_id: Optional[str] = None):
         super().__init__(context)
@@ -89,8 +89,21 @@ class SchemaDocumenterAgent(BaseAgent):
         # Get schemas for this service
         schemas = self._get_service_schemas(service)
         
-        # Generate models document
-        models_path = await self._generate_models_doc(service, schemas, data_dir)
+        # Group schemas by type
+        graphql_schemas = [s for s in schemas if s.schema_type == "graphql"]
+        openapi_schemas = [s for s in schemas if s.schema_type in ("openapi", "rest")]
+        database_schemas = [s for s in schemas if s.schema_type == "database"]
+        event_schemas = [s for s in schemas if s.schema_type == "event"]
+        
+        # Generate models document with actual data
+        models_path = await self._generate_models_doc(
+            service, 
+            graphql_schemas, 
+            openapi_schemas, 
+            database_schemas, 
+            event_schemas,
+            data_dir
+        )
         generated.append(models_path)
         
         # Generate side effects document
@@ -102,17 +115,20 @@ class SchemaDocumenterAgent(BaseAgent):
     async def _generate_models_doc(
         self,
         service: Service,
-        schemas: list[Schema],
+        graphql_schemas: list[Schema],
+        openapi_schemas: list[Schema],
+        database_schemas: list[Schema],
+        event_schemas: list[Schema],
         data_dir: Path,
     ) -> str:
         """Generate the data models document."""
-        # Use Claude to generate model documentation
-        models_content = await self._generate_models_content(service, schemas)
+        total_schemas = len(graphql_schemas) + len(openapi_schemas) + len(database_schemas) + len(event_schemas)
         
         content = f"""---
 title: {service.name} Data Models
-description: Database models and data structures for {service.name}
+description: Data types, schemas, and models for {service.name}
 generated: true
+schema_count: {total_schemas}
 ---
 
 # {service.name} Data Models
@@ -121,30 +137,73 @@ This document describes the data models and structures used by {service.name}.
 
 ## Overview
 
-{models_content.get('overview', f'{service.name} manages data through various models and schemas.')}
+| Type | Count |
+|------|-------|
+| GraphQL Types | {len(graphql_schemas)} |
+| API Schemas | {len(openapi_schemas)} |
+| Database Models | {len(database_schemas)} |
+| Event Schemas | {len(event_schemas)} |
 
-## Database Models
-
-{models_content.get('database_models', 'No specific database models documented.')}
-
-## Event Schemas
-
-{models_content.get('event_schemas', 'No event schemas documented.')}
-
-## Data Relationships
-
-{models_content.get('relationships', 'See the entity relationship diagram below.')}
-
-{self._generate_erd_placeholder(service)}
-
-## Data Validation
-
-{models_content.get('validation', 'Data validation is enforced at the API and database levels.')}
-
+"""
+        
+        # GraphQL Types section
+        if graphql_schemas:
+            content += "## GraphQL Types\n\n"
+            content += "These types are defined in the GraphQL schema.\n\n"
+            
+            # Group by kind
+            types = [s for s in graphql_schemas if s.metadata.get("kind") in ("type", "Type", "OBJECT", None)]
+            inputs = [s for s in graphql_schemas if s.metadata.get("kind") in ("input", "Input", "INPUT")]
+            enums = [s for s in graphql_schemas if s.metadata.get("kind") in ("enum", "Enum", "ENUM")]
+            
+            if types:
+                content += "### Object Types\n\n"
+                for schema in types:
+                    content += self._format_schema_section(schema)
+            
+            if inputs:
+                content += "### Input Types\n\n"
+                for schema in inputs:
+                    content += self._format_schema_section(schema)
+            
+            if enums:
+                content += "### Enums\n\n"
+                for schema in enums:
+                    content += self._format_enum_section(schema)
+        
+        # OpenAPI/REST Schemas section
+        if openapi_schemas:
+            content += "## API Schemas\n\n"
+            content += "These schemas are defined in the OpenAPI specification.\n\n"
+            
+            for schema in openapi_schemas:
+                content += self._format_schema_section(schema)
+        
+        # Database Models section
+        if database_schemas:
+            content += "## Database Models\n\n"
+            content += "These models represent database tables and collections.\n\n"
+            
+            for schema in database_schemas:
+                content += self._format_schema_section(schema)
+        else:
+            content += "## Database Models\n\n"
+            content += "*Database models are typically defined in migrations. "
+            content += "Check the repository's migration files for the latest schema.*\n\n"
+        
+        # Event Schemas section
+        if event_schemas:
+            content += "## Event Schemas\n\n"
+            content += "These schemas define the structure of events published by this service.\n\n"
+            
+            for schema in event_schemas:
+                content += self._format_schema_section(schema)
+        
+        content += """
 ## Related Documents
 
 - [Service Overview](../README.md)
-- [API Schemas](../api/schemas.md)
+- [API Documentation](../api/overview.md)
 - [Side Effects](./side-effects.md)
 """
         
@@ -153,13 +212,78 @@ This document describes the data models and structures used by {service.name}.
         
         return str(path)
     
+    def _format_schema_section(self, schema: Schema) -> str:
+        """Format a schema as a markdown section."""
+        section = f"### {schema.name}\n\n"
+        
+        if schema.description:
+            section += f"{schema.description}\n\n"
+        
+        if schema.fields:
+            section += "| Field | Type | Required | Description |\n"
+            section += "|-------|------|----------|-------------|\n"
+            
+            for field in schema.fields:
+                name = field.get("name", "")
+                field_type = field.get("type", "unknown")
+                required = "Yes" if field.get("required") else "No"
+                desc = field.get("description") or "N/A"
+                
+                # Handle long descriptions
+                if len(desc) > 60:
+                    desc = desc[:57] + "..."
+                
+                section += f"| `{name}` | `{field_type}` | {required} | {desc} |\n"
+            
+            section += "\n"
+        else:
+            section += "*No fields defined.*\n\n"
+        
+        section += "---\n\n"
+        return section
+    
+    def _format_enum_section(self, schema: Schema) -> str:
+        """Format an enum schema as a markdown section."""
+        section = f"### {schema.name}\n\n"
+        
+        if schema.description:
+            section += f"{schema.description}\n\n"
+        
+        enum_values = schema.metadata.get("enum_values", [])
+        if enum_values:
+            section += "| Value | Description |\n"
+            section += "|-------|-------------|\n"
+            
+            for value in enum_values:
+                name = value.get("name", "")
+                desc = value.get("description") or "N/A"
+                deprecated = " *(deprecated)*" if value.get("deprecated") else ""
+                section += f"| `{name}` | {desc}{deprecated} |\n"
+            
+            section += "\n"
+        elif schema.fields:
+            # Fallback to fields if enum_values not set
+            section += "**Values:**\n\n"
+            for field in schema.fields:
+                section += f"- `{field.get('name', field.get('type', 'unknown'))}`\n"
+            section += "\n"
+        
+        section += "---\n\n"
+        return section
+    
     async def _generate_side_effects_doc(
         self,
         service: Service,
         data_dir: Path,
     ) -> str:
         """Generate the side effects document."""
-        effects_content = await self._analyze_side_effects(service)
+        # Get service dependencies
+        deps = self.graph.get_service_dependencies(service.id)
+        dep_names = [d.name for d in deps] if deps else []
+        
+        # Get schemas to identify data operations
+        schemas = self._get_service_schemas(service)
+        schema_names = [s.name for s in schemas]
         
         content = f"""---
 title: {service.name} Side Effects
@@ -173,38 +297,73 @@ This document describes the data operations performed by {service.name} and thei
 
 ## Database Operations
 
-{effects_content.get('database_ops', 'This service performs standard CRUD operations on its data models.')}
+This service performs operations on the following data models:
 
-## External Service Calls
+"""
+        
+        if schema_names:
+            for name in schema_names[:10]:
+                content += f"- **{name}**: CRUD operations\n"
+        else:
+            content += "*No specific data models documented. Check migration files for database operations.*\n"
+        
+        content += f"""
+## Service Dependencies
 
-{effects_content.get('external_calls', 'No external service calls documented.')}
+This service depends on the following services:
 
+"""
+        
+        if dep_names:
+            for name in dep_names:
+                content += f"- `{name}`\n"
+        else:
+            content += "*No direct service dependencies identified.*\n"
+        
+        content += f"""
 ## Event Publishing
 
-{effects_content.get('events_published', 'No events published.')}
+*Event schemas should be extracted from the service's event definitions.*
+
+Common patterns:
+- Entity created events
+- Entity updated events
+- Entity deleted events
 
 ## Event Consumption
 
-{effects_content.get('events_consumed', 'No events consumed.')}
-
-## Cache Operations
-
-{effects_content.get('cache_ops', 'No cache operations documented.')}
-
-## File Operations
-
-{effects_content.get('file_ops', 'No file operations documented.')}
+*Events consumed by this service should be identified from message queue configurations.*
 
 ## Side Effect Summary
 
 | Operation | Target | Type | Description |
 |-----------|--------|------|-------------|
-{effects_content.get('summary_table', '| N/A | N/A | N/A | No side effects documented |')}
+| API Call | External Service | Synchronous | Service-to-service communication |
+| Database Write | Primary DB | Persistent | Data persistence operations |
+| Event Publish | Message Queue | Async | Event-driven communication |
+
+## Data Flow
+
+```mermaid
+flowchart LR
+    subgraph {service.name.replace('-', '_')}
+        API[API Layer]
+        BL[Business Logic]
+        DAL[Data Access]
+    end
+    
+    Client --> API
+    API --> BL
+    BL --> DAL
+    DAL --> DB[(Database)]
+    BL --> MQ{{Message Queue}}
+```
 
 ## Related Documents
 
 - [Data Models](./models.md)
 - [Service Overview](../README.md)
+- [API Documentation](../api/overview.md)
 """
         
         path = data_dir / "side-effects.md"
@@ -218,20 +377,28 @@ This document describes the data operations performed by {service.name} and thei
     ) -> Optional[str]:
         """Generate a cross-service data dictionary."""
         # Collect all schemas
-        all_schemas = []
+        all_schemas: list[tuple[str, Schema]] = []
         for service in services:
             schemas = self._get_service_schemas(service)
             for schema in schemas:
-                all_schemas.append({
-                    "service": service.name,
-                    "schema": schema,
-                })
+                all_schemas.append((service.name, schema))
         
         if not all_schemas:
             return None
         
-        # Generate dictionary content
-        dict_content = await self._generate_dictionary_content(all_schemas)
+        # Group schemas by name to find shared types
+        schema_by_name: dict[str, list[tuple[str, Schema]]] = {}
+        for service_name, schema in all_schemas:
+            if schema.name not in schema_by_name:
+                schema_by_name[schema.name] = []
+            schema_by_name[schema.name].append((service_name, schema))
+        
+        # Identify shared types (used by multiple services)
+        shared_types = {
+            name: schemas 
+            for name, schemas in schema_by_name.items() 
+            if len(schemas) > 1
+        }
         
         content = f"""---
 title: Platform Data Dictionary
@@ -245,23 +412,65 @@ This document provides a comprehensive dictionary of data entities across all pl
 
 ## Overview
 
-The platform manages data across {len(services)} services with various data stores and schemas.
-
-## Core Entities
-
-{dict_content.get('core_entities', 'No core entities identified.')}
-
-## Entity Index
-
-{dict_content.get('entity_index', 'No entities indexed.')}
+| Metric | Value |
+|--------|-------|
+| Services | {len(services)} |
+| Total Schemas | {len(all_schemas)} |
+| Unique Schema Names | {len(schema_by_name)} |
+| Shared Types | {len(shared_types)} |
 
 ## Shared Data Types
 
-{dict_content.get('shared_types', 'No shared data types documented.')}
+These types are used by multiple services:
 
-## Data Flow Patterns
+"""
+        
+        if shared_types:
+            for name, schemas in sorted(shared_types.items()):
+                services_using = [s[0] for s in schemas]
+                content += f"### {name}\n\n"
+                content += f"Used by: {', '.join(services_using)}\n\n"
+                
+                # Show fields from first schema
+                if schemas[0][1].fields:
+                    content += "| Field | Type |\n"
+                    content += "|-------|------|\n"
+                    for field in schemas[0][1].fields[:10]:
+                        content += f"| `{field.get('name')}` | `{field.get('type', 'unknown')}` |\n"
+                    content += "\n"
+                
+                content += "---\n\n"
+        else:
+            content += "*No shared data types identified across services.*\n\n"
+        
+        content += """## Entity Index
 
-{dict_content.get('data_flows', 'Data flows between services via APIs and events.')}
+### By Service
+
+"""
+        
+        # Group by service
+        by_service: dict[str, list[Schema]] = {}
+        for service_name, schema in all_schemas:
+            if service_name not in by_service:
+                by_service[service_name] = []
+            by_service[service_name].append(schema)
+        
+        for service_name, schemas in sorted(by_service.items()):
+            content += f"#### {service_name}\n\n"
+            for schema in sorted(schemas, key=lambda s: s.name)[:20]:
+                content += f"- `{schema.name}` ({schema.schema_type})\n"
+            if len(schemas) > 20:
+                content += f"- *... and {len(schemas) - 20} more*\n"
+            content += "\n"
+        
+        content += """## Data Flow Patterns
+
+Data flows between services through:
+
+1. **Synchronous API calls** - REST or GraphQL requests
+2. **Asynchronous events** - Message queue events
+3. **Shared databases** - Direct database access (when applicable)
 
 ## Related Documents
 
@@ -284,141 +493,6 @@ The platform manages data across {len(services)} services with various data stor
                 schemas.append(schema)
         
         return schemas
-    
-    async def _generate_models_content(
-        self,
-        service: Service,
-        schemas: list[Schema],
-    ) -> dict[str, Any]:
-        """Use Claude to generate model documentation content."""
-        schema_info = "\n".join([
-            f"- {s.name} ({s.schema_type}): {s.description or 'No description'}"
-            for s in schemas[:10]
-        ])
-        
-        prompt = f"""Generate data model documentation for:
-
-Service: {service.name}
-Databases: {service.databases}
-Known schemas:
-{schema_info or 'None'}
-
-Generate sections:
-1. overview: Brief overview of data management
-2. database_models: Description of database models (markdown tables)
-3. event_schemas: Description of event schemas
-4. relationships: Data relationships
-5. validation: Validation rules
-
-Return JSON."""
-        
-        try:
-            response = await self.call_claude(
-                system_prompt="You are a technical writer documenting data models.",
-                user_message=prompt,
-            )
-            
-            response = response.strip()
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            
-            return json.loads(response)
-        except Exception:
-            return {}
-    
-    async def _analyze_side_effects(self, service: Service) -> dict[str, Any]:
-        """Use Claude to analyze and document side effects."""
-        deps = self.graph.get_service_dependencies(service.id)
-        dep_names = [d.name for d in deps]
-        
-        prompt = f"""Analyze side effects for this service:
-
-Service: {service.name}
-Description: {service.description}
-Databases: {service.databases}
-Dependencies: {dep_names}
-
-Generate sections:
-1. database_ops: Database operations performed
-2. external_calls: External service calls
-3. events_published: Events this service publishes
-4. events_consumed: Events this service consumes
-5. cache_ops: Cache operations
-6. file_ops: File operations
-7. summary_table: Markdown table rows for summary
-
-Return JSON."""
-        
-        try:
-            response = await self.call_claude(
-                system_prompt="You are analyzing data side effects for documentation.",
-                user_message=prompt,
-            )
-            
-            response = response.strip()
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            
-            return json.loads(response)
-        except Exception:
-            return {}
-    
-    async def _generate_dictionary_content(
-        self,
-        schemas: list[dict],
-    ) -> dict[str, Any]:
-        """Use Claude to generate data dictionary content."""
-        schema_summary = "\n".join([
-            f"- {s['service']}: {s['schema'].name} ({s['schema'].schema_type})"
-            for s in schemas[:20]
-        ])
-        
-        prompt = f"""Generate a data dictionary from these schemas:
-
-{schema_summary}
-
-Generate sections:
-1. core_entities: Key entities shared across services
-2. entity_index: Alphabetical index of entities
-3. shared_types: Common data types
-4. data_flows: How data flows between services
-
-Return JSON."""
-        
-        try:
-            response = await self.call_claude(
-                system_prompt="You are creating a platform data dictionary.",
-                user_message=prompt,
-            )
-            
-            response = response.strip()
-            if response.startswith("```"):
-                response = response.split("```")[1]
-                if response.startswith("json"):
-                    response = response[4:]
-            
-            return json.loads(response)
-        except Exception:
-            return {}
-    
-    def _generate_erd_placeholder(self, service: Service) -> str:
-        """Generate a placeholder ERD diagram."""
-        return f"""```mermaid
-erDiagram
-    {service.name.upper().replace('-', '_')} {{
-        string id PK
-        string name
-        datetime created_at
-        datetime updated_at
-    }}
-```
-
-*Note: This is a placeholder diagram. Actual schema should be extracted from database migrations.*
-"""
     
     async def _write_file(self, path: Path, content: str) -> None:
         """Write content to a file."""
