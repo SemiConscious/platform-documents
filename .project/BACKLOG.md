@@ -40,8 +40,8 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 ### Infrastructure ✅
 - [x] Infrastructure overview (AWS, networking, deployment)
 - [x] **Salt Stack configuration management** ✅ COMPLETE (2026-01-20)
-- [ ] Guardian system documentation
-- [ ] Networking architecture deep-dive
+- [x] **Guardian system documentation** ✅ COMPLETE (2026-01-20)
+- [x] **Networking architecture deep-dive** ✅ COMPLETE (2026-01-20)
 
 ---
 
