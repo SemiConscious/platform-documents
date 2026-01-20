@@ -93,6 +93,14 @@ class GitHubClient:
         
         repos = []
         data = response.data
+        
+        # Handle nested response format: {success, data: {repositories: [...]}}
+        if isinstance(data, dict):
+            if "data" in data and isinstance(data["data"], dict):
+                data = data["data"].get("repositories", [])
+            elif "repositories" in data:
+                data = data["repositories"]
+        
         if isinstance(data, list):
             for repo_data in data:
                 try:

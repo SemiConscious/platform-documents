@@ -35,7 +35,7 @@ auth:
 sources:
   github:
     organizations:
-      - natterbox
+      - redmatter  # Natterbox GitHub org
     exclude_repos:
       - ".*-deprecated"
       - ".*-archive"

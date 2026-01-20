@@ -152,7 +152,7 @@ class RepositoryScannerAgent(BaseAgent):
             url=repo.url,
             default_branch=repo.default_branch,
             language=repo.language,
-            languages=repo.languages,
+            languages={repo.language: 100} if repo.language else {},  # Approximate from primary language
             topics=repo.topics,
         )
         self.graph.add_entity(repo_entity)
