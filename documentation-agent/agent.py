@@ -1112,15 +1112,31 @@ If the topic is large, subdivide into multiple files:
 - Configuration guide
 - Troubleshooting guide
 
-## Research Process
-1. Search Confluence for existing documentation
-2. Find the GitHub repository
-3. READ THE ACTUAL SOURCE CODE - controllers, routes, models, services
-4. Document what the CODE does, not just what docs claim
+## Research Process (DO NOT OVER-RESEARCH!)
+1. Search Confluence for existing documentation (2-3 searches max)
+2. Find the GitHub repository and explore key files (5-10 file reads max)
+3. READ KEY SOURCE CODE - controllers, routes, models, services
+4. **STOP RESEARCHING AND START WRITING** after gathering enough info
+
+## ⚠️ CRITICAL: YOU MUST CREATE FILES
+
+**Your job is to CREATE DOCUMENTATION FILES, not just research.**
+
+- You have LIMITED TURNS - do not spend them all on research
+- After ~10-15 turns of research, START WRITING documentation files
+- Use write_file to create the target files listed above
+- If you reach turn 30 without writing files, you have FAILED the task
+- Incomplete documentation is better than no documentation
+
+## Time Budget (out of 50 turns):
+- Turns 1-15: Research (Confluence + GitHub)
+- Turns 15-45: WRITE DOCUMENTATION FILES
+- Turns 45-50: Verify and summarize
 
 ## Important
 - Do NOT update STATUS.md or BACKLOG.md - that's handled by the coordinator
-- When done, provide a clear summary of what you created
+- **YOU MUST USE write_file TO CREATE DOCUMENTATION** - this is your primary job
+- When done, provide a clear summary of what files you created
 
 Current date: {datetime.now().strftime("%Y-%m-%d")}
 """
@@ -1327,17 +1343,25 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
         return truncated
 
     def _process_tool_result(self, result: dict, source: str = "unknown") -> dict:
-        """Process tool result: store in file store, truncate only if needed."""
-        if result.get("_truncated") or result.get("_file_store_ref"):
+        """
+        Process tool result with new strategy:
+        1. Always store in file store first
+        2. If result fits in available context, return full result
+        3. If too big, do a soft reset (compress history) and try again
+        4. If still too big after reset, return file store reference only (NO truncation)
+        """
+        if result.get("_file_store_ref") or result.get("stored_in_file_store"):
             return result
 
         result_str = json.dumps(result)
         result_size = len(result_str)
 
+        # Always store in file store first
         store_info = self.file_store.store(result_str, source, "json")
 
         available = self.bedrock.available_for_result(self.messages, self._get_system_prompt(), self.tools)
 
+        # If it fits, return full result with file store reference
         if result_size <= available:
             result["_file_store_ref"] = {
                 "file_id": store_info["file_id"],
@@ -1345,10 +1369,31 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
             }
             return result
 
-        # Log truncation
-        logger.info(f"[{self.agent_id}] ✂️  Truncating: {result_size:,} → {available:,} chars")
+        # Result too big - try soft reset (compress history)
+        logger.info(f"[{self.agent_id}] 📦 Result too big ({result_size:,} chars) - compressing history...")
+        self._compress_historical_messages(keep_recent=1)
 
-        return self._truncate_to_fit(result, available, store_info)
+        # Check available space after compression
+        available = self.bedrock.available_for_result(self.messages, self._get_system_prompt(), self.tools)
+
+        if result_size <= available:
+            logger.info(f"[{self.agent_id}] ✅ After compression: result fits ({result_size:,} <= {available:,})")
+            result["_file_store_ref"] = {
+                "file_id": store_info["file_id"],
+                "size_bytes": store_info["size_bytes"],
+            }
+            return result
+
+        # Still too big after compression - return file store reference only (NO truncation)
+        logger.info(f"[{self.agent_id}] 📁 Result too large even after compression - returning file store reference")
+        return {
+            "stored_in_file_store": True,
+            "file_id": store_info["file_id"],
+            "size_bytes": store_info["size_bytes"],
+            "content_type": store_info.get("content_type", "json"),
+            "message": f"Result is {result_size:,} chars. Use read_from_store(file_id='{store_info['file_id']}') to read in chunks.",
+            "hint": "Read with offset=0, limit=50000 to get first chunk, then continue with higher offsets."
+        }
 
     def _compress_historical_messages(self, keep_recent: int = 2) -> None:
         """
@@ -1472,13 +1517,13 @@ When complete, provide a summary of what was created.""",
                 self._consecutive_errors = 0
             except Exception as e:
                 error_str = str(e)
-                
+
                 # Handle context-too-long errors with emergency compression
                 if "Input is too long" in error_str or "ValidationException" in error_str:
                     logger.warning(f"[{self.agent_id}] ⚠️  Context too large - emergency compression")
                     self._compress_historical_messages(keep_recent=1)
                     continue
-                
+
                 self._consecutive_errors += 1
                 if self._consecutive_errors >= 3:
                     return TaskResult(
@@ -2631,29 +2676,27 @@ Original task: {original_task}"""
 
     def _process_tool_result(self, result: dict, source: str = "unknown") -> dict:
         """
-        Process tool result: store in file store, truncate only if needed.
-
-        Strategy:
-        - Always store the full result in file store for later retrieval
-        - Calculate available context space
-        - If result fits: return as-is with _file_store_ref for later compression
-        - If result too big: truncate largest text field and add _truncated metadata
+        Process tool result with new strategy (no truncation):
+        1. Always store in file store first
+        2. If result fits in available context, return full result
+        3. If too big, do a soft reset (compress history) and try again
+        4. If still too big after reset, return file store reference only (NO truncation)
 
         Args:
             result: The tool result dict
             source: Description of the source (tool name)
 
         Returns:
-            The result, possibly truncated with _truncated metadata if it was too large
+            The full result, or a file store reference if too large
         """
         # Skip if already processed
-        if result.get("_truncated") or result.get("_file_store_ref"):
+        if result.get("_file_store_ref") or result.get("stored_in_file_store"):
             return result
 
         result_str = json.dumps(result)
         result_size = len(result_str)
 
-        # Always store full result for later retrieval
+        # Always store full result in file store
         store_info = self.file_store.store(result_str, source, "json")
 
         # Calculate available context space
@@ -2667,10 +2710,31 @@ Original task: {original_task}"""
             }
             return result
 
-        # Log truncation
-        logger.info(f"✂️  Truncating: {result_size:,} → {available:,} chars")
+        # Result too big - try soft reset (compress history)
+        logger.info(f"📦 Result too big ({result_size:,} chars) - compressing history...")
+        self._compress_historical_messages(keep_recent=1)
 
-        return self._truncate_to_fit(result, available, store_info)
+        # Check available space after compression
+        available = self.bedrock.available_for_result(self.messages, self._get_system_prompt(), self.tools)
+
+        if result_size <= available:
+            logger.info(f"✅ After compression: result fits ({result_size:,} <= {available:,})")
+            result["_file_store_ref"] = {
+                "file_id": store_info["file_id"],
+                "size_bytes": store_info["size_bytes"],
+            }
+            return result
+
+        # Still too big after compression - return file store reference only (NO truncation)
+        logger.info(f"📁 Result too large even after compression - returning file store reference")
+        return {
+            "stored_in_file_store": True,
+            "file_id": store_info["file_id"],
+            "size_bytes": store_info["size_bytes"],
+            "content_type": store_info.get("content_type", "json"),
+            "message": f"Result is {result_size:,} chars. Use read_from_store(file_id='{store_info['file_id']}') to read in chunks.",
+            "hint": "Read with offset=0, limit=50000 to get first chunk, then continue with higher offsets."
+        }
 
     def _compress_historical_messages(self, keep_recent: int = 2) -> None:
         """
@@ -2988,7 +3052,7 @@ Please continue from where you left off. Files in the file store are still acces
 
             except Exception as e:
                 error_str = str(e)
-                
+
                 # Check if this is a context-too-long error from Bedrock
                 if "Input is too long" in error_str or "ValidationException" in error_str:
                     logger.warning(f"⚠️  Context too large for Bedrock - triggering emergency compression")
@@ -2999,7 +3063,7 @@ Please continue from where you left off. Files in the file store are still acces
                     logger.info("🗑️  Emergency cleanup: compressed history and cleared file store")
                     # Don't count this as a consecutive error, try again
                     continue
-                
+
                 self._consecutive_errors += 1
                 logger.error(f"Bedrock API error ({self._consecutive_errors}/{self.MAX_CONSECUTIVE_ERRORS}): {e}")
 
