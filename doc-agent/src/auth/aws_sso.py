@@ -141,14 +141,16 @@ class AWSSSOAuth:
             # Default expiration - assume 1 hour from now if not specified
             expiration = datetime.utcnow() + timedelta(hours=1)
             
-            region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or self.region
+            # IMPORTANT: Use the configured region (self.region) rather than
+            # environment region, as we need to match the Bedrock inference profile region
+            # The credentials work cross-region, but the API endpoint must match
             
             return AWSCredentials(
                 access_key_id=access_key,
                 secret_access_key=secret_key,
                 session_token=session_token,
                 expiration=expiration,
-                region=region,
+                region=self.region,  # Use configured region, not env region
             )
         
         return None

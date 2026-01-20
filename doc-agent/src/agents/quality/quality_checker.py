@@ -340,7 +340,9 @@ generated: {datetime.utcnow().isoformat()}Z
                 "config": (base / "configuration.md").exists(),
                 "operations": (base / "operations.md").exists(),
             }
-            coverage["score"] = sum(coverage.values()) / (len(coverage) - 1)  # Exclude name
+            # Calculate score from boolean values only (exclude 'name')
+            bool_values = [v for k, v in coverage.items() if isinstance(v, bool)]
+            coverage["score"] = sum(bool_values) / len(bool_values) if bool_values else 0
             service_coverage.append(coverage)
         
         # Format table
