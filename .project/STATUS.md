@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-01-20  
 **Current Phase:** Phase 2 - Documentation Creation  
-**Overall Progress:** ████████████████░░░░ 80%
+**Overall Progress:** ████████████████░░░░ 82%
 
 ---
 
 ## 🎯 Current Focus
 
-Domain overview documentation complete. Ready for deep-dive documentation on specific services.
+Platform core services documentation in progress. Starting deep-dive documentation on specific services.
 
 ## 🔄 What's Complete
 
@@ -24,6 +24,7 @@ Domain overview documentation complete. Ready for deep-dive documentation on spe
 - [x] Onboarding guides ✅
 - [x] Terraform module catalog ✅
 - [x] Documentation agent tooling ✅
+- [x] **Platform API (Core API) documentation** ✅ (NEW)
 
 ## 🚧 Blocked On
 
@@ -41,9 +42,10 @@ Domain overview documentation complete. Ready for deep-dive documentation on spe
 - `/architecture/ai-cai/overview.md` - Conversational AI
 - `/architecture/infrastructure/overview.md` - Infrastructure & deployment
 
-### Services (2 docs)
+### Services (3 docs)
 - `/services/inventory.md` - Service inventory
 - `/services/repository-inventory.md` - Comprehensive inventory of ~450+ repositories
+- `/services/platform-core/platform-api.md` - **Platform API documentation** (NEW)
 
 ### Terraform (1 doc)
 - `/terraform-modules/catalog.md` - Module catalog
@@ -64,17 +66,17 @@ Domain overview documentation complete. Ready for deep-dive documentation on spe
 
 ## ⏭️ Next Up
 
-1. **Deep-dive documentation** (detailed docs beyond overviews):
+1. **Platform core services** (in progress):
+   - ~~platform-api documentation~~ ✅ DONE
+   - platform-sapien documentation
+   - Database architecture
+   - CDR processing (cdrmunch)
+
+2. **Deep-dive documentation** (detailed docs beyond overviews):
    - Voice routing: dialplan, PBX, tts-gateway, routing policies
    - Salesforce: AVS package details, SCV connector, CTI adapter
    - Omnichannel: Omniservice, chat widget, message templates
    - AI/CAI: Bedrock integration, prompt pipeline, WebSocket service
-
-2. **Platform core services**:
-   - platform-api documentation
-   - platform-sapien documentation
-   - Database architecture
-   - CDR processing (cdrmunch)
 
 3. **Operations expansion**:
    - CI/CD workflows documentation
@@ -86,7 +88,17 @@ Domain overview documentation complete. Ready for deep-dive documentation on spe
 
 ## 💡 Recent Updates
 
-### 2026-01-20
+### 2026-01-20 (Session 2)
+- **Platform API documentation created:**
+  - Comprehensive service documentation (~400 lines)
+  - Architecture diagrams and system position
+  - API endpoint categorization (79 controllers)
+  - Database architecture (Core DB, Big DB, schema-api)
+  - Migration strategy and Delta API transition
+  - Integration points documentation
+  - Deployment and testing procedures
+
+### 2026-01-20 (Session 1)
 - **Architecture domain overviews completed:**
   - AI/CAI overview (340 lines)
   - Infrastructure overview (386 lines)
@@ -110,17 +122,17 @@ Domain overview documentation complete. Ready for deep-dive documentation on spe
 |--------|-------|
 | Repos Inventoried | ~450 ✅ |
 | Architecture Docs | 8 ✅ |
-| Services Documented | 2 |
+| Services Documented | 3 ✅ |
 | Terraform Docs | 1 ✅ |
 | Runbooks Created | 4 ✅ |
 | Onboarding Guides | 3 ✅ |
-| **Total Docs** | **~25** |
+| **Total Docs** | **~26** |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
-| 2026-01-20 | Completed all domain overviews, runbooks, onboarding, documentation agent |
+| 2026-01-20 | Platform API documentation, domain overviews, runbooks, onboarding, documentation agent |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
 
 ---
