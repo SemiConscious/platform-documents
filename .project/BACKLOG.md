@@ -27,8 +27,8 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [x] Call flow documentation (inbound/outbound)
 - [x] fsxinetd service documentation
 - [x] **CDR processing pipeline (cdrmunch)** ✅ DONE
-- [x] **tts-gateway service documentation** ✅ DONE (NEW)
-- [ ] Dialplan structure and logic
+- [x] **tts-gateway service documentation** ✅ DONE
+- [x] **Dialplan structure and logic** ✅ DONE (NEW)
 - [ ] PBX component documentation
 - [ ] Routing policies documentation
 
