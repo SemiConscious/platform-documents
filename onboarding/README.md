@@ -16,6 +16,7 @@ This directory contains onboarding documentation for new team members joining Na
 |-------|-----------------|-------------|
 | [Developer Onboarding](./developer.md) | Software Engineers | Development environment, codebase navigation, workflow |
 | [Platform Engineer Onboarding](./platform-engineer.md) | PE/SRE Team | Infrastructure, deployments, monitoring, incident response |
+| [Support Team Onboarding](./support.md) | Support Team | Troubleshooting, diagnostics, escalations, ticketing |
 
 ---
 
@@ -34,6 +35,14 @@ This directory contains onboarding documentation for new team members joining Na
 2. Read all [Runbooks](/operations/runbooks/)
 3. Shadow on-call for 2 weeks
 4. Complete scenario training
+
+### Support Team Member
+
+1. Complete [Support Team Onboarding](./support.md)
+2. Review Crisis Management processes
+3. Practice log analysis on test data
+4. Shadow support tickets for 1 week
+5. Complete call diagnostics training
 
 ### Salesforce Developer
 
@@ -73,6 +82,8 @@ This directory contains onboarding documentation for new team members joining Na
 |---------|---------|
 | #platform-engineering | Platform team |
 | #dev-help | Development questions |
+| #support | Support team |
+| #ops_support | Operations collaboration |
 | Your team channel | Team-specific |
 
 ### Key Resources

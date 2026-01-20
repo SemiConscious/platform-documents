@@ -26,8 +26,8 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [x] FreeSWITCH overview and role
 - [x] Call flow documentation (inbound/outbound)
 - [x] fsxinetd service documentation
-- [ ] Dialplan structure and logic
-- [ ] PBX component documentation
+- [x] **Dialplan structure and logic** ✅ COMPLETE (2026-01-20)
+- [x] **PBX component documentation** ✅ COMPLETE (2026-01-20)
 - [ ] tts-gateway service documentation
 - [ ] Routing policies documentation
 
@@ -71,16 +71,16 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [ ] Prompt pipeline documentation
 - [ ] WebSocket service details
 
-### Observability (Lumina)
-- [ ] Lumina architecture
-- [ ] Metrics pipeline
-- [ ] Event processing
-- [ ] Frontend application
+### Observability (Lumina) ✅ COMPLETE
+- [x] **Lumina architecture** ✅ COMPLETE (2026-01-20)
+- [x] **Metrics pipeline** ✅ COMPLETE (2026-01-20)
+- [x] **Event processing** ✅ COMPLETE (2026-01-20)
+- [x] **Frontend application** ✅ COMPLETE (2026-01-20)
 
-### Permissions & Auth
-- [ ] NAPS (Natterbox Permissions Service)
-- [ ] Gatekeeper authorizer
-- [ ] Auth0 integration
+### Permissions & Auth ✅ COMPLETE
+- [x] **NAPS (Natterbox Permissions Service)** ✅ COMPLETE (2026-01-20)
+- [x] **Gatekeeper authorizer** ✅ COMPLETE (2026-01-20)
+- [x] **Auth0 integration** ✅ COMPLETE (2026-01-20)
 
 ---
 
@@ -108,10 +108,10 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [x] Deployment procedures
 - [x] Monitoring and alerting procedures
 
-### CI/CD
-- [ ] GitHub Actions workflows documentation
-- [ ] Release management process (RMHT)
-- [ ] Environment management
+### CI/CD ✅ COMPLETE
+- [x] **GitHub Actions workflows documentation** ✅ COMPLETE (2026-01-20)
+- [x] **Release management process (RMHT)** ✅ COMPLETE (2026-01-20)
+- [x] **Environment management** ✅ COMPLETE (2026-01-20)
 
 ---
 
@@ -123,10 +123,10 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [x] Key technologies overview
 - [x] Common development tasks
 
-### Support Onboarding
-- [ ] Platform overview for support
-- [ ] Troubleshooting basics
-- [ ] Escalation procedures
+### Support Onboarding ✅ COMPLETE
+- [x] **Platform overview for support** ✅ COMPLETE (2026-01-20)
+- [x] **Troubleshooting basics** ✅ COMPLETE (2026-01-20)
+- [x] **Escalation procedures** ✅ COMPLETE (2026-01-20)
 
 ### Platform Engineer Onboarding ✅
 - [x] Training plan overview
@@ -153,6 +153,12 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - Historical migration documentation
 - Individual customer configurations
 - Wallboard application
+- tts-gateway service documentation
+- Routing policies documentation
+- Terraform module deep-dives (6 modules)
+- Salesforce deep-dive documentation (4 items)
+- Omnichannel deep-dive documentation (4 items)
+- AI/CAI deep-dive documentation (3 items)
 
 ---
 
