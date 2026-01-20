@@ -1508,7 +1508,7 @@ Review the project status (.project/STATUS.md) and continue with the next logica
         elif tool_name == "read_from_store":
             file_id = tool_input.get("file_id", "")
             offset = tool_input.get("offset", 0)
-            limit = tool_input.get("limit", 200)  # Default to 200 lines
+            limit = tool_input.get("limit", 50)  # Default to 50 lines (smaller chunks)
             logger.info(f"📦 read_from_store: {file_id} (offset={offset}, limit={limit})")
             result = self.file_store.read(file_id, offset, limit)
             
@@ -1717,7 +1717,9 @@ Please continue from where you left off. Files in the file store are still acces
                             tool_errors += 1
                         
                         # Store large results in file store to prevent context overflow
-                        result = self._truncate_result(result, source=tool_name)
+                        # (but don't re-store results from file store reads)
+                        if tool_name not in ("read_from_store", "list_store_files"):
+                            result = self._truncate_result(result, source=tool_name)
                         
                         tool_results.append({
                             "type": "tool_result",

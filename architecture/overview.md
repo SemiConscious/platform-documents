@@ -1,6 +1,6 @@
 # Platform Architecture Overview
 
-> **Last Updated:** 2026-01-19  
+> **Last Updated:** 2026-01-20  
 > **Status:** ✅ Complete
 
 ## Introduction
@@ -27,6 +27,7 @@ Natterbox is a cloud-based enterprise telephony platform that integrates voice c
 | Omnichannel | ✅ Complete | [Overview](./omnichannel/overview.md) |
 | AI/CAI | ✅ Complete | [Overview](./ai-cai/overview.md) |
 | Infrastructure | ✅ Complete | [Overview](./infrastructure/overview.md) |
+| **Database** | ✅ Complete | [Overview](./database/overview.md) |
 
 ## Global Infrastructure
 
@@ -71,10 +72,12 @@ Each region operates with:
 - **Salt Stack** - Configuration management
 
 ### Databases
-- **MariaDB/MySQL** - Primary relational data
+- **MariaDB/MySQL** - Primary relational data (on-premises + Aurora)
 - **DynamoDB** - NoSQL, global tables
 - **Redis** - Caching
 - **Elasticsearch** - Search and analytics
+
+See [Database Architecture](./database/overview.md) for comprehensive database documentation.
 
 ### Frontend
 - **React** - Modern web applications
@@ -96,6 +99,8 @@ Original diagrams are maintained in Google Drive (draw.io):
 - [Service Inventory](../services/inventory.md)
 - [Repository Inventory](../services/repository-inventory.md)
 - [Terraform Module Catalog](../terraform-modules/catalog.md)
+- [Platform API](../services/platform-core/platform-api.md)
+- [Platform Sapien](../services/platform-core/platform-sapien.md)
 
 ## Source
 
@@ -103,4 +108,4 @@ This documentation was migrated from and supplements the [Confluence Architectur
 
 ---
 
-*Last updated: 2026-01-19*
+*Last updated: 2026-01-20*

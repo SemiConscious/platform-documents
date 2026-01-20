@@ -31,10 +31,10 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 - [ ] tts-gateway service documentation
 - [ ] Routing policies documentation
 
-### Platform Core Services 🔄
+### Platform Core Services ✅ COMPLETE
 - [x] **platform-api documentation** ✅ DONE
-- [x] **platform-sapien documentation** ✅ DONE (NEW)
-- [ ] Database architecture overview
+- [x] **platform-sapien documentation** ✅ DONE
+- [x] **Database architecture overview** ✅ DONE (NEW)
 - [ ] CDR processing pipeline (cdrmunch)
 
 ### Infrastructure ✅
