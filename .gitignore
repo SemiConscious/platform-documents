@@ -7,3 +7,9 @@
 
 # OS files
 .DS_Store
+venv/
+__pycache__/
+
+# Agent runtime data
+.agent-store/
+logs/
