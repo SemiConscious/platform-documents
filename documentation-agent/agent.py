@@ -909,10 +909,11 @@ class BedrockClient:
     """Client for AWS Bedrock Claude API with tool use support."""
 
     # Context limits (approximate - characters, not tokens)
-    # Opus has 200K token context, ~4 chars per token = ~800K chars
-    CONTEXT_WARNING_CHARS = 400000  # Warn at ~100K tokens
-    CONTEXT_LIMIT_CHARS = 700000  # Hard limit at ~175K tokens
-    SAFETY_BUFFER = 100000  # Reserve for response + safety margin
+    # Bedrock Opus has ~128K effective token limit, ~4 chars per token = ~512K chars
+    # Being conservative to avoid "Input is too long" errors
+    CONTEXT_WARNING_CHARS = 300000  # Warn at ~75K tokens
+    CONTEXT_LIMIT_CHARS = 480000  # Hard limit at ~120K tokens (conservative)
+    SAFETY_BUFFER = 80000  # Reserve for response + safety margin
 
     def __init__(self, config: Config):
         self.config = config
@@ -1470,6 +1471,14 @@ When complete, provide a summary of what was created.""",
                 )
                 self._consecutive_errors = 0
             except Exception as e:
+                error_str = str(e)
+                
+                # Handle context-too-long errors with emergency compression
+                if "Input is too long" in error_str or "ValidationException" in error_str:
+                    logger.warning(f"[{self.agent_id}] ⚠️  Context too large - emergency compression")
+                    self._compress_historical_messages(keep_recent=1)
+                    continue
+                
                 self._consecutive_errors += 1
                 if self._consecutive_errors >= 3:
                     return TaskResult(
@@ -2978,6 +2987,19 @@ Please continue from where you left off. Files in the file store are still acces
                 self._consecutive_errors = 0
 
             except Exception as e:
+                error_str = str(e)
+                
+                # Check if this is a context-too-long error from Bedrock
+                if "Input is too long" in error_str or "ValidationException" in error_str:
+                    logger.warning(f"⚠️  Context too large for Bedrock - triggering emergency compression")
+                    # Aggressive compression - keep only last 1 message
+                    self._compress_historical_messages(keep_recent=1)
+                    # Also clear file store to free up memory
+                    self.file_store.clear()
+                    logger.info("🗑️  Emergency cleanup: compressed history and cleared file store")
+                    # Don't count this as a consecutive error, try again
+                    continue
+                
                 self._consecutive_errors += 1
                 logger.error(f"Bedrock API error ({self._consecutive_errors}/{self.MAX_CONSECUTIVE_ERRORS}): {e}")
 
