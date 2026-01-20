@@ -7,8 +7,22 @@ llm:
   temperature: 0.3
 
 mcp:
+  # Natterbox MCP server configuration
   server: natterbox
-  timeout: 30
+  timeout: 60
+  
+  # How to launch the MCP server (if not already running)
+  # These can also be set via environment variables:
+  # MCP_SERVER_COMMAND, MCP_SERVER_ARGS
+  command: npx
+  args:
+    - "@natterbox/mcp-server"
+  
+  # Additional environment variables for the server
+  # env:
+  #   GITHUB_TOKEN: "your-token"
+  #   CONFLUENCE_TOKEN: "your-token"
+  #   JIRA_TOKEN: "your-token"
 
 sources:
   github:

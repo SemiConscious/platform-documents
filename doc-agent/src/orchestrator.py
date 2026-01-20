@@ -72,9 +72,15 @@ class Orchestrator:
         
         # Initialize components
         self.store = KnowledgeStore(self.store_dir)
+        
+        # Configure MCP client for Natterbox server
+        mcp_config = config.get("mcp", {})
         self.mcp_client = MCPClient(
-            server_name=config.get("mcp", {}).get("server", "natterbox"),
-            timeout=config.get("mcp", {}).get("timeout", 30),
+            server_name=mcp_config.get("server", "natterbox"),
+            server_command=mcp_config.get("command"),
+            server_args=mcp_config.get("args"),
+            server_env=mcp_config.get("env"),
+            timeout=mcp_config.get("timeout", 60),
         )
         
         # Initialize file store for context management (session-only)
