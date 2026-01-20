@@ -1876,13 +1876,19 @@ Please continue from where you left off. Files in the file store are still acces
                     text = block.get("text", "")
                     response_text += text
                     
-                    # Print ALL of Claude's thinking/reasoning - no truncation
-                    # Use flush=True to ensure output appears immediately
+                    # Log and print ALL of Claude's thinking/reasoning
+                    # Goes to both log file and stdout for visibility
                     if text.strip():
+                        thinking_text = text.strip()
+                        # Log FULL thinking to file (separate lines for readability)
+                        logger.info(f"💭 Claude's thinking ({len(thinking_text)} chars):")
+                        for line in thinking_text.split('\n'):
+                            logger.info(f"   {line}")
+                        # Also print to stdout with flush for real-time display
                         print(f"\n{'─'*60}", flush=True)
                         print(f"💭 Claude's thinking:", flush=True)
                         print(f"{'─'*60}", flush=True)
-                        print(text.strip(), flush=True)
+                        print(thinking_text, flush=True)
                         print(f"{'─'*60}\n", flush=True)
             
             # If no more tool use, we're done
