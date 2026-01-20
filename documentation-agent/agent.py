@@ -63,7 +63,7 @@ class Config:
     # AWS Bedrock settings
     aws_region: str = field(default_factory=lambda: os.environ.get("AWS_REGION", "us-east-1"))
     bedrock_model_id: str = field(default_factory=lambda: os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-sonnet-4-20250514-v1:0"))
-    max_tokens: int = 8192
+    max_tokens: int = 32768  # Increased for generating large documentation
 
     # MCP Server settings
     natterbox_mcp_url: str = field(default_factory=lambda: os.environ.get("NATTERBOX_MCP_URL", "https://avatar.natterbox-dev03.net/mcp/sse"))
@@ -1831,6 +1831,28 @@ Please continue from where you left off. Files in the file store are still acces
             # Check stop reason
             stop_reason = response.get("stop_reason")
             content = response.get("content", [])
+
+            # Handle max_tokens - response was truncated
+            if stop_reason == "max_tokens":
+                logger.warning("⚠️  Response hit max_tokens limit - asking Claude to continue")
+                
+                # Check if there are incomplete tool_use blocks (no id or missing fields)
+                has_incomplete_tool_use = any(
+                    block.get("type") == "tool_use" and (not block.get("id") or not block.get("name"))
+                    for block in content
+                )
+                
+                if has_incomplete_tool_use:
+                    # Remove incomplete tool_use blocks before adding to history
+                    content = [b for b in content if not (b.get("type") == "tool_use" and (not b.get("id") or not b.get("name")))]
+                    logger.info("Removed incomplete tool_use blocks from truncated response")
+                
+                # Add the (cleaned) assistant response
+                if content:
+                    self.messages.append({"role": "assistant", "content": content})
+                    # Ask Claude to continue
+                    self.messages.append({"role": "user", "content": "Your response was truncated. Please continue exactly where you left off."})
+                continue  # Continue to next turn
 
             # Add assistant response to history
             self.messages.append({"role": "assistant", "content": content})
