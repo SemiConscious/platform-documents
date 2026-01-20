@@ -1,177 +1,151 @@
 # Documentation Backlog
 
-Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.md) when done.
+**Last Updated:** 2026-01-20  
+**Current Focus:** Priority 4 - Modern Services
 
 ---
 
-## Priority 1: Foundation ✅ COMPLETE
+## Priority 1: Platform Core ✅ COMPLETE
 
-### Project Setup ✅
-- [x] Create repository structure
-- [x] Set up project tracking files
-- [x] Create initial repository inventory
-- [x] Categorize repositories by domain
+### Foundation Documents ✅
+- [x] `architecture/overview.md` - Architecture index and navigation
+- [x] `architecture/global-architecture.md` - High-level system architecture
+- [x] `services/repository-inventory.md` - Repository catalog with categorization
+- [ ] Service dependency map (deferred - requires complex diagramming/research)
 
-### High-Level Architecture ✅
-- [x] Create architecture overview document
-- [x] Pull existing diagrams from Confluence Architecture space
-- [x] Document global platform topology (6 AWS regions)
-- [ ] Create service dependency map (deferred - complex)
+### Core Services ✅
+- [x] `services/platform-core/platform-api.md` - CoreAPI documentation
+- [x] `services/platform-core/platform-sapien.md` - Public API documentation
 
 ---
 
-## Priority 2: Core Platform ✅ COMPLETE
+## Priority 2: Voice Routing Subsystem ✅ COMPLETE
 
-### Voice Routing Subsystem ✅ COMPLETE
-- [x] FreeSWITCH overview and role
-- [x] Call flow documentation (inbound/outbound)
-- [x] fsxinetd service documentation
-- [x] **CDR processing pipeline (cdrmunch)** ✅ DONE
-- [x] **tts-gateway service documentation** ✅ DONE
-- [x] **Dialplan structure and logic** ✅ DONE
-- [x] **PBX component documentation** ✅ DONE
-- [x] **Routing policies documentation** ✅ DONE (NEW)
-
-### Platform Core Services ✅ COMPLETE
-- [x] **platform-api documentation** ✅ DONE
-- [x] **platform-sapien documentation** ✅ DONE
-- [x] **Database architecture overview** ✅ DONE
-- [x] **CDR processing pipeline (cdrmunch)** ✅ DONE
-
-### Infrastructure ✅
-- [x] Infrastructure overview (AWS, networking, deployment)
-- [ ] Salt Stack configuration management details
-- [ ] Guardian system documentation
-- [ ] Networking architecture deep-dive
+### Voice Components ✅
+- [x] `architecture/voice-routing/overview.md` - Voice subsystem overview
+- [x] `architecture/voice-routing/fsxinetd.md` - fsxinetd service deep-dive
+- [x] `architecture/voice-routing/cdr-processing.md` - CDR pipeline documentation
+- [x] `architecture/voice-routing/tts-gateway.md` - TTS Gateway service
+- [x] `architecture/voice-routing/dialplan.md` - Dialplan structure and logic
+- [x] `architecture/voice-routing/pbx.md` - PBX component documentation
+- [x] `architecture/voice-routing/routing-policies.md` - Routing policies documentation
 
 ---
 
-## Priority 3: Key Integrations ✅ OVERVIEW COMPLETE
+## Priority 3: Salesforce & Omnichannel ⏳ PARTIAL
 
-### Salesforce Integration ✅
-- [x] Salesforce integration overview (AVS, SCV, architecture)
-- [ ] AVS package deep-dive
-- [ ] SCV BYOT connector details
-- [ ] Omni-Channel integration details
-- [ ] Voice Call object usage
+### Salesforce Integration
+- [x] `architecture/salesforce-integration/overview.md` - Integration overview ✅
+- [ ] `architecture/salesforce-integration/avs-package.md` - AVS deep-dive (deferred - complex)
+- [ ] `architecture/salesforce-integration/scv-connector.md` - SCV connector details (deferred - complex)
+- [ ] `architecture/salesforce-integration/cti-adapter.md` - CTI adapter (deferred - complex)
 
-### Omnichannel ✅
-- [x] Omnichannel overview (architecture, components, flows)
-- [ ] Omniservice deep-dive
-- [ ] Chat widget integration details
-- [ ] Message templates service
-- [ ] Channel routing logic
+### Omnichannel
+- [x] `architecture/omnichannel/overview.md` - Omnichannel overview ✅
+- [ ] `architecture/omnichannel/omniservice.md` - Omniservice deep-dive (deferred - complex)
+- [ ] `architecture/omnichannel/chat-widget.md` - Chat widget documentation (deferred - complex)
+- [ ] `architecture/omnichannel/message-templates.md` - Message templates (deferred - complex)
 
 ---
 
-## Priority 4: Modern Services ✅ OVERVIEW COMPLETE
+## Priority 4: Modern Services ⏳ PARTIAL
 
-### AI/CAI (Conversational AI) ✅
-- [x] CAI overview (architecture, components, integration)
-- [ ] Bedrock integration deep-dive
-- [ ] Prompt pipeline documentation
-- [ ] WebSocket service details
+### AI/Conversational AI
+- [x] `architecture/ai-cai/overview.md` - AI/CAI overview ✅
+- [ ] `architecture/ai-cai/bedrock-integration.md` - AWS Bedrock details (deferred - complex)
+- [ ] `architecture/ai-cai/prompt-pipeline.md` - Prompt management (deferred - complex)
+- [ ] `architecture/ai-cai/websocket-service.md` - WebSocket handling (deferred - complex)
 
-### Observability (Lumina)
-- [ ] Lumina architecture
-- [ ] Metrics pipeline
-- [ ] Event processing
-- [ ] Frontend application
+### Observability (Lumina) ✅
+- [x] `architecture/observability/overview.md` - Lumina observability platform ✅
 
-### Permissions & Auth
-- [ ] NAPS (Natterbox Permissions Service)
-- [ ] Gatekeeper authorizer
-- [ ] Auth0 integration
+### Permissions & Auth (NEXT UP)
+- [ ] `architecture/permissions/overview.md` - NAPS/Gatekeeper overview
+- [ ] `architecture/permissions/naps-service.md` - NAPS deep-dive
+- [ ] `architecture/permissions/gatekeeper.md` - Gatekeeper documentation
+- [ ] `architecture/permissions/auth0-integration.md` - Auth0 integration
 
 ---
 
-## Priority 5: Infrastructure as Code (Partial)
+## Priority 5: Infrastructure & Terraform ⏳ PARTIAL
 
-### Terraform Module Catalog ✅
-- [x] Create module inventory (catalog.md)
-- [ ] Document module dependencies
-- [ ] Standardize module documentation format
-- [ ] Key modules deep-dive:
-  - [ ] aws-terraform-omnichannel
-  - [ ] aws-terraform-network-rt
-  - [ ] aws-terraform-fsx8
-  - [ ] aws-terraform-cai
-  - [ ] aws-terraform-bedrock
-  - [ ] aws-terraform-lumina-pipeline
+### Infrastructure
+- [x] `architecture/infrastructure/overview.md` - Infrastructure overview ✅
+- [ ] `architecture/infrastructure/salt-stack.md` - Salt configuration (deferred - complex)
+- [ ] `architecture/infrastructure/guardian.md` - Guardian firewall (deferred - complex)
+- [ ] `architecture/infrastructure/networking.md` - Network architecture (deferred - complex)
+
+### Database
+- [x] `architecture/database/overview.md` - Database architecture ✅
+
+### Terraform
+- [x] `terraform-modules/catalog.md` - Module catalog ✅
+- [ ] Module documentation for individual modules (deferred - very large scope)
 
 ---
 
-## Priority 6: Operations ✅ COMPLETE
+## Priority 6: Operations ⏳ PARTIAL
 
 ### Runbooks ✅
-- [x] Consolidate existing runbooks from Confluence
-- [x] Incident response procedures (emergency-response.md)
-- [x] Deployment procedures
-- [x] Monitoring and alerting procedures
+- [x] `operations/runbooks/README.md` - Runbooks index ✅
+- [x] `operations/runbooks/emergency-response.md` - Emergency procedures ✅
+- [x] `operations/runbooks/deployment-procedures.md` - Deployment guide ✅
+- [x] `operations/runbooks/monitoring-alerting.md` - Monitoring tools ✅
 
-### CI/CD
-- [ ] GitHub Actions workflows documentation
-- [ ] Release management process (RMHT)
-- [ ] Environment management
-
----
-
-## Priority 7: Onboarding ✅ COMPLETE
-
-### Developer Onboarding ✅
-- [x] Development environment setup
-- [x] Repository navigation guide
-- [x] Key technologies overview
-- [x] Common development tasks
-
-### Support Onboarding
-- [ ] Platform overview for support
-- [ ] Troubleshooting basics
-- [ ] Escalation procedures
-
-### Platform Engineer Onboarding ✅
-- [x] Training plan overview
-- [x] Tools and access
-- [x] Operational procedures
+### CI/CD (NEXT UP after Permissions)
+- [ ] `operations/ci-cd/github-actions.md` - GitHub Actions workflows
+- [ ] `operations/ci-cd/rmht.md` - Release Management tool
+- [ ] `operations/ci-cd/environments.md` - Environment management
 
 ---
 
-## Priority 8: Tooling ✅ COMPLETE
+## Priority 7: Onboarding ⏳ PARTIAL
 
-### Documentation Agent ✅
-- [x] Agent framework for autonomous documentation updates
-- [x] Task configuration (tasks.yaml)
-- [x] Docker deployment setup
-
----
-
-## Parking Lot
-
-*Items to be prioritized later or determined out of scope:*
-
-- Mobile apps (Freedom iOS/Android)
-- Legacy system deep documentation
-- Historical migration documentation
-- Individual customer configurations
-- Wallboard application
+- [x] `onboarding/README.md` - Onboarding index ✅
+- [x] `onboarding/developer.md` - Developer guide ✅
+- [x] `onboarding/platform-engineer.md` - PE/SRE guide ✅
+- [ ] `onboarding/support.md` - Support team onboarding
 
 ---
 
-## Backlog Management
+## Deferred Items (Complex/Large Scope)
 
-### Adding Items
-- New items go to "Parking Lot" unless urgent
-- Prioritize based on business need and dependencies
+These items require significant research, complex diagramming, or access to specific resources:
 
-### Estimating
-Items are roughly sized:
-- 🟢 Small (< 1 hour)
-- 🟡 Medium (1-4 hours)
-- 🔴 Large (4+ hours, consider breaking down)
-
-### Dependencies
-Note dependencies in item descriptions. Don't start blocked items.
+1. **Service dependency map** - Requires mapping 450+ repos
+2. **AVS package deep-dive** - Complex Salesforce managed package
+3. **SCV connector details** - Complex AWS/Salesforce integration
+4. **CTI adapter** - WebSocket adapter internals
+5. **Omniservice deep-dive** - Large complex service
+6. **Chat widget** - Frontend components and SDK
+7. **Message templates** - Template system internals
+8. **Bedrock integration** - AWS AI service integration
+9. **Prompt pipeline** - Prompt management system
+10. **WebSocket service** - Real-time communication layer
+11. **Salt Stack** - Configuration management (legacy)
+12. **Guardian firewall** - Custom firewall rules
+13. **Networking deep-dive** - VPC, Transit Gateway, etc.
+14. **Individual Terraform modules** - 100+ modules to document
 
 ---
 
-*Last reviewed: 2026-01-20*
+## Quick Wins (Can be done quickly)
+
+1. ~~Lumina observability overview~~ ✅ DONE
+2. Permissions & Auth overview (NAPS/Gatekeeper) ← **NEXT**
+3. CI/CD GitHub Actions documentation
+4. Support team onboarding guide
+
+---
+
+## Notes
+
+- Focus on completing overviews before deep-dives
+- Use existing Confluence content as primary source
+- GitHub READMEs provide good technical detail
+- Terraform modules often have embedded documentation
+- Some services lack documentation - may need code analysis
+
+---
+
+*Review and update this backlog at the start of each session*
