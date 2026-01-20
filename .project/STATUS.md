@@ -1,21 +1,24 @@
 # Platform Documentation Project - Status
 
-**Last Updated:** 2026-01-19  
-**Current Phase:** Phase 1 - Discovery & Inventory  
-**Overall Progress:** ███░░░░░░░ 30%
+**Last Updated:** 2026-01-20  
+**Current Phase:** Phase 2 - Documentation Creation  
+**Overall Progress:** ██████████░░░░░░░░░░ 65%
 
 ---
 
 ## 🎯 Current Focus
 
-Completing repository inventory and establishing baseline understanding of the platform.
+Creating runbooks and onboarding documentation.
 
 ## 🔄 Currently In Progress
 
 - [x] Repository inventory and categorization ✅ COMPLETE
 - [x] Pull existing architecture content from Confluence ✅ COMPLETE
 - [x] Document high-level platform architecture ✅ COMPLETE
-- [ ] Complete remaining subsystem documentation
+- [x] Voice routing subsystem documentation ✅ COMPLETE
+- [x] Operations runbooks ✅ COMPLETE
+- [x] Onboarding guides ✅ COMPLETE
+- [ ] Additional service-level documentation
 
 ## 🚧 Blocked On
 
@@ -23,52 +26,65 @@ Completing repository inventory and establishing baseline understanding of the p
 
 ## ✅ Ready for Review
 
-- `/services/repository-inventory.md` - Comprehensive inventory of ~450+ repositories organized by domain
-- `/architecture/global-architecture.md` - Platform architecture overview with diagrams
-- `/architecture/voice-routing/overview.md` - Voice routing subsystem documentation
+### Architecture
+- `/architecture/global-architecture.md` - Platform architecture overview
+- `/architecture/voice-routing/overview.md` - Voice routing subsystem
 - `/architecture/voice-routing/fsxinetd.md` - fsxinetd service documentation
+
+### Services
+- `/services/repository-inventory.md` - Comprehensive inventory of ~450+ repositories
+
+### Operations
+- `/operations/runbooks/README.md` - Runbooks index
+- `/operations/runbooks/emergency-response.md` - Emergency procedures
+- `/operations/runbooks/deployment-procedures.md` - Release process
+- `/operations/runbooks/monitoring-alerting.md` - Monitoring tools
+
+### Onboarding
+- `/onboarding/README.md` - Onboarding index
+- `/onboarding/developer.md` - Developer onboarding guide
+- `/onboarding/platform-engineer.md` - PE/SRE onboarding guide
 
 ## ⏭️ Next Up
 
-1. Pull existing architecture diagrams from Confluence Architecture space
-2. Document high-level platform architecture
-3. Begin Voice Routing subsystem documentation
-4. Create Terraform module dependency map
+1. Salesforce integration architecture documentation
+2. Omnichannel subsystem documentation
+3. AI/CAI architecture documentation
+4. Infrastructure documentation (Terraform modules)
+5. Additional service-level documentation
 
-## 💡 Recent Discoveries
+## 💡 Recent Updates
+
+### 2026-01-20
+- **Runbooks created:**
+  - Emergency Response (SDC failover, GeoDNS, OOB access)
+  - Deployment Procedures (release types, timelines, rollbacks)
+  - Monitoring and Alerting (tools, channels, dashboards)
+- **Onboarding guides created:**
+  - Developer onboarding (environment setup, workflow, repositories)
+  - Platform Engineer onboarding (based on SRE training plan)
 
 ### 2026-01-19
-- **Scale confirmed**: ~450+ repositories across `redmatter`, `SemiConscious`, `natterbox`, and `benjajim` orgs
-- **Key domains identified**:
-  - Voice Routing (~35 repos) - FreeSWITCH, OpenSIPS, dialplan, CDR
-  - Terraform Modules (~120 repos) - Extensive IaC coverage
-  - Omnichannel (~10 repos) - Multi-channel communication
-  - AI/CAI (~10 repos) - Bedrock, Vertex AI integration
-  - Lumina (~10 repos) - Observability platform
-- **Technology Stack**:
-  - Languages: PHP (legacy), TypeScript/Node.js (modern), Go, C/C++, Python, Lua
-  - Frameworks: React, Svelte, Kohana
-  - Voice: FreeSWITCH, OpenSIPS, WebRTC
-  - Cloud: AWS primary, hybrid support
-  - IaC: Terraform, Salt Stack
-- **Notable patterns**:
-  - Many repos migrated from Bitbucket (mirror descriptions)
-  - PHP 8 migration in progress (parallel *-php8 repos)
-  - Extensive use of Terraform modules with territory/region setup patterns
+- Project kickoff
+- Repository structure established
+- Full repository inventory completed (~450+ repos)
+- Architecture documentation started
 
 ## 📈 Metrics
 
 | Metric | Count |
 |--------|-------|
 | Repos Inventoried | ~450 / ~450 ✅ |
-| Architecture Docs | 3 |
+| Architecture Docs | 4 |
 | Services Documented | 1 (fsxinetd) |
-| Runbooks Created | 0 |
+| Runbooks Created | 3 ✅ |
+| Onboarding Guides | 2 ✅ |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
+| 2026-01-20 | Created runbooks and onboarding documentation |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
 
 ---

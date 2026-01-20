@@ -23,10 +23,10 @@ Natterbox is a cloud-based enterprise telephony platform that integrates voice c
 | Subsystem | Status | Documentation |
 |-----------|--------|---------------|
 | Voice Routing | ✅ Complete | [Overview](./voice-routing/overview.md), [fsxinetd](./voice-routing/fsxinetd.md) |
-| Omnichannel | 🔲 Planned | [Folder](./omnichannel/) |
-| Salesforce Integration | 🔲 Planned | [Folder](./salesforce-integration/) |
-| AI/CAI | 🔲 Planned | [Folder](./ai-cai/) |
-| Infrastructure | 🔲 Planned | [Folder](./infrastructure/) |
+| Salesforce Integration | ✅ Complete | [Overview](./salesforce-integration/overview.md) |
+| Omnichannel | ✅ Complete | [Overview](./omnichannel/overview.md) |
+| AI/CAI | ✅ Complete | [Overview](./ai-cai/overview.md) |
+| Infrastructure | ✅ Complete | [Overview](./infrastructure/overview.md) |
 
 ## Global Infrastructure
 
