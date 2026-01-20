@@ -84,17 +84,63 @@ class Config:
 class ShellTool:
     """
     Provides shell command execution capabilities.
-    Designed to run in a Docker container for isolation.
+    All operations are sandboxed to the work_dir - no escaping allowed.
     """
     
+    # Dangerous bash patterns to block
+    BLOCKED_PATTERNS = [
+        r'\bsudo\b',
+        r'\brm\s+-rf\s+/',
+        r'\bchmod\s+.*/',
+        r'\bchown\s+.*/',
+        r'>\s*/(?!workspace)',  # Redirect to absolute path outside workspace
+        r'\bmkdir\s+-p\s+/',
+        r'\bln\s+-s',  # Symlinks could escape sandbox
+    ]
+    
     def __init__(self, work_dir: Path, timeout: int = 300):
-        self.work_dir = work_dir
+        self.work_dir = Path(work_dir).resolve()  # Get absolute path
         self.timeout = timeout
         self.work_dir.mkdir(parents=True, exist_ok=True)
+        self._blocked_re = [re.compile(p) for p in self.BLOCKED_PATTERNS]
+    
+    def _resolve_safe_path(self, path: str) -> tuple[Path, Optional[str]]:
+        """
+        Resolve a path and ensure it's within work_dir.
+        Returns (resolved_path, error_message).
+        If error_message is not None, the path is not safe.
+        """
+        try:
+            # Handle relative and absolute paths
+            if path.startswith("/"):
+                resolved = Path(path).resolve()
+            else:
+                resolved = (self.work_dir / path).resolve()
+            
+            # Check if path is within work_dir
+            try:
+                resolved.relative_to(self.work_dir)
+                return resolved, None
+            except ValueError:
+                return resolved, f"Path '{path}' resolves to '{resolved}' which is outside the workspace '{self.work_dir}'"
+                
+        except Exception as e:
+            return Path(path), f"Invalid path '{path}': {e}"
+    
+    def _check_command_safety(self, command: str) -> Optional[str]:
+        """
+        Check if a bash command is safe to execute.
+        Returns error message if unsafe, None if safe.
+        """
+        for pattern in self._blocked_re:
+            if pattern.search(command):
+                return f"Blocked potentially dangerous command pattern: {pattern.pattern}"
+        return None
     
     def execute(self, command: str, description: str = "") -> dict[str, Any]:
         """
         Execute a shell command and return the result.
+        Command runs with cwd set to work_dir and is checked for dangerous patterns.
         
         Args:
             command: The bash command to execute
@@ -105,7 +151,25 @@ class ShellTool:
         """
         logger.info(f"Shell: {description or command[:100]}")
         
+        # Check command safety
+        safety_error = self._check_command_safety(command)
+        if safety_error:
+            logger.warning(f"Blocked command: {safety_error}")
+            return {
+                "success": False,
+                "returncode": -1,
+                "stdout": "",
+                "stderr": safety_error,
+            }
+        
         try:
+            # Create a restricted environment
+            safe_env = {
+                **os.environ,
+                "HOME": str(self.work_dir),
+                "PWD": str(self.work_dir),
+            }
+            
             result = subprocess.run(
                 command,
                 shell=True,
@@ -113,7 +177,7 @@ class ShellTool:
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
-                env={**os.environ, "HOME": str(self.work_dir)},
+                env=safe_env,
             )
             
             return {
@@ -138,30 +202,43 @@ class ShellTool:
             }
     
     def read_file(self, path: str) -> dict[str, Any]:
-        """Read a file from the workspace."""
+        """Read a file from the workspace. Path must be within work_dir."""
+        resolved, error = self._resolve_safe_path(path)
+        if error:
+            logger.warning(f"Blocked read_file: {error}")
+            return {"success": False, "error": error}
+        
         try:
-            file_path = self.work_dir / path if not path.startswith("/") else Path(path)
-            content = file_path.read_text()
+            content = resolved.read_text()
             return {"success": True, "content": content}
         except Exception as e:
             return {"success": False, "error": str(e)}
     
     def write_file(self, path: str, content: str) -> dict[str, Any]:
-        """Write content to a file in the workspace."""
+        """Write content to a file in the workspace. Path must be within work_dir."""
+        resolved, error = self._resolve_safe_path(path)
+        if error:
+            logger.warning(f"Blocked write_file: {error}")
+            return {"success": False, "error": error}
+        
         try:
-            file_path = self.work_dir / path if not path.startswith("/") else Path(path)
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_text(content)
-            return {"success": True, "path": str(file_path)}
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            resolved.write_text(content)
+            logger.info(f"Wrote file: {resolved}")
+            return {"success": True, "path": str(resolved)}
         except Exception as e:
             return {"success": False, "error": str(e)}
     
     def list_directory(self, path: str = ".") -> dict[str, Any]:
-        """List contents of a directory."""
+        """List contents of a directory. Path must be within work_dir."""
+        resolved, error = self._resolve_safe_path(path)
+        if error:
+            logger.warning(f"Blocked list_directory: {error}")
+            return {"success": False, "error": error}
+        
         try:
-            dir_path = self.work_dir / path if not path.startswith("/") else Path(path)
             items = []
-            for item in dir_path.iterdir():
+            for item in resolved.iterdir():
                 items.append({
                     "name": item.name,
                     "type": "directory" if item.is_dir() else "file",
@@ -176,7 +253,7 @@ class ShellTool:
         return [
             {
                 "name": "bash",
-                "description": "Execute a bash command in the workspace. Use for running scripts, installing packages, git operations, file manipulation, etc.",
+                "description": f"Execute a bash command in the workspace ({self.work_dir}). Commands run with cwd set to workspace. Some dangerous patterns are blocked. Use for git operations, file manipulation, etc.",
                 "input_schema": {
                     "type": "object",
                     "properties": {
