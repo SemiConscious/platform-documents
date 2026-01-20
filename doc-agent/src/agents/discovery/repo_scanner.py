@@ -59,6 +59,10 @@ class RepositoryScannerAgent(BaseAgent):
         discovered_apis = 0
         errors = []
         
+        # Parallelism for repo analysis (configurable)
+        max_concurrent = self.context.config.get("agents", {}).get("discovery", {}).get("repo_parallelism", 10)
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
         for org in self.organizations:
             try:
                 all_repos = await self.github.list_repositories(org=org)
@@ -71,22 +75,37 @@ class RepositoryScannerAgent(BaseAgent):
                 
                 self.logger.info(f"Found {len(repos)} repositories in {org} (filtered from {len(all_repos)})")
                 
-                for repo in repos:
-                    try:
-                        # Skip if already processed (for incremental runs)
-                        if repo.full_name in processed_repos:
-                            self.logger.debug(f"Skipping already processed repo: {repo.full_name}")
-                            continue
-                        
-                        # Process the repository
-                        service = await self._process_repository(org, repo)
-                        
+                # Filter to repos not yet processed
+                repos_to_process = [
+                    r for r in repos
+                    if r.full_name not in processed_repos
+                ]
+                
+                if not repos_to_process:
+                    self.logger.info(f"All repos in {org} already processed")
+                    continue
+                
+                self.logger.info(f"Processing {len(repos_to_process)} repos in parallel (max {max_concurrent} concurrent)")
+                
+                # Process repos in parallel with semaphore
+                async def process_with_semaphore(repo):
+                    async with semaphore:
+                        return await self._process_single_repo(org, repo)
+                
+                tasks = [process_with_semaphore(repo) for repo in repos_to_process]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                # Collect results
+                for repo, result in zip(repos_to_process, results):
+                    if isinstance(result, Exception):
+                        self.logger.warning(f"Failed to process repo {repo.name}: {result}")
+                        errors.append(f"{repo.name}: {str(result)}")
+                    elif result:
+                        service, apis = result
                         if service:
                             self.graph.add_entity(service)
                             discovered_services += 1
                             
-                            # Process APIs if found
-                            apis = await self._extract_apis(org, repo, service.id)
                             for api in apis:
                                 self.graph.add_entity(api)
                                 self.graph.add_relation(Relation(
@@ -95,12 +114,8 @@ class RepositoryScannerAgent(BaseAgent):
                                     relation_type=RelationType.EXPOSES,
                                 ))
                                 discovered_apis += 1
-                        
-                        processed_repos.add(repo.full_name)
-                        
-                    except Exception as e:
-                        self.logger.warning(f"Failed to process repo {repo.name}: {e}")
-                        errors.append(f"{repo.name}: {str(e)}")
+                    
+                    processed_repos.add(repo.full_name)
                 
             except Exception as e:
                 self.logger.error(f"Failed to scan organization {org}: {e}")
@@ -126,6 +141,23 @@ class RepositoryScannerAgent(BaseAgent):
             error="; ".join(errors) if errors else None,
             metadata={"organizations": self.organizations},
         )
+    
+    async def _process_single_repo(
+        self,
+        org: str,
+        repo: GHRepo,
+    ) -> Optional[tuple[Optional[Service], list[API]]]:
+        """Process a single repository and return service + APIs."""
+        try:
+            service = await self._process_repository(org, repo)
+            apis = []
+            
+            if service:
+                apis = await self._extract_apis(org, repo, service.id)
+            
+            return (service, apis)
+        except Exception as e:
+            raise e
     
     def _should_exclude(self, repo_name: str) -> bool:
         """Check if a repository should be excluded based on patterns."""

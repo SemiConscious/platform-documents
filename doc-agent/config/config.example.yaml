@@ -116,6 +116,7 @@ output:
 agents:
   discovery:
     parallelism: 5
+    repo_parallelism: 10  # Parallel repo analysis (Claude API calls)
     timeout: 300
   analysis:
     parallelism: 3
