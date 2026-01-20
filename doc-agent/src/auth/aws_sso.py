@@ -98,6 +98,13 @@ class AWSSSOAuth:
         if self._credentials and not self._credentials.is_expired() and not force_refresh:
             return self._credentials
         
+        # Check if we're already inside an aws-vault session (env vars present)
+        env_creds = self._get_credentials_from_env()
+        if env_creds and not force_refresh:
+            self._credentials = env_creds
+            logger.info(f"Using AWS credentials from environment (aws-vault session)")
+            return self._credentials
+        
         # Check token cache
         cached = self.cache.get("aws", "sso_credentials", self.profile)
         if cached and not cached.is_expired() and not force_refresh:
@@ -119,6 +126,32 @@ class AWSSSOAuth:
             return await self._get_credentials_aws_vault()
         else:
             return await self._get_credentials_aws_cli()
+    
+    def _get_credentials_from_env(self) -> Optional[AWSCredentials]:
+        """Check for AWS credentials in environment variables."""
+        access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+        secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+        session_token = os.environ.get("AWS_SESSION_TOKEN", "")
+        
+        # Also check if we're in an aws-vault session
+        aws_vault = os.environ.get("AWS_VAULT")
+        
+        if access_key and secret_key:
+            # Credentials are in environment (likely aws-vault exec or similar)
+            # Default expiration - assume 1 hour from now if not specified
+            expiration = datetime.utcnow() + timedelta(hours=1)
+            
+            region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or self.region
+            
+            return AWSCredentials(
+                access_key_id=access_key,
+                secret_access_key=secret_key,
+                session_token=session_token,
+                expiration=expiration,
+                region=region,
+            )
+        
+        return None
     
     async def _get_credentials_aws_vault(self) -> Optional[AWSCredentials]:
         """Get credentials using aws-vault."""

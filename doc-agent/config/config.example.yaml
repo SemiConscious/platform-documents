@@ -3,7 +3,7 @@
 llm:
   # Using AWS Bedrock for Claude API access
   provider: bedrock
-  model: anthropic.claude-sonnet-4-20250514-v1:0  # Claude Opus 4.5 on Bedrock
+  model: eu.anthropic.claude-opus-4-5-20251101-v1:0  # Claude Opus 4.5 via EU inference profile
   max_tokens: 4096
   temperature: 0.3
 

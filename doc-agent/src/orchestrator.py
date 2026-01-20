@@ -13,6 +13,7 @@ from .knowledge import KnowledgeGraph, KnowledgeStore
 from .mcp.client import MCPClient, MCPOAuthConfig
 from .context import FileStore, FileStoreTool
 from .auth import TokenCache, AWSSSOAuth
+from .tools import ToolRegistry, FileReadTool, FileWriteTool, FileListTool, ShellTool, GitTool
 from .utils.logging import get_logger
 
 logger = get_logger("orchestrator")
@@ -98,6 +99,15 @@ class Orchestrator:
         self.file_store = FileStore(threshold_bytes=1024)  # 1KB threshold
         self.file_store_tool = FileStoreTool(self.file_store)
         
+        # Initialize local tool registry
+        workspace_root = Path.cwd()  # Use current directory as workspace
+        self.tool_registry = ToolRegistry(
+            workspace_root=workspace_root,
+            output_dir=self.output_dir,
+            allowed_paths=[workspace_root, self.output_dir, self.store_dir],
+        )
+        self._setup_tools()
+        
         # Anthropic client for summary generation
         self.anthropic: Optional[AsyncAnthropic] = None
         
@@ -116,6 +126,19 @@ class Orchestrator:
                 use_aws_vault=aws_config.get("use_aws_vault", True),
             )
             logger.info(f"AWS SSO configured for profile: {aws_config.get('profile', 'default')}")
+    
+    def _setup_tools(self) -> None:
+        """Set up local tools for agents."""
+        # Register file tools
+        self.tool_registry.register(FileReadTool(self.tool_registry))
+        self.tool_registry.register(FileWriteTool(self.tool_registry))
+        self.tool_registry.register(FileListTool(self.tool_registry))
+        
+        # Register shell tools
+        self.tool_registry.register(ShellTool(self.tool_registry))
+        self.tool_registry.register(GitTool(self.tool_registry))
+        
+        logger.info(f"Registered {len(self.tool_registry.list_tools())} local tools: {self.tool_registry.list_tools()}")
         
     async def initialize(self) -> None:
         """Initialize the orchestrator and load existing state."""
@@ -241,6 +264,8 @@ class Orchestrator:
             file_store=self.file_store,
             output_dir=self.output_dir,
             config=self.config,
+            anthropic_client=self.anthropic,
+            tool_registry=self.tool_registry,
             dry_run=dry_run,
             verbose=verbose,
         )

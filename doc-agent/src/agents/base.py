@@ -6,7 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional, TypeVar, Generic, Union
+from typing import Any, Optional, TypeVar, Generic, Union, TYPE_CHECKING
 from pathlib import Path
 
 from anthropic import AsyncAnthropic
@@ -14,6 +14,9 @@ from anthropic import AsyncAnthropic
 from ..knowledge import KnowledgeGraph, KnowledgeStore
 from ..mcp.client import MCPClient
 from ..context import FileStore, FileReference
+
+if TYPE_CHECKING:
+    from ..tools import ToolRegistry
 
 logger = logging.getLogger("doc-agent.agents.base")
 
@@ -44,6 +47,12 @@ class AgentContext:
     file_store: FileStore
     output_dir: Path
     config: dict[str, Any]
+    
+    # LLM client (may be Bedrock or direct Anthropic)
+    anthropic_client: Optional[AsyncAnthropic] = None
+    
+    # Local tools registry
+    tool_registry: Optional["ToolRegistry"] = None
     
     # Runtime state
     dry_run: bool = False
@@ -76,10 +85,11 @@ class BaseAgent(ABC):
         
         Args:
             context: Shared agent context
-            anthropic_client: Optional pre-configured Anthropic client
+            anthropic_client: Optional pre-configured Anthropic client (deprecated, use context.anthropic_client)
         """
         self.context = context
-        self.anthropic = anthropic_client or AsyncAnthropic()
+        # Prefer context.anthropic_client, fall back to parameter, then create new
+        self.anthropic = context.anthropic_client or anthropic_client or AsyncAnthropic()
         self.logger = logging.getLogger(f"doc-agent.agents.{self.name}")
         
         # Configuration
@@ -107,6 +117,116 @@ class BaseAgent(ABC):
     def file_store(self) -> FileStore:
         """Access to the file store for context management."""
         return self.context.file_store
+    
+    @property
+    def tools(self) -> Optional["ToolRegistry"]:
+        """Access to local tools registry."""
+        return self.context.tool_registry
+    
+    def has_tools(self) -> bool:
+        """Check if local tools are available."""
+        return self.context.tool_registry is not None
+    
+    async def read_file(self, path: str, **kwargs) -> Optional[str]:
+        """
+        Convenience method to read a local file.
+        
+        Args:
+            path: File path (relative to workspace or absolute)
+            **kwargs: Additional args (start_line, end_line, encoding)
+            
+        Returns:
+            File content or None if failed
+        """
+        if not self.has_tools():
+            self.logger.warning("No tool registry available for file reading")
+            return None
+        
+        result = await self.tools.execute("file_read", path=path, **kwargs)
+        if result.success:
+            return result.data
+        else:
+            self.logger.warning(f"Failed to read file {path}: {result.error}")
+            return None
+    
+    async def write_file(self, path: str, content: str, **kwargs) -> bool:
+        """
+        Convenience method to write a file to the output directory.
+        
+        Args:
+            path: File path (relative to output dir)
+            content: Content to write
+            **kwargs: Additional args (append, encoding)
+            
+        Returns:
+            True if successful
+        """
+        if not self.has_tools():
+            self.logger.warning("No tool registry available for file writing")
+            return False
+        
+        result = await self.tools.execute("file_write", path=path, content=content, **kwargs)
+        if not result.success:
+            self.logger.warning(f"Failed to write file {path}: {result.error}")
+        return result.success
+    
+    async def list_files(self, path: str = ".", **kwargs) -> list[dict]:
+        """
+        Convenience method to list files in a directory.
+        
+        Args:
+            path: Directory path
+            **kwargs: Additional args (pattern, recursive, etc.)
+            
+        Returns:
+            List of file info dicts
+        """
+        if not self.has_tools():
+            return []
+        
+        result = await self.tools.execute("file_list", path=path, **kwargs)
+        if result.success:
+            return result.data.get("files", [])
+        return []
+    
+    async def run_shell(self, command: str, **kwargs) -> Optional[dict]:
+        """
+        Convenience method to run a shell command.
+        
+        Args:
+            command: Shell command to execute
+            **kwargs: Additional args (working_dir, timeout, env)
+            
+        Returns:
+            Dict with stdout, stderr, exit_code or None if failed
+        """
+        if not self.has_tools():
+            self.logger.warning("No tool registry available for shell execution")
+            return None
+        
+        result = await self.tools.execute("shell_exec", command=command, **kwargs)
+        if result.success:
+            return result.data
+        else:
+            self.logger.warning(f"Shell command failed: {result.error}")
+            return result.data  # Return data even on failure (has stderr)
+    
+    async def git(self, operation: str, **kwargs) -> Optional[dict]:
+        """
+        Convenience method for git operations.
+        
+        Args:
+            operation: Git operation (status, log, diff, branch, show, ls-files)
+            **kwargs: Additional args (args, path)
+            
+        Returns:
+            Dict with stdout, stderr, exit_code or None
+        """
+        if not self.has_tools():
+            return None
+        
+        result = await self.tools.execute("git", operation=operation, **kwargs)
+        return result.data if result.success else None
     
     def store_large_content(
         self,
