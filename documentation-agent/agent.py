@@ -1989,13 +1989,44 @@ Reply with ONLY the commit message, nothing else."""
 
 
 async def _check_more_work(agent: 'DocumentationAgent') -> bool:
-    """Ask the agent if there's more high-priority work to do."""
+    """Check if there's more work by reading the backlog directly."""
     
-    check_prompt = """Based on the project status and backlog, is there more high-priority documentation work to do?
-
-Read .project/STATUS.md and .project/BACKLOG.md if needed.
-
-Reply with ONLY one word: YES or NO"""
+    # Read backlog directly and check for unchecked items
+    try:
+        backlog_path = agent.config.work_dir / ".project" / "BACKLOG.md"
+        if backlog_path.exists():
+            backlog = backlog_path.read_text()
+            
+            # Count unchecked items (not deferred/complex)
+            unchecked = 0
+            for line in backlog.split('\n'):
+                line_lower = line.lower()
+                # Look for unchecked markdown checkboxes
+                if '- [ ]' in line:
+                    # Skip deferred or complex items
+                    if 'deferred' not in line_lower and 'complex' not in line_lower:
+                        unchecked += 1
+                        logger.info(f"📋 Remaining work: {line.strip()}")
+            
+            if unchecked > 0:
+                logger.info(f"📊 Found {unchecked} unchecked items in backlog (excluding deferred/complex)")
+                return True
+            else:
+                logger.info("📊 No more unchecked items found in backlog (or all remaining are deferred/complex)")
+                return False
+        else:
+            logger.warning("Backlog file not found")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error reading backlog: {e}")
+        # Fall back to asking Claude
+        pass
+    
+    # Fallback: ask Claude
+    check_prompt = """Read .project/BACKLOG.md and count unchecked items (lines with '- [ ]').
+Exclude items marked as 'deferred' or 'complex'.
+Reply with ONLY one word: YES if there are unchecked items, NO if all are done."""
 
     agent.messages = [{
         "role": "user",

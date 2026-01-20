@@ -337,6 +337,7 @@ The global network supports routing from any SIP server to any PBX:
 
 - [Global Architecture](../global-architecture.md)
 - [fsxinetd Service Details](./fsxinetd.md)
+- [TTS Gateway Service](./tts-gateway.md)
 - [PBX Component View](./pbx.md)
 - [CDR Processing](./cdr-processing.md)
 

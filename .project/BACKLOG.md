@@ -20,16 +20,16 @@ Prioritized list of documentation work. Items move to [COMPLETED.md](COMPLETED.m
 
 ---
 
-## Priority 2: Core Platform ✅ COMPLETE
+## Priority 2: Core Platform ✅ MOSTLY COMPLETE
 
 ### Voice Routing Subsystem ✅
 - [x] FreeSWITCH overview and role
 - [x] Call flow documentation (inbound/outbound)
 - [x] fsxinetd service documentation
-- [x] **CDR processing pipeline (cdrmunch)** ✅ DONE (NEW)
+- [x] **CDR processing pipeline (cdrmunch)** ✅ DONE
+- [x] **tts-gateway service documentation** ✅ DONE (NEW)
 - [ ] Dialplan structure and logic
 - [ ] PBX component documentation
-- [ ] tts-gateway service documentation
 - [ ] Routing policies documentation
 
 ### Platform Core Services ✅ COMPLETE

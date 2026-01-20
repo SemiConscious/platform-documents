@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-01-20  
 **Current Phase:** Phase 2 - Documentation Creation  
-**Overall Progress:** ██████████████████░░ 90%
+**Overall Progress:** ██████████████████░░ 92%
 
 ---
 
 ## 🎯 Current Focus
 
-Platform core services documentation in progress. Starting deep-dive documentation on specific services.
+Platform core services documentation in progress. Continuing deep-dive documentation on voice routing services.
 
 ## 🔄 What's Complete
 
@@ -27,7 +27,8 @@ Platform core services documentation in progress. Starting deep-dive documentati
 - [x] **Platform API (Core API) documentation** ✅
 - [x] **Platform Sapien (Public API) documentation** ✅
 - [x] **Database architecture overview** ✅
-- [x] **CDR processing pipeline (cdrmunch)** ✅ (NEW)
+- [x] **CDR processing pipeline (cdrmunch)** ✅
+- [x] **TTS Gateway service documentation** ✅ (NEW)
 
 ## 🚧 Blocked On
 
@@ -35,12 +36,13 @@ Platform core services documentation in progress. Starting deep-dive documentati
 
 ## ✅ Ready for Review
 
-### Architecture (10 docs)
+### Architecture (11 docs)
 - `/architecture/overview.md` - Architecture index
 - `/architecture/global-architecture.md` - Platform architecture overview
 - `/architecture/voice-routing/overview.md` - Voice routing subsystem
 - `/architecture/voice-routing/fsxinetd.md` - fsxinetd service documentation
-- `/architecture/voice-routing/cdr-processing.md` - **CDR processing pipeline** (NEW)
+- `/architecture/voice-routing/cdr-processing.md` - CDR processing pipeline
+- `/architecture/voice-routing/tts-gateway.md` - **TTS Gateway service** (NEW)
 - `/architecture/salesforce-integration/overview.md` - Salesforce integration
 - `/architecture/omnichannel/overview.md` - Omnichannel architecture
 - `/architecture/ai-cai/overview.md` - Conversational AI
@@ -75,7 +77,6 @@ Platform core services documentation in progress. Starting deep-dive documentati
 1. **Voice routing deep-dive** (remaining items):
    - Dialplan structure and logic
    - PBX component documentation
-   - tts-gateway service documentation
    - Routing policies documentation
 
 2. **Deep-dive documentation** (detailed docs beyond overviews):
@@ -92,6 +93,20 @@ Platform core services documentation in progress. Starting deep-dive documentati
    - Support team onboarding guide
 
 ## 💡 Recent Updates
+
+### 2026-01-20 (Session 6)
+- **TTS Gateway documentation created:**
+  - Comprehensive service documentation (~450 lines)
+  - Architecture diagrams showing component relationships
+  - Protocol flow (SIP/MRCP/RTP) documentation
+  - Voice providers (Amazon Polly, Google Cloud TTS)
+  - Voice management and naming conventions
+  - Caching strategy for performance optimization
+  - AWS ECS Fargate deployment details
+  - Terraform module reference
+  - Monitoring and alerting configuration
+  - Operational runbooks
+  - Future DynamoDB-based architecture roadmap
 
 ### 2026-01-20 (Session 5)
 - **CDR Processing documentation created:**
@@ -161,18 +176,18 @@ Platform core services documentation in progress. Starting deep-dive documentati
 | Metric | Count |
 |--------|-------|
 | Repos Inventoried | ~450 ✅ |
-| Architecture Docs | 10 ✅ |
+| Architecture Docs | 11 ✅ |
 | Services Documented | 4 ✅ |
 | Terraform Docs | 1 ✅ |
 | Runbooks Created | 4 ✅ |
 | Onboarding Guides | 3 ✅ |
-| **Total Docs** | **~29** |
+| **Total Docs** | **~30** |
 
 ## 🗓️ Recent Sessions
 
 | Date | Summary |
 |------|---------|
-| 2026-01-20 | CDR processing docs, Database architecture, Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
+| 2026-01-20 | TTS Gateway docs, CDR processing docs, Database architecture, Platform Sapien docs, Platform API docs, domain overviews, runbooks, onboarding, documentation agent |
 | 2026-01-19 | Project kickoff, repo structure, completed full repository inventory |
 
 ---
