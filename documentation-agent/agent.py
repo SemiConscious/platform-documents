@@ -36,10 +36,17 @@ load_dotenv()
 import boto3
 import httpx
 
-# Configure logging
+# Configure logging with immediate flush
+class FlushingStreamHandler(logging.StreamHandler):
+    """Handler that flushes after every emit for real-time output."""
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[FlushingStreamHandler()]
 )
 logger = logging.getLogger("documentation-agent")
 
@@ -1870,12 +1877,13 @@ Please continue from where you left off. Files in the file store are still acces
                     response_text += text
                     
                     # Print ALL of Claude's thinking/reasoning - no truncation
+                    # Use flush=True to ensure output appears immediately
                     if text.strip():
-                        print(f"\n{'─'*60}")
-                        print(f"💭 Claude's thinking:")
-                        print(f"{'─'*60}")
-                        print(text.strip())
-                        print(f"{'─'*60}\n")
+                        print(f"\n{'─'*60}", flush=True)
+                        print(f"💭 Claude's thinking:", flush=True)
+                        print(f"{'─'*60}", flush=True)
+                        print(text.strip(), flush=True)
+                        print(f"{'─'*60}\n", flush=True)
             
             # If no more tool use, we're done
             if stop_reason == "end_turn":
