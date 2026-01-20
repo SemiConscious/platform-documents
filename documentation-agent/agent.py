@@ -76,7 +76,7 @@ class Config:
     shell_timeout: int = 300  # seconds
 
     # Conversation settings
-    max_turns: int = 50
+    max_turns: int = 150  # Increased for deep research
 
     def __post_init__(self):
         self.work_dir = Path(self.work_dir)
