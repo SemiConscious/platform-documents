@@ -35,7 +35,9 @@ auth:
 sources:
   github:
     organizations:
-      - redmatter  # Natterbox GitHub org
+      - redmatter      # Main Natterbox GitHub org
+      - natterbox      # Additional Natterbox org
+      - SemiConscious  # Related repos
     exclude_repos:
       - ".*-deprecated"
       - ".*-archive"

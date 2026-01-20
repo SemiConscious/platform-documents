@@ -67,48 +67,71 @@ class GitHubClient:
         self,
         org: Optional[str] = None,
         per_page: int = 100,
+        max_pages: int = 10,
     ) -> list[Repository]:
         """
         List repositories for an organization or the authenticated user.
         
+        Handles pagination to fetch all repos (up to max_pages).
+        
         Args:
             org: Organization name (optional, lists user repos if not provided)
-            per_page: Results per page
+            per_page: Results per page (max 100)
+            max_pages: Maximum pages to fetch (default 10 = up to 1000 repos)
             
         Returns:
             List of Repository objects
         """
-        args = {
-            "operation": "list_repos",
-            "perPage": per_page,
-        }
-        if org:
-            args["org"] = org
+        all_repos = []
+        page = 1
         
-        response = await self.mcp.call_tool(self.TOOL_NAME, args)
+        while page <= max_pages:
+            args = {
+                "operation": "list_repos",
+                "perPage": per_page,
+                "page": page,
+            }
+            if org:
+                args["org"] = org
+            
+            response = await self.mcp.call_tool(self.TOOL_NAME, args)
+            
+            if not response.success:
+                logger.error(f"Failed to list repositories page {page}: {response.error}")
+                break
+            
+            repos = []
+            data = response.data
+            
+            # Handle nested response format: {success, data: {repositories: [...]}}
+            if isinstance(data, dict):
+                if "data" in data and isinstance(data["data"], dict):
+                    data = data["data"].get("repositories", [])
+                elif "repositories" in data:
+                    data = data["repositories"]
+            
+            if isinstance(data, list):
+                for repo_data in data:
+                    try:
+                        repos.append(Repository.from_dict(repo_data))
+                    except Exception as e:
+                        logger.warning(f"Failed to parse repository: {e}")
+            
+            if not repos:
+                # No more results
+                break
+            
+            all_repos.extend(repos)
+            logger.debug(f"Fetched page {page}: {len(repos)} repos (total: {len(all_repos)})")
+            
+            if len(repos) < per_page:
+                # Last page (partial results)
+                break
+            
+            page += 1
         
-        if not response.success:
-            logger.error(f"Failed to list repositories: {response.error}")
-            return []
-        
-        repos = []
-        data = response.data
-        
-        # Handle nested response format: {success, data: {repositories: [...]}}
-        if isinstance(data, dict):
-            if "data" in data and isinstance(data["data"], dict):
-                data = data["data"].get("repositories", [])
-            elif "repositories" in data:
-                data = data["repositories"]
-        
-        if isinstance(data, list):
-            for repo_data in data:
-                try:
-                    repos.append(Repository.from_dict(repo_data))
-                except Exception as e:
-                    logger.warning(f"Failed to parse repository: {e}")
-        
-        return repos
+        logger.info(f"Listed {len(all_repos)} total repositories for {org or 'authenticated user'}")
+        return all_repos
     
     async def get_repository(
         self,
