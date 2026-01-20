@@ -829,6 +829,9 @@ If you encounter issues that prevent completion:
 3. Suggest how to resolve the issue
 """
 
+    # Continuation file for resuming interrupted tasks
+    CONTINUATION_FILE = ".project/continuation.json"
+    
     def __init__(self, config: Config):
         self.config = config
         self.shell = ShellTool(config.work_dir, config.shell_timeout)
@@ -841,6 +844,109 @@ If you encounter issues that prevent completion:
         self._tool_call_history: list[str] = []  # Hashes of recent tool calls
         self._consecutive_errors = 0
         self._files_written: set[str] = set()  # Track created files
+        
+        # Continuation file path
+        self._continuation_path = self.config.work_dir / self.CONTINUATION_FILE
+    
+    def _check_continuation(self) -> Optional[dict]:
+        """Check if there's a continuation file from a previous interrupted run."""
+        try:
+            if self._continuation_path.exists():
+                data = json.loads(self._continuation_path.read_text())
+                logger.info(f"📋 Found continuation file from: {data.get('timestamp', 'unknown')}")
+                logger.info(f"   Original task: {data.get('original_task', 'unknown')[:80]}...")
+                return data
+        except Exception as e:
+            logger.warning(f"Failed to load continuation file: {e}")
+        return None
+    
+    def _clear_continuation(self):
+        """Remove the continuation file after successful completion."""
+        try:
+            if self._continuation_path.exists():
+                self._continuation_path.unlink()
+                logger.info("🗑️  Cleared continuation file (task complete)")
+        except Exception as e:
+            logger.warning(f"Failed to clear continuation file: {e}")
+    
+    def _generate_continuation_prompt(self, original_task: str, turns_used: int) -> str:
+        """
+        Ask Claude to generate a continuation prompt capturing current progress.
+        This is called when we run out of turns.
+        """
+        logger.info("📝 Generating continuation prompt for next run...")
+        
+        # Add a special message asking for a continuation summary
+        continuation_request = """
+IMPORTANT: The task has been interrupted due to reaching the maximum number of turns.
+
+Please provide a CONTINUATION PROMPT that I can use to resume this task exactly where you left off.
+The continuation prompt should:
+
+1. Briefly summarize what has been accomplished so far
+2. List any files that were created or modified
+3. Clearly state what the NEXT STEPS should be
+4. Include any important context or decisions made during this session
+
+Format your response as a clear, actionable prompt that another instance can use to continue the work.
+Start your response with "CONTINUATION PROMPT:" followed by the prompt text.
+"""
+        
+        # Temporarily add this to messages
+        self.messages.append({
+            "role": "user",
+            "content": continuation_request
+        })
+        
+        try:
+            response = self.bedrock.create_message(
+                messages=self.messages,
+                system=self._get_system_prompt(),
+                tools=[],  # No tools needed for this
+            )
+            
+            # Extract the continuation prompt
+            for block in response.get("content", []):
+                if block.get("type") == "text":
+                    text = block.get("text", "")
+                    # Try to extract just the continuation prompt
+                    if "CONTINUATION PROMPT:" in text:
+                        prompt = text.split("CONTINUATION PROMPT:", 1)[1].strip()
+                        return prompt
+                    return text
+                    
+        except Exception as e:
+            logger.error(f"Failed to generate continuation prompt: {e}")
+            # Fallback: create a basic continuation prompt
+            return f"""Continue the documentation task from where it was interrupted.
+
+Original task: {original_task}
+
+Files created so far: {list(self._files_written)}
+
+The previous run used {turns_used} turns. Please review the project status files 
+(.project/STATUS.md, .project/BACKLOG.md) and continue with the next logical step."""
+        
+        return ""
+    
+    def _save_continuation(self, original_task: str, continuation_prompt: str, turns_used: int):
+        """Save continuation data for the next run."""
+        try:
+            self._continuation_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            data = {
+                "timestamp": datetime.now().isoformat(),
+                "original_task": original_task,
+                "continuation_prompt": continuation_prompt,
+                "turns_used": turns_used,
+                "files_written": list(self._files_written),
+            }
+            
+            self._continuation_path.write_text(json.dumps(data, indent=2))
+            logger.info(f"💾 Saved continuation prompt to: {self._continuation_path}")
+            
+        except Exception as e:
+            logger.error(f"Failed to save continuation: {e}")
         
     async def initialize(self) -> bool:
         """Initialize the agent and connect to services."""
@@ -1036,13 +1142,44 @@ If you encounter issues that prevent completion:
             - Maximum turns reached
             - Loop detected (repeated tool call patterns)
             - Too many consecutive errors
+            
+        Continuation:
+            - If a previous run was interrupted, automatically resumes from there
+            - On interruption, generates and saves a continuation prompt for next run
         """
+        # Check for continuation from previous interrupted run
+        continuation = self._check_continuation()
+        original_task = task  # Keep original for logging
+        
+        if continuation:
+            # Use continuation prompt instead of original task
+            continuation_prompt = continuation.get("continuation_prompt", "")
+            if continuation_prompt:
+                logger.info("🔄 Resuming from continuation prompt...")
+                print(f"\n📋 CONTINUING PREVIOUS TASK")
+                print(f"   Original: {continuation.get('original_task', 'unknown')[:60]}...")
+                print(f"   Turns used previously: {continuation.get('turns_used', 0)}")
+                print(f"   Files from previous run: {continuation.get('files_written', [])}\n")
+                
+                # Use continuation as the task, but include context about it being a continuation
+                task = f"""This is a CONTINUATION of a previous interrupted task.
+
+PREVIOUS PROGRESS:
+{continuation_prompt}
+
+Please continue from where the previous run left off. Do not repeat work that was already completed.
+If the task appears to be complete based on the progress summary, verify this and update the project tracking files.
+"""
+                # Pre-populate files written from previous run
+                self._files_written = set(continuation.get("files_written", []))
+        
         logger.info(f"Starting task: {task[:100]}...")
         
-        # Reset tracking for new task
+        # Reset tracking for new task (but keep files_written if continuing)
         self._tool_call_history = []
         self._consecutive_errors = 0
-        self._files_written = set()
+        if not continuation:
+            self._files_written = set()
         
         # Add user message
         self.messages.append({
@@ -1113,6 +1250,9 @@ If you encounter issues that prevent completion:
             if stop_reason == "end_turn":
                 logger.info("✅ Task completed (end_turn)")
                 
+                # Clear continuation file on successful completion
+                self._clear_continuation()
+                
                 # Print summary if files were created
                 if self._files_written:
                     logger.info(f"Files created/modified: {len(self._files_written)}")
@@ -1155,12 +1295,18 @@ If you encounter issues that prevent completion:
                 
                 # Check for loop
                 if self._detect_loop(tool_calls_this_turn):
-                    logger.error("Exiting due to detected loop in tool calls")
+                    logger.error("⚠️  Exiting due to detected loop in tool calls")
+                    
+                    # Generate and save continuation for next run
+                    continuation_prompt = self._generate_continuation_prompt(original_task, turns)
+                    self._save_continuation(original_task, continuation_prompt, turns)
+                    
                     return (
-                        f"Task aborted: Loop detected in tool calls. "
+                        f"Task interrupted: Loop detected in tool calls. "
                         f"The same pattern of {self.PATTERN_WINDOW_SIZE} tool calls "
                         f"repeated {self.MAX_REPEATED_PATTERNS} times.\n\n"
-                        f"Files created before abort: {list(self._files_written)}"
+                        f"Files created: {list(self._files_written)}\n\n"
+                        f"A continuation file has been saved. Run the agent again to resume."
                     )
                 
                 # Check for too many tool errors
@@ -1183,10 +1329,26 @@ If you encounter issues that prevent completion:
                 logger.warning(f"Unexpected stop reason: {stop_reason}")
                 break
         
-        logger.warning("Reached maximum turns")
+        logger.warning(f"⏱️  Reached maximum turns ({self.config.max_turns})")
+        
+        # Generate and save continuation for next run
+        continuation_prompt = self._generate_continuation_prompt(original_task, turns)
+        self._save_continuation(original_task, continuation_prompt, turns)
+        
+        print(f"\n{'='*60}")
+        print("TASK INTERRUPTED - CONTINUATION SAVED")
+        print(f"{'='*60}")
+        print(f"Turns used: {turns}/{self.config.max_turns}")
+        print(f"Files created: {list(self._files_written)}")
+        print(f"\nRun the agent again to continue from where it left off.")
+        print(f"Continuation file: {self._continuation_path}")
+        print(f"{'='*60}\n")
+        
         return (
             f"Task incomplete - reached maximum {self.config.max_turns} turns.\n\n"
-            f"Files created: {list(self._files_written)}"
+            f"Files created: {list(self._files_written)}\n\n"
+            f"A continuation file has been saved to {self._continuation_path}\n"
+            f"Run the agent again to resume from where it left off."
         )
     
     async def interactive_mode(self):
