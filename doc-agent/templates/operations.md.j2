@@ -1,0 +1,125 @@
+---
+title: {{ service.name }} Operations
+description: Operational guide for {{ service.name }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+---
+
+# {{ service.name }} Operations Guide
+
+This guide covers operational aspects of {{ service.name }}, including monitoring, troubleshooting, and common procedures.
+
+## Health Checks
+
+{% if service.health_endpoint %}
+**Endpoint**: `{{ service.health_endpoint }}`
+{% else %}
+**Endpoint**: `GET /health`
+{% endif %}
+
+Expected response:
+```json
+{
+  "status": "healthy",
+  "version": "x.y.z",
+  "checks": {}
+}
+```
+
+## Monitoring
+
+### Key Metrics
+
+| Metric | Description | Alert Threshold |
+|--------|-------------|-----------------|
+{% for metric in metrics %}
+| {{ metric.name }} | {{ metric.description }} | {{ metric.threshold }} |
+{% else %}
+| request_rate | Requests per second | > 1000/s |
+| error_rate | Error percentage | > 5% |
+| latency_p99 | 99th percentile latency | > 1s |
+{% endfor %}
+
+### Dashboards
+
+- Service Overview Dashboard
+- Error Rate Dashboard
+- Latency Dashboard
+
+## Logging
+
+### Log Levels
+
+| Level | Usage |
+|-------|-------|
+| ERROR | Actionable errors requiring attention |
+| WARN | Potential issues to investigate |
+| INFO | Normal operational events |
+| DEBUG | Detailed debugging information |
+
+### Key Log Messages
+
+{% for log in key_logs %}
+- `{{ log.message }}`: {{ log.meaning }}
+{% else %}
+- Check service-specific documentation for log patterns
+{% endfor %}
+
+## Common Issues
+
+{% for issue in common_issues %}
+### {{ issue.title }}
+
+**Symptoms**: {{ issue.symptoms }}
+
+**Cause**: {{ issue.cause }}
+
+**Resolution**: {{ issue.resolution }}
+
+---
+
+{% else %}
+Check the platform troubleshooting guide for common issues.
+{% endfor %}
+
+## Troubleshooting
+
+### Step-by-Step Debug Process
+
+1. Check service health endpoint
+2. Review recent logs for errors
+3. Check dependent service status
+4. Verify configuration
+5. Check resource utilization
+
+### Useful Commands
+
+```bash
+# Check service logs
+kubectl logs -f deployment/{{ service.name | replace(' ', '-') | lower }}
+
+# Check service status
+kubectl get pods -l app={{ service.name | replace(' ', '-') | lower }}
+
+# Port forward for local debugging
+kubectl port-forward svc/{{ service.name | replace(' ', '-') | lower }} 8080:80
+```
+
+## Runbooks
+
+{% for runbook in runbooks %}
+### {{ runbook.title }}
+
+{{ runbook.steps }}
+
+---
+
+{% else %}
+Runbooks are being developed. For urgent issues, contact the on-call engineer.
+{% endfor %}
+
+## Related Documents
+
+- [Service Overview](./README.md)
+- [Configuration Guide](./configuration.md)
+- [Architecture](./architecture.md)

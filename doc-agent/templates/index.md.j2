@@ -1,0 +1,98 @@
+---
+title: {{ platform.name or 'Platform Documentation' }}
+description: {{ platform.description or 'Comprehensive platform documentation' }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+---
+
+# {{ platform.name or 'Platform Documentation' }}
+
+{{ platform.description or 'Welcome to the platform documentation.' }}
+
+## Quick Links
+
+- [Architecture Overview](./architecture/overview.md)
+- [System Landscape](./architecture/system-landscape.md)
+- [Service Catalog](#services)
+- [Glossary](./reference/glossary.md)
+
+## Architecture
+
+Explore the platform architecture:
+
+| Document | Description |
+|----------|-------------|
+| [Overview](./architecture/overview.md) | High-level system architecture |
+| [System Landscape](./architecture/system-landscape.md) | Service map and connections |
+| [Data Flows](./architecture/data-flows.md) | How data moves through the system |
+| [Technology Stack](./architecture/technology-stack.md) | Languages, frameworks, and infrastructure |
+
+{% if domains %}
+## Domains
+
+The platform is organized into the following domains:
+
+| Domain | Description | Services |
+|--------|-------------|----------|
+{% for domain in domains %}
+| [{{ domain.name }}](./architecture/domains/{{ domain.id }}/overview.md) | {{ domain.description or '' }} | {{ domain.service_count or 0 }} |
+{% endfor %}
+
+{% endif %}
+
+{% if services %}
+## Services
+
+Complete catalog of platform services:
+
+| Service | Domain | Language | Status |
+|---------|--------|----------|--------|
+{% for service in services | sort(attribute='name') %}
+| [{{ service.name }}](./services/{{ service.id }}/README.md) | {{ service.domain or 'N/A' }} | {{ service.language or 'N/A' }} | {{ service.status or 'Active' }} |
+{% endfor %}
+
+{% endif %}
+
+{% if integrations %}
+## Integrations
+
+Third-party integrations:
+
+{% for integration in integrations %}
+- [{{ integration.name }}](./integrations/{{ integration.id }}/overview.md) - {{ integration.description or '' }}
+{% endfor %}
+{% endif %}
+
+## Reference
+
+| Document | Description |
+|----------|-------------|
+| [Glossary](./reference/glossary.md) | Platform terminology and definitions |
+| [Message Formats](./reference/message-formats/) | Event and message schemas |
+| [Database Schemas](./reference/database-schemas/) | Data dictionary |
+
+## Getting Started
+
+{% if platform.getting_started %}
+{{ platform.getting_started }}
+{% else %}
+1. Start with the [Architecture Overview](./architecture/overview.md) to understand the system
+2. Explore [Domains](#domains) to find the area you're interested in
+3. Dive into specific [Services](#services) for detailed documentation
+{% endif %}
+
+---
+
+## About This Documentation
+
+This documentation is automatically generated from multiple sources:
+
+- **GitHub**: Repository analysis and code documentation
+- **Confluence**: Architecture documents and design decisions
+- **Jira**: Feature descriptions and technical context
+
+{% if platform.last_discovery %}
+Last discovery run: {{ platform.last_discovery }}
+{% endif %}
+
+*Generated: {{ now().strftime('%Y-%m-%d %H:%M UTC') }}*

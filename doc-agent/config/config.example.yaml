@@ -1,0 +1,86 @@
+# Platform Documentation Agent Configuration
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-20250514
+  max_tokens: 4096
+  temperature: 0.3
+
+mcp:
+  server: natterbox
+  timeout: 30
+
+sources:
+  github:
+    organizations:
+      - natterbox
+    exclude_repos:
+      - ".*-deprecated"
+      - ".*-archive"
+      - "internal-tools"
+    include_patterns:
+      - "README.md"
+      - "docs/**/*.md"
+      - "*.yaml"
+      - "*.yml"
+      - "openapi*.json"
+      - "openapi*.yaml"
+      - "swagger*.json"
+      - "swagger*.yaml"
+      - "**/migrations/**"
+      - "**/schema*.sql"
+      - "package.json"
+      - "requirements.txt"
+      - "go.mod"
+      - "Cargo.toml"
+      - "pom.xml"
+      
+  confluence:
+    spaces:
+      - ARCH
+      - ENG
+      - OPS
+      - PLAT
+    exclude_labels:
+      - draft
+      - deprecated
+      
+  jira:
+    projects:
+      - PLAT
+      - VOICE
+      - INT
+      - INFRA
+    issue_types:
+      - Epic
+      - Story
+      - Bug
+      - "Technical Debt"
+
+output:
+  directory: ./docs
+  format: markdown
+  
+agents:
+  discovery:
+    parallelism: 5
+    timeout: 300
+  analysis:
+    parallelism: 3
+    timeout: 600
+  generation:
+    parallelism: 10
+    timeout: 120
+  quality:
+    parallelism: 5
+    timeout: 60
+
+quality:
+  min_completeness: 0.8
+  require_review: false
+  validate_links: true
+  
+logging:
+  level: INFO
+  file: ./logs/doc-agent.log
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

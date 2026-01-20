@@ -1,0 +1,78 @@
+---
+title: Data Flows
+description: How data moves through the {{ platform.name or 'platform' }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+---
+
+# Data Flows
+
+This document describes how data flows through the platform, including key integration points and data transformation stages.
+
+## Overview
+
+{{ platform.data_flow_overview or 'The platform processes data through multiple services, transforming and enriching it at each stage.' }}
+
+## Key Data Flows
+
+{% if data_flows %}
+{% for flow in data_flows %}
+### {{ flow.name }}
+
+{{ flow.description }}
+
+{% if flow.diagram %}
+```mermaid
+{{ flow.diagram }}
+```
+{% endif %}
+
+**Services Involved**: {{ flow.services | join(', ') if flow.services else 'Multiple' }}
+
+**Data Types**: {{ flow.data_types | join(', ') if flow.data_types else 'Various' }}
+
+---
+
+{% endfor %}
+{% else %}
+Data flow documentation is being generated. Check individual service documentation for specific data handling details.
+{% endif %}
+
+## Integration Points
+
+### External Systems
+
+| System | Direction | Data Types | Protocol |
+|--------|-----------|------------|----------|
+{% for integration in integrations %}
+| {{ integration.name }} | {{ integration.direction }} | {{ integration.data_types | join(', ') }} | {{ integration.protocol }} |
+{% else %}
+| See integrations docs | Various | Various | Various |
+{% endfor %}
+
+### Internal Events
+
+The platform uses event-driven architecture for asynchronous communication between services.
+
+| Event | Producer | Consumers | Purpose |
+|-------|----------|-----------|---------|
+{% for event in events %}
+| {{ event.name }} | {{ event.producer }} | {{ event.consumers | join(', ') }} | {{ event.purpose }} |
+{% else %}
+| Various | Various | Various | See service documentation |
+{% endfor %}
+
+## Data Transformation
+
+Data is transformed at various stages:
+
+1. **Ingestion**: Raw data is validated and normalized
+2. **Processing**: Business logic is applied
+3. **Storage**: Data is persisted to appropriate stores
+4. **Delivery**: Data is formatted for consumers
+
+## Related Documents
+
+- [Architecture Overview](./overview.md)
+- [System Landscape](./system-landscape.md)
+- [Message Formats](../reference/message-formats/)

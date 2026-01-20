@@ -1,0 +1,42 @@
+[project]
+name = "doc-agent"
+version = "0.1.0"
+description = "Multi-agent AI system for generating comprehensive platform documentation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "networkx>=3.2",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "pydantic>=2.5",
+    "rich>=13.7",
+    "click>=8.1",
+    "aiofiles>=23.2",
+    "httpx>=0.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+doc-agent = "src.main:cli"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "config*", "templates*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

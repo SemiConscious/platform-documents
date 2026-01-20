@@ -1,0 +1,112 @@
+---
+title: {{ service.name }}
+description: {{ service.description or 'Service documentation' }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+{% if sources %}
+sources:
+{% for source in sources %}
+  - {{ source.url }}
+{% endfor %}
+{% endif %}
+---
+
+# {{ service.name }}
+
+> {{ service.description or 'No description available.' }}
+
+## Overview
+
+{% if service.purpose %}
+{{ service.purpose }}
+{% else %}
+This service is part of the Natterbox platform.
+{% endif %}
+
+## Quick Facts
+
+| Property | Value |
+|----------|-------|
+| **Repository** | {% if service.repository %}[{{ service.repository }}]({{ service.repository_url or '#' }}){% else %}N/A{% endif %} |
+| **Language** | {{ service.language or 'N/A' }} |
+| **Framework** | {{ service.framework or 'N/A' }} |
+| **Team** | {{ service.team or 'N/A' }} |
+| **Status** | {{ service.status or 'Active' }} |
+
+{% if service.dependencies %}
+## Dependencies
+
+This service depends on:
+
+{% for dep in service.dependencies %}
+- [{{ dep }}](../{{ dep }}/README.md)
+{% endfor %}
+{% endif %}
+
+{% if service.dependents %}
+## Dependents
+
+The following services depend on this service:
+
+{% for dep in service.dependents %}
+- [{{ dep }}](../{{ dep }}/README.md)
+{% endfor %}
+{% endif %}
+
+{% if service.apis %}
+## APIs
+
+This service exposes the following APIs:
+
+{% for api in service.apis %}
+- [{{ api.name }}](./api/overview.md) - {{ api.description or api.api_type }}
+{% endfor %}
+
+See the [API Documentation](./api/overview.md) for details.
+{% endif %}
+
+{% if service.databases %}
+## Data Storage
+
+This service uses the following databases:
+
+{% for db in service.databases %}
+- {{ db }}
+{% endfor %}
+
+See [Data Models](./data/models.md) for schema details.
+{% endif %}
+
+{% if service.config_keys %}
+## Configuration
+
+Key configuration options:
+
+| Key | Description | Required |
+|-----|-------------|----------|
+{% for key in service.config_keys %}
+| `{{ key.name }}` | {{ key.description or 'N/A' }} | {{ 'Yes' if key.required else 'No' }} |
+{% endfor %}
+
+See [Configuration Guide](./configuration.md) for full details.
+{% endif %}
+
+{% if related_docs %}
+## Related Documents
+
+{% for doc in related_docs %}
+- [{{ doc.title }}]({{ doc.path }})
+{% endfor %}
+{% endif %}
+
+{% if sources %}
+---
+
+## Sources
+
+This documentation was generated from the following sources:
+
+{% for source in sources %}
+- [{{ source.title }}]({{ source.url }}) ({{ source.type }})
+{% endfor %}
+{% endif %}

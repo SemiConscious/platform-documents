@@ -1,0 +1,86 @@
+---
+title: {{ domain.name }}
+description: {{ domain.description or 'Domain documentation' }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+---
+
+# {{ domain.name }}
+
+> {{ domain.description or 'No description available.' }}
+
+## Overview
+
+{{ domain.overview or 'This domain is part of the Natterbox platform.' }}
+
+{% if domain.responsibilities %}
+## Responsibilities
+
+{% for responsibility in domain.responsibilities %}
+- {{ responsibility }}
+{% endfor %}
+{% endif %}
+
+{% if services %}
+## Services
+
+This domain contains the following services:
+
+| Service | Description | Status |
+|---------|-------------|--------|
+{% for service in services %}
+| [{{ service.name }}](../../services/{{ service.id }}/README.md) | {{ service.description or 'N/A' }} | {{ service.status or 'Active' }} |
+{% endfor %}
+
+{% endif %}
+
+{% if domain.architecture_diagram %}
+## Architecture
+
+```mermaid
+{{ domain.architecture_diagram }}
+```
+{% endif %}
+
+{% if domain.data_flows %}
+## Data Flows
+
+{{ domain.data_flows }}
+{% endif %}
+
+{% if domain.interactions %}
+## Interactions with Other Domains
+
+{{ domain.interactions }}
+
+{% if domain.domain_dependencies %}
+### Dependencies
+
+This domain depends on:
+
+{% for dep in domain.domain_dependencies %}
+- [{{ dep.name }}](../{{ dep.id }}/overview.md) - {{ dep.reason or '' }}
+{% endfor %}
+{% endif %}
+
+{% if domain.domain_dependents %}
+### Dependents
+
+The following domains depend on this domain:
+
+{% for dep in domain.domain_dependents %}
+- [{{ dep.name }}](../{{ dep.id }}/overview.md) - {{ dep.reason or '' }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if domain.key_concepts %}
+## Key Concepts
+
+{% for concept in domain.key_concepts %}
+### {{ concept.name }}
+
+{{ concept.description }}
+
+{% endfor %}
+{% endif %}

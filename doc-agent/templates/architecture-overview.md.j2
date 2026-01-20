@@ -1,0 +1,89 @@
+---
+title: Architecture Overview
+description: High-level architecture of the {{ platform.name or 'platform' }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+---
+
+# Architecture Overview
+
+{{ platform.architecture_description or 'This document provides a high-level overview of the platform architecture.' }}
+
+## System Overview
+
+{% if platform.system_diagram %}
+```mermaid
+{{ platform.system_diagram }}
+```
+{% else %}
+The platform consists of multiple interconnected services organized into logical domains.
+{% endif %}
+
+{% if platform.key_principles %}
+## Key Principles
+
+{% for principle in platform.key_principles %}
+### {{ principle.name }}
+
+{{ principle.description }}
+
+{% endfor %}
+{% endif %}
+
+## Technology Stack
+
+{% if platform.technologies %}
+| Category | Technologies |
+|----------|--------------|
+{% for category, techs in platform.technologies.items() %}
+| {{ category }} | {{ techs | join(', ') }} |
+{% endfor %}
+{% else %}
+- **Languages**: Various (see individual service documentation)
+- **Infrastructure**: Cloud-native deployment
+- **Communication**: REST APIs, message queues, events
+{% endif %}
+
+{% if domains %}
+## Domain Architecture
+
+The platform is organized into the following domains:
+
+{% for domain in domains %}
+### {{ domain.name }}
+
+{{ domain.description or 'No description available.' }}
+
+**Services**: {{ domain.services | length if domain.services else 0 }}
+
+{% if domain.key_responsibilities %}
+Key responsibilities:
+{% for resp in domain.key_responsibilities %}
+- {{ resp }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if platform.communication_patterns %}
+## Communication Patterns
+
+{{ platform.communication_patterns }}
+{% endif %}
+
+{% if platform.data_stores %}
+## Data Storage
+
+| Store | Type | Purpose |
+|-------|------|---------|
+{% for store in platform.data_stores %}
+| {{ store.name }} | {{ store.type }} | {{ store.purpose }} |
+{% endfor %}
+{% endif %}
+
+## Further Reading
+
+- [System Landscape](./system-landscape.md) - Detailed service map
+- [Data Flows](./data-flows.md) - How data moves through the system
+- [Technology Stack](./technology-stack.md) - Detailed technology choices

@@ -1,0 +1,107 @@
+---
+title: {{ api.name }} API
+description: API reference for {{ api.name }}
+generated: {{ now().isoformat() }}Z
+auto_generated: true
+---
+
+# {{ api.name }} API
+
+> {{ api.description or 'API documentation.' }}
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| **Type** | {{ api.api_type or 'REST' }} |
+| **Version** | {{ api.version or 'v1' }} |
+| **Base URL** | `{{ api.base_url or '/api' }}` |
+| **Authentication** | {{ api.auth_type or 'Required' }} |
+
+{% if api.auth_details %}
+## Authentication
+
+{{ api.auth_details }}
+{% endif %}
+
+{% if endpoints %}
+## Endpoints
+
+{% for endpoint in endpoints %}
+### {{ endpoint.method }} `{{ endpoint.path }}`
+
+{{ endpoint.description or 'No description.' }}
+
+{% if endpoint.auth_required %}
+**Authentication Required**: Yes
+{% endif %}
+
+{% if endpoint.deprecated %}
+> **Warning**: This endpoint is deprecated.
+{% endif %}
+
+{% if endpoint.parameters %}
+#### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+{% for param in endpoint.parameters %}
+| `{{ param.name }}` | {{ param.type }} | {{ param.location }} | {{ 'Yes' if param.required else 'No' }} | {{ param.description or 'N/A' }} |
+{% endfor %}
+{% endif %}
+
+{% if endpoint.request_schema %}
+#### Request Body
+
+```json
+{{ endpoint.request_schema | tojson(indent=2) if endpoint.request_schema is mapping else endpoint.request_schema }}
+```
+{% endif %}
+
+{% if endpoint.response_schema %}
+#### Response
+
+```json
+{{ endpoint.response_schema | tojson(indent=2) if endpoint.response_schema is mapping else endpoint.response_schema }}
+```
+{% endif %}
+
+{% if endpoint.examples %}
+#### Examples
+
+{% for example in endpoint.examples %}
+**{{ example.name or 'Example' }}**
+
+Request:
+```{{ example.request_type or 'bash' }}
+{{ example.request }}
+```
+
+Response:
+```json
+{{ example.response }}
+```
+
+{% endfor %}
+{% endif %}
+
+---
+
+{% endfor %}
+{% endif %}
+
+{% if api.errors %}
+## Error Codes
+
+| Code | Name | Description |
+|------|------|-------------|
+{% for error in api.errors %}
+| {{ error.code }} | {{ error.name }} | {{ error.description }} |
+{% endfor %}
+{% endif %}
+
+{% if api.rate_limits %}
+## Rate Limits
+
+{{ api.rate_limits }}
+{% endif %}
