@@ -4,7 +4,48 @@ Items completed during this documentation project, with dates.
 
 ---
 
-## 2026-01-20
+## 2026-01-20 (Session 2)
+
+### Platform Core Services
+- ✅ Created `/services/platform-api.md` - **Comprehensive CoreAPI documentation** (700+ lines)
+  - Full architecture diagram with ASCII art
+  - Repository structure (79 controllers, 90 service classes)
+  - Database architecture (6 databases with read/write separation)
+  - Complete configuration reference
+  - API endpoint documentation with examples:
+    - Authentication endpoints
+    - User management
+    - Call control (originate, transfer, hangup, hold, mute, DTMF, record)
+    - Organization management
+    - Dialplan management
+    - Device management
+  - Service layer architecture documentation
+  - Authentication & authorization system
+  - Caching strategy (memcached patterns)
+  - FreeSWITCH integration details
+  - Docker deployment configuration
+  - Operational procedures (logging, cache management, database queries)
+  - Comprehensive troubleshooting guide
+  - Migration strategy (Strangler pattern) documentation
+  - Cross-referenced with source code verification
+
+**Source Code Verified:**
+- `application/config/coreapi.php` - Main configuration
+- `application/config/database.php` - Database connections
+- `application/controllers/callcontrol.php` - Call control endpoints (570 lines)
+- `application/controllers/auth.php` - Authentication endpoints
+- `application/controllers/users.php` - User management
+- `application/controllers/orgs.php` - Organization management
+- `application/controllers/dialplan.php` - Dialplan management
+- `application/models/service.php` - Base service class (114KB)
+- `application/models/authservice.php` - Authentication logic (50KB)
+- `application/models/fsdialplanservice.php` - Dialplan generation (179KB)
+- `Dockerfile` - Container definition
+- `docker-compose.yml` - Local development setup
+
+---
+
+## 2026-01-20 (Session 1)
 
 ### Architecture Domain Overviews
 - ✅ Created `/architecture/ai-cai/overview.md` - Conversational AI documentation
@@ -116,13 +157,13 @@ Items completed during this documentation project, with dates.
 | Category | Files Created |
 |----------|---------------|
 | Architecture | 8 |
-| Services | 2 |
+| Services | 3 |
 | Terraform | 1 |
 | Operations | 4 |
 | Onboarding | 3 |
 | Documentation Agent | 7 |
 | Project Tracking | 6 |
-| **Total** | **31** |
+| **Total** | **32** |
 
 ---
 

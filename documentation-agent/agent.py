@@ -1189,7 +1189,7 @@ If you encounter issues:
         """Check if the message history has tool_use blocks without corresponding tool_result."""
         if not self.messages:
             return False
-        
+
         # Check the last assistant message
         for msg in reversed(self.messages):
             if msg.get("role") == "assistant":
@@ -1208,7 +1208,7 @@ If you encounter issues:
                         if block.get("type") == "tool_result":
                             return False  # Tool results exist, we're good
                 break
-        
+
         return False
 
     def _get_fallback_continuation(self, original_task: str, turns_used: int) -> str:
