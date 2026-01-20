@@ -1835,18 +1835,15 @@ Please continue from where you left off. Files in the file store are still acces
             # Handle max_tokens - response was truncated
             if stop_reason == "max_tokens":
                 logger.warning("⚠️  Response hit max_tokens limit - asking Claude to continue")
-                
+
                 # Check if there are incomplete tool_use blocks (no id or missing fields)
-                has_incomplete_tool_use = any(
-                    block.get("type") == "tool_use" and (not block.get("id") or not block.get("name"))
-                    for block in content
-                )
-                
+                has_incomplete_tool_use = any(block.get("type") == "tool_use" and (not block.get("id") or not block.get("name")) for block in content)
+
                 if has_incomplete_tool_use:
                     # Remove incomplete tool_use blocks before adding to history
                     content = [b for b in content if not (b.get("type") == "tool_use" and (not b.get("id") or not b.get("name")))]
                     logger.info("Removed incomplete tool_use blocks from truncated response")
-                
+
                 # Add the (cleaned) assistant response
                 if content:
                     self.messages.append({"role": "assistant", "content": content})
@@ -1958,8 +1955,13 @@ Please continue from where you left off. Files in the file store are still acces
 
             else:
                 logger.warning(f"Unexpected stop reason: {stop_reason}")
-                break
+                # Save continuation and exit cleanly
+                logger.info(f"Exiting after {turns} turns due to unexpected stop reason")
+                continuation_prompt = self._generate_continuation_prompt(original_task, turns)
+                self._save_continuation(original_task, continuation_prompt, turns)
+                return f"Task interrupted after {turns} turns due to unexpected stop reason: {stop_reason}"
 
+        # Only reaches here if we actually hit max turns
         logger.warning(f"⏱️  Reached maximum turns ({self.config.max_turns})")
 
         # Generate and save continuation for next run
