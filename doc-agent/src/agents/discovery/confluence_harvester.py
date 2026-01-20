@@ -58,12 +58,15 @@ class ConfluenceHarvesterAgent(BaseAgent):
         
         for space_key in self.spaces:
             try:
-                pages = await self.confluence.list_pages(
-                    space_key=space_key,
-                    exclude_labels=self.exclude_labels,
-                )
+                all_pages = await self.confluence.get_pages_in_space(space_key)
                 
-                self.logger.info(f"Found {len(pages)} pages in space {space_key}")
+                # Filter out pages with excluded labels
+                pages = [
+                    p for p in all_pages
+                    if not any(label in p.labels for label in self.exclude_labels)
+                ]
+                
+                self.logger.info(f"Found {len(pages)} pages in space {space_key} (filtered from {len(all_pages)})")
                 
                 for page in pages:
                     try:
@@ -94,18 +97,17 @@ class ConfluenceHarvesterAgent(BaseAgent):
                 errors.append(f"space/{space_key}: {str(e)}")
         
         # Also extract architecture-specific documents
-        for space_key in self.spaces:
-            try:
-                arch_docs = await self.confluence.extract_architecture_docs(space_key)
-                for page in arch_docs:
-                    if page.id not in processed_pages:
-                        document = await self._process_page(page, is_architecture=True)
-                        if document:
-                            self.graph.add_entity(document)
-                            discovered_documents += 1
-                        processed_pages.add(page.id)
-            except Exception as e:
-                self.logger.warning(f"Failed to extract architecture docs from {space_key}: {e}")
+        try:
+            arch_docs = await self.confluence.extract_architecture_docs(self.spaces)
+            for page in arch_docs:
+                if page.id not in processed_pages:
+                    document = await self._process_page(page, is_architecture=True)
+                    if document:
+                        self.graph.add_entity(document)
+                        discovered_documents += 1
+                    processed_pages.add(page.id)
+        except Exception as e:
+            self.logger.warning(f"Failed to extract architecture docs: {e}")
         
         # Save checkpoint
         await self.save_checkpoint({

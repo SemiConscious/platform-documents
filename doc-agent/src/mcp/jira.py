@@ -1,9 +1,8 @@
-"""Jira-specific MCP operations."""
+"""Jira operations via the Natterbox MCP server."""
 
 import logging
+from dataclasses import dataclass, field
 from typing import Any, Optional
-from dataclasses import dataclass
-from datetime import datetime
 
 from .client import MCPClient
 
@@ -15,66 +14,64 @@ class JiraIssue:
     """Jira issue information."""
     key: str
     summary: str
-    description: Optional[str]
-    issue_type: str
-    status: str
-    priority: Optional[str]
-    project: str
-    url: str
-    created: Optional[datetime]
-    updated: Optional[datetime]
-    resolved: Optional[datetime]
-    assignee: Optional[str]
-    reporter: Optional[str]
-    labels: list[str]
-    components: list[str]
-    epic_key: Optional[str]
-    parent_key: Optional[str]
+    description: str = ""
+    issue_type: str = ""
+    status: str = ""
+    priority: str = ""
+    assignee: str = ""
+    reporter: str = ""
+    labels: list[str] = field(default_factory=list)
+    components: list[str] = field(default_factory=list)
+    url: str = ""
+    created: str = ""
+    updated: str = ""
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "JiraIssue":
+    def from_dict(cls, data: dict) -> "JiraIssue":
         fields = data.get("fields", data)
         
-        created = None
-        updated = None
-        resolved = None
+        # Extract nested values safely
+        assignee = fields.get("assignee", {})
+        if isinstance(assignee, dict):
+            assignee = assignee.get("displayName", assignee.get("emailAddress", ""))
         
-        if fields.get("created"):
-            try:
-                created = datetime.fromisoformat(fields["created"].replace("Z", "+00:00"))
-            except (ValueError, AttributeError):
-                pass
+        reporter = fields.get("reporter", {})
+        if isinstance(reporter, dict):
+            reporter = reporter.get("displayName", reporter.get("emailAddress", ""))
         
-        if fields.get("updated"):
-            try:
-                updated = datetime.fromisoformat(fields["updated"].replace("Z", "+00:00"))
-            except (ValueError, AttributeError):
-                pass
+        issue_type = fields.get("issuetype", {})
+        if isinstance(issue_type, dict):
+            issue_type = issue_type.get("name", "")
         
-        if fields.get("resolutiondate"):
-            try:
-                resolved = datetime.fromisoformat(fields["resolutiondate"].replace("Z", "+00:00"))
-            except (ValueError, AttributeError):
-                pass
+        status = fields.get("status", {})
+        if isinstance(status, dict):
+            status = status.get("name", "")
+        
+        priority = fields.get("priority", {})
+        if isinstance(priority, dict):
+            priority = priority.get("name", "")
+        
+        components = []
+        for comp in fields.get("components", []):
+            if isinstance(comp, dict):
+                components.append(comp.get("name", ""))
+            elif isinstance(comp, str):
+                components.append(comp)
         
         return cls(
             key=data.get("key", ""),
             summary=fields.get("summary", ""),
-            description=fields.get("description"),
-            issue_type=fields.get("issuetype", {}).get("name", "") if isinstance(fields.get("issuetype"), dict) else fields.get("issue_type", ""),
-            status=fields.get("status", {}).get("name", "") if isinstance(fields.get("status"), dict) else fields.get("status", ""),
-            priority=fields.get("priority", {}).get("name") if isinstance(fields.get("priority"), dict) else fields.get("priority"),
-            project=fields.get("project", {}).get("key", "") if isinstance(fields.get("project"), dict) else fields.get("project", ""),
-            url=data.get("url", data.get("self", "")),
-            created=created,
-            updated=updated,
-            resolved=resolved,
-            assignee=fields.get("assignee", {}).get("displayName") if isinstance(fields.get("assignee"), dict) else fields.get("assignee"),
-            reporter=fields.get("reporter", {}).get("displayName") if isinstance(fields.get("reporter"), dict) else fields.get("reporter"),
+            description=fields.get("description") or "",
+            issue_type=issue_type if isinstance(issue_type, str) else "",
+            status=status if isinstance(status, str) else "",
+            priority=priority if isinstance(priority, str) else "",
+            assignee=assignee if isinstance(assignee, str) else "",
+            reporter=reporter if isinstance(reporter, str) else "",
             labels=fields.get("labels", []),
-            components=[c.get("name", c) if isinstance(c, dict) else c for c in fields.get("components", [])],
-            epic_key=fields.get("epic", {}).get("key") if isinstance(fields.get("epic"), dict) else fields.get("epic_key"),
-            parent_key=fields.get("parent", {}).get("key") if isinstance(fields.get("parent"), dict) else fields.get("parent_key"),
+            components=components,
+            url=data.get("self", ""),
+            created=fields.get("created", ""),
+            updated=fields.get("updated", ""),
         )
 
 
@@ -83,291 +80,277 @@ class JiraProject:
     """Jira project information."""
     key: str
     name: str
-    description: Optional[str]
-    url: str
-    lead: Optional[str]
+    description: str = ""
+    url: str = ""
+    lead: str = ""
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "JiraProject":
+    def from_dict(cls, data: dict) -> "JiraProject":
+        lead = data.get("lead", {})
+        if isinstance(lead, dict):
+            lead = lead.get("displayName", "")
+        
         return cls(
             key=data.get("key", ""),
             name=data.get("name", ""),
-            description=data.get("description"),
-            url=data.get("url", data.get("self", "")),
-            lead=data.get("lead", {}).get("displayName") if isinstance(data.get("lead"), dict) else data.get("lead"),
+            description=data.get("description") or "",
+            url=data.get("self", ""),
+            lead=lead if isinstance(lead, str) else "",
         )
 
 
-@dataclass 
+@dataclass
 class JiraComponent:
     """Jira component information."""
     id: str
     name: str
-    description: Optional[str]
-    lead: Optional[str]
-    project: str
+    description: str = ""
+    lead: str = ""
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "JiraComponent":
+    def from_dict(cls, data: dict) -> "JiraComponent":
+        lead = data.get("lead", {})
+        if isinstance(lead, dict):
+            lead = lead.get("displayName", "")
+        
         return cls(
             id=data.get("id", ""),
             name=data.get("name", ""),
-            description=data.get("description"),
-            lead=data.get("lead", {}).get("displayName") if isinstance(data.get("lead"), dict) else data.get("lead"),
-            project=data.get("project", ""),
+            description=data.get("description") or "",
+            lead=lead if isinstance(lead, str) else "",
         )
 
 
 class JiraClient:
     """
-    Jira-specific operations through MCP.
+    Jira operations via the Natterbox MCP server.
     
-    Provides methods for searching issues, extracting technical context,
-    and understanding project structure.
+    Uses the 'jira' MCP tool with operation parameter.
     """
     
+    TOOL_NAME = "jira"
+    
     def __init__(self, mcp_client: MCPClient):
-        """
-        Initialize the Jira client.
-        
-        Args:
-            mcp_client: The MCP client to use for requests
-        """
         self.mcp = mcp_client
-    
-    async def get_project(self, project_key: str) -> Optional[JiraProject]:
-        """
-        Get information about a Jira project.
-        
-        Args:
-            project_key: The project key (e.g., "PLAT")
-            
-        Returns:
-            JiraProject object or None
-        """
-        response = await self.mcp.call_tool(
-            "jira_get_project",
-            {"project_key": project_key}
-        )
-        
-        if not response.success:
-            logger.error(f"Failed to get project {project_key}: {response.error}")
-            return None
-        
-        return JiraProject.from_dict(response.data)
-    
-    async def get_components(self, project_key: str) -> list[JiraComponent]:
-        """
-        Get components for a Jira project.
-        
-        Args:
-            project_key: The project key
-            
-        Returns:
-            List of JiraComponent objects
-        """
-        response = await self.mcp.call_tool(
-            "jira_get_components",
-            {"project_key": project_key}
-        )
-        
-        if not response.success:
-            logger.error(f"Failed to get components for {project_key}: {response.error}")
-            return []
-        
-        return [JiraComponent.from_dict(c) for c in response.data or []]
     
     async def search_issues(
         self,
-        jql: str,
-        max_results: int = 100,
+        query: str,
+        project_key: Optional[str] = None,
     ) -> list[JiraIssue]:
         """
-        Search for issues using JQL.
+        Search for Jira issues.
         
         Args:
-            jql: JQL query string
-            max_results: Maximum number of results
+            query: JQL or natural language query
+            project_key: Optional project to filter
             
         Returns:
-            List of JiraIssue objects
+            List of matching issues
         """
-        response = await self.mcp.call_tool(
-            "jira_search",
-            {"jql": jql, "max_results": max_results}
-        )
+        search_query = query
+        if project_key:
+            search_query = f'project = "{project_key}" AND ({query})'
+        
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "search_issues",
+            "query": search_query,
+        })
         
         if not response.success:
             logger.error(f"Search failed: {response.error}")
             return []
         
-        issues = response.data.get("issues", response.data) if isinstance(response.data, dict) else response.data
-        return [JiraIssue.from_dict(i) for i in issues or []]
-    
-    async def get_issue(self, issue_key: str) -> Optional[JiraIssue]:
-        """
-        Get a specific Jira issue.
+        issues = []
+        data = response.data
         
-        Args:
-            issue_key: The issue key (e.g., "PLAT-123")
-            
-        Returns:
-            JiraIssue object or None
-        """
-        response = await self.mcp.call_tool(
-            "jira_get_issue",
-            {"issue_key": issue_key}
-        )
+        # Handle various response formats
+        results = []
+        if isinstance(data, list):
+            results = data
+        elif isinstance(data, dict):
+            results = data.get("issues", data.get("results", []))
+        
+        for issue_data in results:
+            try:
+                issues.append(JiraIssue.from_dict(issue_data))
+            except Exception as e:
+                logger.warning(f"Failed to parse issue: {e}")
+        
+        return issues
+    
+    async def get_issue(
+        self,
+        issue_key: str,
+    ) -> Optional[JiraIssue]:
+        """Get a specific issue by key."""
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "get_issue",
+            "issueKey": issue_key,
+        })
         
         if not response.success:
-            logger.error(f"Failed to get issue {issue_key}: {response.error}")
+            logger.error(f"Get issue failed: {response.error}")
             return None
         
-        return JiraIssue.from_dict(response.data)
+        if response.data:
+            return JiraIssue.from_dict(response.data)
+        return None
+    
+    async def list_projects(self) -> list[JiraProject]:
+        """List all accessible Jira projects."""
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "list_projects",
+        })
+        
+        if not response.success:
+            logger.error(f"List projects failed: {response.error}")
+            return []
+        
+        projects = []
+        data = response.data
+        
+        results = []
+        if isinstance(data, list):
+            results = data
+        elif isinstance(data, dict):
+            results = data.get("projects", data.get("values", []))
+        
+        for project_data in results:
+            try:
+                projects.append(JiraProject.from_dict(project_data))
+            except Exception as e:
+                logger.warning(f"Failed to parse project: {e}")
+        
+        return projects
+    
+    async def get_project(
+        self,
+        project_key: str,
+    ) -> Optional[JiraProject]:
+        """Get project information."""
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "get_project",
+            "projectKey": project_key,
+        })
+        
+        if not response.success:
+            logger.error(f"Get project failed: {response.error}")
+            return None
+        
+        if response.data:
+            return JiraProject.from_dict(response.data)
+        return None
     
     async def get_epics(
         self,
         project_key: str,
-        status: Optional[str] = None,
     ) -> list[JiraIssue]:
-        """
-        Get epics for a project.
-        
-        Args:
-            project_key: The project key
-            status: Optional status filter (e.g., "Done", "In Progress")
-            
-        Returns:
-            List of epic issues
-        """
-        jql = f'project = "{project_key}" AND issuetype = Epic'
-        if status:
-            jql += f' AND status = "{status}"'
-        jql += " ORDER BY created DESC"
-        
-        return await self.search_issues(jql)
+        """Get all epics in a project."""
+        return await self.search_issues(
+            f'project = "{project_key}" AND issuetype = Epic ORDER BY created DESC'
+        )
     
-    async def get_stories_for_epic(self, epic_key: str) -> list[JiraIssue]:
-        """
-        Get all stories linked to an epic.
-        
-        Args:
-            epic_key: The epic key
-            
-        Returns:
-            List of story issues
-        """
-        jql = f'"Epic Link" = "{epic_key}" ORDER BY created DESC'
-        return await self.search_issues(jql)
+    async def get_stories_for_epic(
+        self,
+        epic_key: str,
+    ) -> list[JiraIssue]:
+        """Get all stories linked to an epic."""
+        return await self.search_issues(
+            f'"Epic Link" = {epic_key} OR parent = {epic_key}'
+        )
     
     async def get_technical_debt(
         self,
         project_key: str,
     ) -> list[JiraIssue]:
-        """
-        Get technical debt issues for a project.
-        
-        Args:
-            project_key: The project key
-            
-        Returns:
-            List of technical debt issues
-        """
-        # Search for issues labeled as tech debt or of tech debt type
-        jql = f'''
-            project = "{project_key}" AND (
-                labels in (tech-debt, "technical-debt", techdebt) OR
-                issuetype = "Technical Debt"
-            ) ORDER BY priority DESC
-        '''
-        return await self.search_issues(jql)
+        """Find technical debt issues in a project."""
+        return await self.search_issues(
+            f'project = "{project_key}" AND (issuetype = "Technical Debt" OR labels = tech-debt OR labels = technical-debt)'
+        )
     
     async def get_bugs(
         self,
         project_key: str,
-        status: Optional[str] = None,
-        component: Optional[str] = None,
+        status: str = "Open",
     ) -> list[JiraIssue]:
-        """
-        Get bug issues for a project.
-        
-        Args:
-            project_key: The project key
-            status: Optional status filter
-            component: Optional component filter
-            
-        Returns:
-            List of bug issues
-        """
-        jql = f'project = "{project_key}" AND issuetype = Bug'
-        if status:
-            jql += f' AND status = "{status}"'
-        if component:
-            jql += f' AND component = "{component}"'
-        jql += " ORDER BY priority DESC, created DESC"
-        
-        return await self.search_issues(jql)
+        """Get bugs in a project."""
+        return await self.search_issues(
+            f'project = "{project_key}" AND issuetype = Bug AND status = "{status}"'
+        )
     
     async def get_recent_releases(
         self,
         project_key: str,
-        limit: int = 10,
     ) -> list[JiraIssue]:
-        """
-        Get recently completed issues (for release notes).
-        
-        Args:
-            project_key: The project key
-            limit: Maximum number of issues
-            
-        Returns:
-            List of recently resolved issues
-        """
-        jql = f'''
-            project = "{project_key}" AND 
-            status = Done AND 
-            resolved >= -30d 
-            ORDER BY resolved DESC
-        '''
-        return await self.search_issues(jql, max_results=limit)
+        """Get recent releases (issues with fixVersion)."""
+        return await self.search_issues(
+            f'project = "{project_key}" AND fixVersion is not EMPTY ORDER BY updated DESC'
+        )
     
     async def extract_feature_documentation(
         self,
-        project_key: str,
-    ) -> list[dict[str, Any]]:
+        project_keys: list[str],
+    ) -> list[JiraIssue]:
         """
         Extract feature documentation from epics and stories.
         
-        Returns structured information about features suitable
-        for documentation generation.
+        Returns epics with detailed descriptions that can be used
+        for documentation.
         """
-        features = []
+        all_features = []
         
-        epics = await self.get_epics(project_key)
+        for project_key in project_keys:
+            try:
+                # Get epics
+                epics = await self.get_epics(project_key)
+                all_features.extend(epics)
+                
+                # Get high-level stories with descriptions
+                stories = await self.search_issues(
+                    f'project = "{project_key}" AND issuetype = Story AND description is not EMPTY ORDER BY created DESC'
+                )
+                all_features.extend(stories[:50])  # Limit stories
+                
+            except Exception as e:
+                logger.warning(f"Failed to get features from {project_key}: {e}")
         
-        for epic in epics:
-            stories = await self.get_stories_for_epic(epic.key)
+        return all_features
+    
+    async def analyze_bug_patterns(
+        self,
+        project_key: str,
+    ) -> dict[str, Any]:
+        """
+        Analyze bug patterns in a project.
+        
+        Returns statistics about bugs by component, priority, etc.
+        """
+        bugs = await self.search_issues(
+            f'project = "{project_key}" AND issuetype = Bug'
+        )
+        
+        # Analyze patterns
+        by_component: dict[str, int] = {}
+        by_priority: dict[str, int] = {}
+        by_status: dict[str, int] = {}
+        
+        for bug in bugs:
+            # By component
+            for comp in bug.components:
+                by_component[comp] = by_component.get(comp, 0) + 1
             
-            features.append({
-                "epic": {
-                    "key": epic.key,
-                    "summary": epic.summary,
-                    "description": epic.description,
-                    "status": epic.status,
-                },
-                "stories": [
-                    {
-                        "key": s.key,
-                        "summary": s.summary,
-                        "description": s.description,
-                        "status": s.status,
-                        "components": s.components,
-                    }
-                    for s in stories
-                ],
-                "components": list(set(
-                    comp for s in stories for comp in s.components
-                )),
-            })
+            # By priority
+            if bug.priority:
+                by_priority[bug.priority] = by_priority.get(bug.priority, 0) + 1
+            
+            # By status
+            if bug.status:
+                by_status[bug.status] = by_status.get(bug.status, 0) + 1
         
-        return features
+        return {
+            "total_bugs": len(bugs),
+            "by_component": by_component,
+            "by_priority": by_priority,
+            "by_status": by_status,
+        }

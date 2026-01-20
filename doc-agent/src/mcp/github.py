@@ -1,9 +1,8 @@
-"""GitHub-specific MCP operations."""
+"""GitHub operations via the Natterbox MCP server."""
 
 import logging
-import re
+from dataclasses import dataclass, field
 from typing import Any, Optional
-from dataclasses import dataclass
 
 from .client import MCPClient
 
@@ -15,28 +14,22 @@ class Repository:
     """GitHub repository information."""
     name: str
     full_name: str
-    description: Optional[str]
-    url: str
-    default_branch: str
-    language: Optional[str]
-    languages: dict[str, int]
-    topics: list[str]
-    visibility: str
-    archived: bool
+    description: str = ""
+    url: str = ""
+    default_branch: str = "main"
+    language: str = ""
+    topics: list[str] = field(default_factory=list)
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Repository":
+    def from_dict(cls, data: dict) -> "Repository":
         return cls(
             name=data.get("name", ""),
             full_name=data.get("full_name", ""),
-            description=data.get("description"),
-            url=data.get("html_url", data.get("url", "")),
+            description=data.get("description") or "",
+            url=data.get("html_url") or data.get("url", ""),
             default_branch=data.get("default_branch", "main"),
-            language=data.get("language"),
-            languages=data.get("languages", {}),
+            language=data.get("language") or "",
             topics=data.get("topics", []),
-            visibility=data.get("visibility", "private"),
-            archived=data.get("archived", False),
         )
 
 
@@ -45,109 +38,89 @@ class FileContent:
     """Content of a file from GitHub."""
     path: str
     content: str
-    sha: str
-    size: int
-    url: str
+    sha: str = ""
+    size: int = 0
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "FileContent":
+    def from_dict(cls, data: dict) -> "FileContent":
         return cls(
             path=data.get("path", ""),
             content=data.get("content", ""),
             sha=data.get("sha", ""),
             size=data.get("size", 0),
-            url=data.get("html_url", data.get("url", "")),
         )
 
 
 class GitHubClient:
     """
-    GitHub-specific operations through MCP.
+    GitHub operations via the Natterbox MCP server.
     
-    Provides methods for discovering repositories, reading files,
-    and extracting repository metadata.
+    Uses the 'github' MCP tool with operation parameter.
     """
     
+    TOOL_NAME = "github"
+    
     def __init__(self, mcp_client: MCPClient):
-        """
-        Initialize the GitHub client.
-        
-        Args:
-            mcp_client: The MCP client to use for requests
-        """
         self.mcp = mcp_client
     
     async def list_repositories(
         self,
-        organization: str,
-        exclude_patterns: Optional[list[str]] = None,
+        org: Optional[str] = None,
+        per_page: int = 100,
     ) -> list[Repository]:
         """
-        List repositories in an organization.
+        List repositories for an organization or the authenticated user.
         
         Args:
-            organization: GitHub organization name
-            exclude_patterns: Regex patterns for repos to exclude
+            org: Organization name (optional, lists user repos if not provided)
+            per_page: Results per page
             
         Returns:
             List of Repository objects
         """
-        response = await self.mcp.call_tool(
-            "github_list_repos",
-            {"organization": organization}
-        )
+        args = {
+            "operation": "list_repos",
+            "perPage": per_page,
+        }
+        if org:
+            args["org"] = org
+        
+        response = await self.mcp.call_tool(self.TOOL_NAME, args)
         
         if not response.success:
-            logger.error(f"Failed to list repos: {response.error}")
+            logger.error(f"Failed to list repositories: {response.error}")
             return []
         
         repos = []
-        exclude_patterns = exclude_patterns or []
-        compiled_patterns = [re.compile(p) for p in exclude_patterns]
+        data = response.data
+        if isinstance(data, list):
+            for repo_data in data:
+                try:
+                    repos.append(Repository.from_dict(repo_data))
+                except Exception as e:
+                    logger.warning(f"Failed to parse repository: {e}")
         
-        for repo_data in response.data or []:
-            repo = Repository.from_dict(repo_data)
-            
-            # Skip archived repos
-            if repo.archived:
-                logger.debug(f"Skipping archived repo: {repo.name}")
-                continue
-            
-            # Check exclusion patterns
-            excluded = False
-            for pattern in compiled_patterns:
-                if pattern.match(repo.name):
-                    logger.debug(f"Skipping excluded repo: {repo.name}")
-                    excluded = True
-                    break
-            
-            if not excluded:
-                repos.append(repo)
-        
-        logger.info(f"Found {len(repos)} repositories in {organization}")
         return repos
     
-    async def get_repository(self, owner: str, repo: str) -> Optional[Repository]:
-        """
-        Get details for a specific repository.
-        
-        Args:
-            owner: Repository owner (org or user)
-            repo: Repository name
-            
-        Returns:
-            Repository object or None
-        """
-        response = await self.mcp.call_tool(
-            "github_get_repo",
-            {"owner": owner, "repo": repo}
-        )
+    async def get_repository(
+        self,
+        owner: str,
+        repo: str,
+    ) -> Optional[Repository]:
+        """Get repository details."""
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "get_repo",
+            "owner": owner,
+            "repo": repo,
+        })
         
         if not response.success:
-            logger.error(f"Failed to get repo {owner}/{repo}: {response.error}")
+            logger.error(f"Failed to get repository: {response.error}")
             return None
         
-        return Repository.from_dict(response.data)
+        if response.data:
+            return Repository.from_dict(response.data)
+        return None
     
     async def get_file_content(
         self,
@@ -162,60 +135,32 @@ class GitHubClient:
         Args:
             owner: Repository owner
             repo: Repository name
-            path: Path to the file
-            ref: Git ref (branch, tag, commit)
+            path: Path to file within repository
+            ref: Branch, tag, or commit (default: repo's default branch)
             
         Returns:
-            FileContent object or None
+            FileContent or None if not found
         """
-        args = {"owner": owner, "repo": repo, "path": path}
+        args = {
+            "operation": "get_file_content",
+            "owner": owner,
+            "repo": repo,
+            "path": path,
+        }
         if ref:
             args["ref"] = ref
         
-        response = await self.mcp.call_tool("github_get_file", args)
+        response = await self.mcp.call_tool(self.TOOL_NAME, args)
         
         if not response.success:
             logger.debug(f"Failed to get file {path}: {response.error}")
             return None
         
-        return FileContent.from_dict(response.data)
+        if response.data:
+            return FileContent.from_dict(response.data)
+        return None
     
-    async def search_files(
-        self,
-        owner: str,
-        repo: str,
-        patterns: list[str],
-        ref: Optional[str] = None,
-    ) -> list[str]:
-        """
-        Search for files matching patterns in a repository.
-        
-        Args:
-            owner: Repository owner
-            repo: Repository name
-            patterns: Glob patterns to match
-            ref: Git ref (branch, tag, commit)
-            
-        Returns:
-            List of matching file paths
-        """
-        args = {
-            "owner": owner,
-            "repo": repo,
-            "patterns": patterns,
-        }
-        if ref:
-            args["ref"] = ref
-        
-        response = await self.mcp.call_tool("github_search_files", args)
-        
-        if not response.success:
-            logger.error(f"Failed to search files: {response.error}")
-            return []
-        
-        return response.data or []
-    
-    async def get_tree(
+    async def list_contents(
         self,
         owner: str,
         repo: str,
@@ -223,59 +168,103 @@ class GitHubClient:
         ref: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         """
-        Get the directory tree of a repository.
+        List contents of a directory in a repository.
         
         Args:
             owner: Repository owner
             repo: Repository name
-            path: Path to start from (empty for root)
-            ref: Git ref (branch, tag, commit)
+            path: Directory path (empty for root)
+            ref: Branch, tag, or commit
             
         Returns:
-            List of tree entries
+            List of content items (files and directories)
         """
-        args = {"owner": owner, "repo": repo, "path": path}
+        args = {
+            "operation": "list_contents",
+            "owner": owner,
+            "repo": repo,
+        }
+        if path:
+            args["path"] = path
         if ref:
             args["ref"] = ref
         
-        response = await self.mcp.call_tool("github_get_tree", args)
+        response = await self.mcp.call_tool(self.TOOL_NAME, args)
+        
+        if not response.success:
+            logger.error(f"Failed to list contents: {response.error}")
+            return []
+        
+        if isinstance(response.data, list):
+            return response.data
+        return []
+    
+    async def get_tree(
+        self,
+        owner: str,
+        repo: str,
+        ref: Optional[str] = None,
+        recursive: bool = True,
+    ) -> list[dict[str, Any]]:
+        """
+        Get the full tree of a repository.
+        
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            ref: Branch, tag, or commit
+            recursive: Whether to get tree recursively
+            
+        Returns:
+            List of tree items (all files and directories)
+        """
+        args = {
+            "operation": "get_tree",
+            "owner": owner,
+            "repo": repo,
+            "recursive": "true" if recursive else "false",
+        }
+        if ref:
+            args["ref"] = ref
+        
+        response = await self.mcp.call_tool(self.TOOL_NAME, args)
         
         if not response.success:
             logger.error(f"Failed to get tree: {response.error}")
             return []
         
-        return response.data or []
+        if isinstance(response.data, dict) and "tree" in response.data:
+            return response.data["tree"]
+        if isinstance(response.data, list):
+            return response.data
+        return []
     
-    async def get_readme(self, owner: str, repo: str) -> Optional[str]:
-        """
-        Get the README content for a repository.
-        
-        Args:
-            owner: Repository owner
-            repo: Repository name
-            
-        Returns:
-            README content or None
-        """
-        # Try common README locations
-        readme_paths = ["README.md", "readme.md", "README", "README.rst"]
-        
-        for path in readme_paths:
-            content = await self.get_file_content(owner, repo, path)
+    async def get_readme(
+        self,
+        owner: str,
+        repo: str,
+    ) -> Optional[str]:
+        """Get the README content for a repository."""
+        # Try common README filenames
+        for filename in ["README.md", "README.rst", "README.txt", "README"]:
+            content = await self.get_file_content(owner, repo, filename)
             if content:
                 return content.content
-        
         return None
     
-    async def get_package_json(self, owner: str, repo: str) -> Optional[dict[str, Any]]:
-        """Get package.json content if it exists."""
+    async def get_package_json(
+        self,
+        owner: str,
+        repo: str,
+    ) -> Optional[dict[str, Any]]:
+        """Get package.json for a Node.js repository."""
+        import json
         content = await self.get_file_content(owner, repo, "package.json")
-        if content:
-            import json
+        if content and content.content:
             try:
                 return json.loads(content.content)
             except json.JSONDecodeError:
-                return None
+                logger.warning(f"Invalid package.json in {owner}/{repo}")
         return None
     
     async def get_openapi_spec(
@@ -283,27 +272,21 @@ class GitHubClient:
         owner: str,
         repo: str,
     ) -> Optional[dict[str, Any]]:
-        """
-        Find and return OpenAPI specification from a repository.
+        """Find and return OpenAPI/Swagger specification."""
+        import json
+        import yaml
         
-        Searches common locations for OpenAPI/Swagger specs.
-        """
+        # Common OpenAPI file locations
         spec_paths = [
-            "openapi.yaml",
-            "openapi.json",
-            "swagger.yaml",
-            "swagger.json",
-            "api/openapi.yaml",
-            "api/openapi.json",
-            "docs/openapi.yaml",
-            "docs/openapi.json",
+            "openapi.yaml", "openapi.yml", "openapi.json",
+            "swagger.yaml", "swagger.yml", "swagger.json",
+            "api/openapi.yaml", "api/openapi.yml", "api/openapi.json",
+            "docs/openapi.yaml", "docs/openapi.yml",
         ]
         
         for path in spec_paths:
             content = await self.get_file_content(owner, repo, path)
-            if content:
-                import json
-                import yaml
+            if content and content.content:
                 try:
                     if path.endswith(".json"):
                         return json.loads(content.content)
@@ -313,3 +296,53 @@ class GitHubClient:
                     logger.warning(f"Failed to parse {path}: {e}")
         
         return None
+    
+    async def list_branches(
+        self,
+        owner: str,
+        repo: str,
+    ) -> list[str]:
+        """List branches in a repository."""
+        response = await self.mcp.call_tool(self.TOOL_NAME, {
+            "operation": "list_branches",
+            "owner": owner,
+            "repo": repo,
+        })
+        
+        if not response.success:
+            logger.error(f"Failed to list branches: {response.error}")
+            return []
+        
+        if isinstance(response.data, list):
+            return [b.get("name", "") for b in response.data if isinstance(b, dict)]
+        return []
+    
+    async def search_files(
+        self,
+        owner: str,
+        repo: str,
+        pattern: str,
+    ) -> list[str]:
+        """
+        Search for files matching a pattern in the repository tree.
+        
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            pattern: Glob pattern to match (e.g., "*.md", "src/**/*.py")
+            
+        Returns:
+            List of matching file paths
+        """
+        import fnmatch
+        
+        tree = await self.get_tree(owner, repo)
+        matches = []
+        
+        for item in tree:
+            if item.get("type") == "blob":  # Files only
+                path = item.get("path", "")
+                if fnmatch.fnmatch(path, pattern):
+                    matches.append(path)
+        
+        return matches

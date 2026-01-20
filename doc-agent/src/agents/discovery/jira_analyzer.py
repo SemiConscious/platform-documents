@@ -58,24 +58,6 @@ class JiraAnalyzerAgent(BaseAgent):
         
         for project_key in self.projects:
             try:
-                # Get project components (for ownership info)
-                components = await self.jira.get_components(project_key)
-                for component in components:
-                    owner = await self._process_component(component, project_key)
-                    if owner:
-                        discovered_owners += 1
-                
-                # Extract feature documentation from epics
-                features = await self.jira.extract_feature_documentation(project_key)
-                for feature in features:
-                    try:
-                        docs = await self._process_feature(feature, project_key)
-                        discovered_features += len(docs)
-                        for doc in docs:
-                            self.graph.add_entity(doc)
-                    except Exception as e:
-                        self.logger.warning(f"Failed to process feature: {e}")
-                
                 # Extract technical debt
                 tech_debt = await self.jira.get_technical_debt(project_key)
                 for issue in tech_debt:
@@ -95,6 +77,21 @@ class JiraAnalyzerAgent(BaseAgent):
             except Exception as e:
                 self.logger.error(f"Failed to analyze project {project_key}: {e}")
                 errors.append(f"project/{project_key}: {str(e)}")
+        
+        # Extract feature documentation from all projects at once
+        try:
+            features = await self.jira.extract_feature_documentation(self.projects)
+            for feature in features:
+                try:
+                    project_key = feature.key.split("-")[0] if feature.key else ""
+                    docs = await self._process_feature(feature, project_key)
+                    discovered_features += len(docs)
+                    for doc in docs:
+                        self.graph.add_entity(doc)
+                except Exception as e:
+                    self.logger.warning(f"Failed to process feature: {e}")
+        except Exception as e:
+            self.logger.warning(f"Failed to extract feature documentation: {e}")
         
         # Save checkpoint
         await self.save_checkpoint({

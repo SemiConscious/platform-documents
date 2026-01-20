@@ -61,12 +61,15 @@ class RepositoryScannerAgent(BaseAgent):
         
         for org in self.organizations:
             try:
-                repos = await self.github.list_repositories(
-                    organization=org,
-                    exclude_patterns=self.exclude_patterns,
-                )
+                all_repos = await self.github.list_repositories(org=org)
                 
-                self.logger.info(f"Found {len(repos)} repositories in {org}")
+                # Filter out excluded repositories
+                repos = [
+                    r for r in all_repos 
+                    if not self._should_exclude(r.name)
+                ]
+                
+                self.logger.info(f"Found {len(repos)} repositories in {org} (filtered from {len(all_repos)})")
                 
                 for repo in repos:
                     try:
@@ -123,6 +126,13 @@ class RepositoryScannerAgent(BaseAgent):
             error="; ".join(errors) if errors else None,
             metadata={"organizations": self.organizations},
         )
+    
+    def _should_exclude(self, repo_name: str) -> bool:
+        """Check if a repository should be excluded based on patterns."""
+        for pattern in self.exclude_patterns:
+            if re.match(pattern, repo_name):
+                return True
+        return False
     
     async def _process_repository(
         self,
