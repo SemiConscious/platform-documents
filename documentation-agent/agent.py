@@ -50,6 +50,10 @@ class FlushingStreamHandler(logging.StreamHandler):
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", handlers=[FlushingStreamHandler()])
 logger = logging.getLogger("documentation-agent")
 
+# Suppress noisy httpx and httpcore logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+
 
 # =============================================================================
 # Configuration
@@ -194,7 +198,7 @@ class FileStore:
         self._content_hash_to_id[content_hash] = file_id
         self._save_index()
 
-        logger.info(f"📦 Stored result: {file_id} ({size:,} bytes from {source})")
+        # Silent storage - only log when reading from store
 
         return {
             "file_id": file_id,
@@ -961,10 +965,17 @@ class BedrockClient:
         if context_size > self.CONTEXT_LIMIT_CHARS:
             raise Exception(f"Context too large: ~{estimated_tokens:,} tokens (~{context_size:,} chars). Limit is ~{self.CONTEXT_LIMIT_CHARS // 4:,} tokens.")
 
-        if context_size > self.CONTEXT_WARNING_CHARS:
-            logger.warning(f"⚠️  Large context: ~{estimated_tokens:,} tokens ({context_size:,} chars) - approaching limit")
+        # Calculate percentage and status indicator
+        pct = (context_size / self.CONTEXT_LIMIT_CHARS) * 100
+        if pct >= 75:
+            indicator = "🔴"  # Red - danger zone
+            logger.warning(f"{indicator} Context: ~{estimated_tokens:,} tokens ({pct:.0f}% of limit)")
+        elif pct >= 50:
+            indicator = "🟡"  # Amber - caution
+            logger.info(f"{indicator} Context: ~{estimated_tokens:,} tokens ({pct:.0f}% of limit)")
         else:
-            logger.info(f"📊 Context size: ~{estimated_tokens:,} tokens")
+            indicator = "🟢"  # Green - healthy
+            logger.info(f"{indicator} Context: ~{estimated_tokens:,} tokens ({pct:.0f}% of limit)")
 
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
@@ -1113,6 +1124,74 @@ If the topic is large, subdivide into multiple files:
 Current date: {datetime.now().strftime("%Y-%m-%d")}
 """
 
+    def _format_mcp_call_details(self, tool_name: str, tool_input: dict) -> str:
+        """Format MCP tool call details for human-readable logging."""
+        details = []
+
+        if "confluence" in tool_name:
+            op = tool_input.get("operation", "unknown")
+            if op == "search_pages":
+                details.append(f"search: '{tool_input.get('query', '')}'")
+            elif op == "get_page":
+                details.append(f"page: {tool_input.get('pageId', 'unknown')}")
+            else:
+                details.append(f"op: {op}")
+
+        elif "github" in tool_name:
+            op = tool_input.get("operation", "unknown")
+            owner = tool_input.get("owner", "")
+            repo = tool_input.get("repo", "")
+            if owner and repo:
+                details.append(f"{owner}/{repo}")
+            if op == "list_contents":
+                details.append(f"list: {tool_input.get('path', '/')}")
+            elif op == "get_file_content":
+                details.append(f"read: {tool_input.get('path', '')}")
+            elif op == "list_repos":
+                details.append("listing repos")
+            elif op == "get_tree":
+                details.append("tree")
+            else:
+                details.append(f"op: {op}")
+
+        elif "salesforce" in tool_name:
+            obj = tool_input.get("object", "")
+            op = tool_input.get("operation", "")
+            query = tool_input.get("query", tool_input.get("soql", ""))
+            if obj:
+                details.append(f"object: {obj}")
+            if query:
+                details.append(f"query: {query[:60]}...")
+            elif op:
+                details.append(f"op: {op}")
+
+        elif "slack" in tool_name:
+            op = tool_input.get("operation", "")
+            channel = tool_input.get("channel", "")
+            if op:
+                details.append(f"op: {op}")
+            if channel:
+                details.append(f"channel: {channel}")
+
+        elif "docs360" in tool_name or "document360" in tool_name:
+            query = tool_input.get("query", "")
+            if query:
+                details.append(f"search: '{query}'")
+            else:
+                op = tool_input.get("operation", "")
+                if op:
+                    details.append(f"op: {op}")
+
+        else:
+            # Generic: show first few key params
+            for key in ["operation", "query", "path", "file", "name"]:
+                if key in tool_input:
+                    val = str(tool_input[key])[:50]
+                    details.append(f"{key}: {val}")
+                    break
+
+        return ", ".join(details) if details else "..."
+
     async def _handle_tool_use(self, tool_use: dict) -> dict:
         """Execute a tool - same logic as main agent."""
         tool_name = tool_use["name"]
@@ -1130,11 +1209,14 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
         elif tool_name == "list_directory":
             result = self.shell.list_directory(tool_input.get("path", "."))
         elif tool_name == "read_from_store":
+            logger.info(f"[{self.agent_id}] 📖 read_from_store: file_id={tool_input.get('file_id', '')}, offset={tool_input.get('offset', 0)}")
             result = self.file_store.read(tool_input.get("file_id", ""), tool_input.get("offset", 0), tool_input.get("limit"))
         elif tool_name == "list_store_files":
             result = self.file_store.list_files()
         elif tool_name.startswith("mcp_"):
             mcp_tool_name = tool_name[4:]
+            details = self._format_mcp_call_details(mcp_tool_name, tool_input)
+            logger.info(f"[{self.agent_id}] 🌐 mcp_{mcp_tool_name}: {details}")
             result = await self.mcp.call_tool(mcp_tool_name, tool_input)
         else:
             result = {"error": f"Unknown tool: {tool_name}"}
@@ -1262,7 +1344,7 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
             }
             return result
 
-        logger.info(f"[{self.agent_id}] 📦 Truncating result ({result_size:,} > {available:,} available) [file_id={store_info['file_id']}]")
+        # Silent truncation - context management happens automatically
 
         return self._truncate_to_fit(result, available, store_info)
 
@@ -1350,8 +1432,7 @@ Current date: {datetime.now().strftime("%Y-%m-%d")}
 
             msg["content"] = new_content
 
-        if compressed_count > 0:
-            logger.info(f"[{self.agent_id}] 📦 Compressed {compressed_count} historical tool results")
+        # Silent compression - context management happens automatically
 
     async def run(self) -> TaskResult:
         """Execute the task and return result."""
@@ -1632,7 +1713,7 @@ Provide a summary of what was accomplished this iteration.
 
                 messages.append({"role": "user", "content": tool_results})
                 response = self.bedrock.create_message(messages=messages, system="You are a documentation project planner.", tools=planning_tools)
-                
+
                 # Log thinking after each turn
                 self._log_thinking(response, "planner")
 
@@ -1677,7 +1758,7 @@ Provide a summary of what was accomplished this iteration.
 
     def _parse_plan(self, text: str) -> Tuple[Optional[dict], list[PlanTask], list[dict]]:
         """Parse plan JSON from Claude's response.
-        
+
         Returns:
             Tuple of (main_topic, subtasks, additional_files)
         """
@@ -1699,7 +1780,7 @@ Provide a summary of what was accomplished this iteration.
             # Handle new format with main_topic
             main_topic = plan_data.get("main_topic")
             additional_files = plan_data.get("additional_files", [])
-            
+
             # Get subtasks (new format) or fall back to old array format
             subtasks_data = plan_data.get("subtasks", [])
             if not subtasks_data and isinstance(plan_data, list):
@@ -1756,10 +1837,7 @@ Provide a summary of what was accomplished this iteration.
                 return result
 
         # Run all tasks in parallel with unique agent IDs
-        results = await asyncio.gather(
-            *[run_with_semaphore(task, f"sub-{i+1}") for i, task in enumerate(tasks)],
-            return_exceptions=True
-        )
+        results = await asyncio.gather(*[run_with_semaphore(task, f"sub-{i + 1}") for i, task in enumerate(tasks)], return_exceptions=True)
 
         # Convert exceptions to failed results
         final_results = []
@@ -2577,7 +2655,7 @@ Original task: {original_task}"""
             return result
 
         # Result too big for context - need to truncate
-        logger.info(f"📦 Truncating result ({result_size:,} chars > {available:,} available) [file_id={store_info['file_id']}]")
+        # Silent truncation - context management happens automatically
 
         return self._truncate_to_fit(result, available, store_info)
 
@@ -2676,8 +2754,7 @@ Original task: {original_task}"""
 
             msg["content"] = new_content
 
-        if compressed_count > 0:
-            logger.info(f"📦 Compressed {compressed_count} historical tool results")
+        # Silent compression - context management happens automatically
 
     def _format_mcp_call_details(self, tool_name: str, tool_input: dict) -> str:
         """Format MCP tool call details for human-readable logging."""
@@ -2771,12 +2848,11 @@ Original task: {original_task}"""
         elif tool_name == "read_from_store":
             file_id = tool_input.get("file_id", "")
             offset = tool_input.get("offset", 0)
-            limit = tool_input.get("limit", 50)  # Default to 50 lines (smaller chunks)
-            logger.info(f"📦 read_from_store: {file_id} (offset={offset}, limit={limit})")
+            limit = tool_input.get("limit", 50000)
+            logger.info(f"📖 read_from_store: file_id={file_id}, offset={offset}")
             result = self.file_store.read(file_id, offset, limit)
 
         elif tool_name == "list_store_files":
-            logger.info(f"📦 list_store_files")
             result = self.file_store.list_files()
 
         # Handle MCP tools
