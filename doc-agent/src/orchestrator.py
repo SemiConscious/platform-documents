@@ -10,9 +10,9 @@ from anthropic import AsyncAnthropic
 
 from .agents.base import AgentContext, AgentResult, ParallelAgentRunner
 from .knowledge import KnowledgeGraph, KnowledgeStore
-from .mcp import MCPClient
+from .mcp.client import MCPClient, MCPOAuthConfig
 from .context import FileStore, FileStoreTool
-from .auth import OAuthManager, OAuthConfig, TokenCache, AWSSSOAuth
+from .auth import TokenCache, AWSSSOAuth
 from .utils.logging import get_logger
 
 logger = get_logger("orchestrator")
@@ -74,21 +74,24 @@ class Orchestrator:
         # Initialize components
         self.store = KnowledgeStore(self.store_dir)
         
-        # Initialize authentication
+        # Initialize authentication (for AWS Bedrock)
         self.token_cache = TokenCache()
-        self.oauth_manager = OAuthManager(token_cache=self.token_cache)
         self.aws_sso: Optional[AWSSSOAuth] = None
         self._setup_auth(config.get("auth", {}))
         
-        # Configure MCP client for Natterbox server
+        # Configure MCP client for Natterbox server (SSE transport with OAuth)
         mcp_config = config.get("mcp", {})
+        oauth_config = mcp_config.get("oauth", {})
+        
         self.mcp_client = MCPClient(
-            server_name=mcp_config.get("server", "natterbox"),
-            server_command=mcp_config.get("command"),
-            server_args=mcp_config.get("args"),
-            server_env=mcp_config.get("env"),
+            server_url=mcp_config.get("url", "https://avatar.natterbox-dev03.net/mcp/sse"),
             timeout=mcp_config.get("timeout", 60),
-            oauth_manager=self.oauth_manager,
+            oauth_config=MCPOAuthConfig(
+                authorization_url=oauth_config.get("authorization_url", "https://avatar.natterbox-dev03.net/mcp/authorize"),
+                token_url=oauth_config.get("token_url", "https://avatar.natterbox-dev03.net/mcp/token"),
+                client_id=oauth_config.get("client_id", "doc-agent"),
+                scopes=oauth_config.get("scopes", []),
+            ),
         )
         
         # Initialize file store for context management (session-only)
@@ -103,28 +106,6 @@ class Orchestrator:
     
     def _setup_auth(self, auth_config: dict[str, Any]) -> None:
         """Set up authentication from config."""
-        # GitHub OAuth
-        github_config = auth_config.get("github", {})
-        if github_config.get("enabled") and github_config.get("client_id"):
-            self.oauth_manager.add_config(OAuthConfig.github(
-                client_id=github_config["client_id"],
-                client_secret=github_config.get("client_secret"),
-            ))
-            logger.info("GitHub OAuth configured")
-        
-        # Atlassian OAuth (Confluence/Jira)
-        atlassian_config = auth_config.get("atlassian", {})
-        if atlassian_config.get("enabled") and atlassian_config.get("client_id"):
-            config = OAuthConfig.atlassian(
-                client_id=atlassian_config["client_id"],
-                client_secret=atlassian_config.get("client_secret"),
-            )
-            # Override scopes if specified
-            if atlassian_config.get("scopes"):
-                config.scopes = atlassian_config["scopes"]
-            self.oauth_manager.add_config(config)
-            logger.info("Atlassian OAuth configured")
-        
         # AWS SSO for Bedrock
         aws_config = auth_config.get("aws", {})
         if aws_config.get("enabled"):
@@ -160,23 +141,9 @@ class Orchestrator:
     
     async def _ensure_authentication(self) -> None:
         """Ensure all required authentication is in place."""
-        auth_config = self.config.get("auth", {})
+        # MCP server handles its own OAuth for GitHub/Confluence/Jira
+        # We only need to ensure AWS SSO is valid for Bedrock
         
-        # Check GitHub auth
-        if auth_config.get("github", {}).get("enabled"):
-            token = await self.oauth_manager.get_token("github")
-            if not token:
-                logger.warning("GitHub token not available. Some features may be limited.")
-                logger.info("Run 'doc-agent auth github' to authenticate.")
-        
-        # Check Atlassian auth
-        if auth_config.get("atlassian", {}).get("enabled"):
-            token = await self.oauth_manager.get_token("atlassian")
-            if not token:
-                logger.warning("Atlassian token not available. Confluence/Jira access may be limited.")
-                logger.info("Run 'doc-agent auth atlassian' to authenticate.")
-        
-        # Check AWS SSO for Bedrock
         if self.aws_sso:
             try:
                 creds = await self.aws_sso.get_credentials()
@@ -184,7 +151,7 @@ class Orchestrator:
                     logger.info(f"AWS SSO credentials valid until {creds.expiration}")
             except Exception as e:
                 logger.warning(f"AWS SSO credentials not available: {e}")
-                logger.info("Run 'aws sso login' or 'aws-vault login' to authenticate.")
+                logger.info("Run 'aws-vault login ssh-dev03-admin' to authenticate.")
     
     async def _setup_anthropic_client(self) -> None:
         """Set up the Anthropic client, using Bedrock if configured."""
@@ -253,9 +220,6 @@ class Orchestrator:
     async def shutdown(self) -> None:
         """Shutdown the orchestrator and save state."""
         logger.info("Shutting down orchestrator")
-        
-        # Close OAuth manager
-        await self.oauth_manager.close()
         
         # Save knowledge graph
         await self.store.save()

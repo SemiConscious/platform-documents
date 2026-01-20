@@ -12,7 +12,7 @@ from pathlib import Path
 from anthropic import AsyncAnthropic
 
 from ..knowledge import KnowledgeGraph, KnowledgeStore
-from ..mcp import MCPClient
+from ..mcp.client import MCPClient
 from ..context import FileStore, FileReference
 
 logger = logging.getLogger("doc-agent.agents.base")

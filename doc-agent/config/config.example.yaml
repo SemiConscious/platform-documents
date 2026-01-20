@@ -1,63 +1,34 @@
 # Platform Documentation Agent Configuration
 
 llm:
-  provider: anthropic
-  model: claude-sonnet-4-20250514
+  # Using AWS Bedrock for Claude API access
+  provider: bedrock
+  model: anthropic.claude-sonnet-4-20250514-v1:0  # Claude Opus 4.5 on Bedrock
   max_tokens: 4096
   temperature: 0.3
 
 mcp:
-  # Natterbox MCP server configuration
-  server: natterbox
+  # Natterbox MCP server (SSE transport with built-in OAuth)
+  url: "https://avatar.natterbox-dev03.net/mcp/sse"
+  transport: sse
   timeout: 60
   
-  # How to launch the MCP server (if not already running)
-  # These can also be set via environment variables:
-  # MCP_SERVER_COMMAND, MCP_SERVER_ARGS
-  command: npx
-  args:
-    - "@natterbox/mcp-server"
-  
-  # Additional environment variables for the server
-  # Tokens are automatically added from OAuth if configured
-  # env:
-  #   GITHUB_TOKEN: "your-token"
-  #   CONFLUENCE_TOKEN: "your-token"
-  #   JIRA_TOKEN: "your-token"
+  # OAuth configuration (MCP server handles GitHub/Confluence/Jira auth)
+  oauth:
+    authorization_url: "https://avatar.natterbox-dev03.net/mcp/authorize"
+    token_url: "https://avatar.natterbox-dev03.net/mcp/token"
+    client_id: "doc-agent"
+    scopes: []
 
 # Authentication configuration
 auth:
   # Token cache directory (default: ~/.doc-agent/tokens)
   # cache_dir: ~/.doc-agent/tokens
   
-  # GitHub OAuth (for API access via MCP)
-  github:
-    enabled: true
-    # Get these from GitHub Settings > Developer settings > OAuth Apps
-    client_id: "your-github-oauth-client-id"
-    # client_secret: "your-github-oauth-client-secret"  # Optional for public clients
-    scopes:
-      - repo
-      - read:org
-      - read:user
-  
-  # Atlassian OAuth (for Confluence & Jira via MCP)
-  atlassian:
-    enabled: true
-    # Get these from https://developer.atlassian.com/console/myapps/
-    client_id: "your-atlassian-oauth-client-id"
-    client_secret: "your-atlassian-oauth-client-secret"
-    scopes:
-      - read:jira-work
-      - read:jira-user
-      - read:confluence-content.all
-      - read:confluence-space.summary
-      - offline_access
-  
   # AWS SSO (for Bedrock API)
   aws:
     enabled: true
-    profile: "your-sso-profile"  # AWS profile with SSO configured
+    profile: "ssh-dev03-admin"  # AWS profile with SSO configured
     region: us-east-1
     use_aws_vault: true  # Use aws-vault for credential management
 

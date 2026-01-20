@@ -1,20 +1,25 @@
-"""Base MCP client for communicating with the Natterbox MCP server."""
+"""MCP client for communicating with the Natterbox MCP server via SSE."""
 
 import asyncio
 import json
 import logging
 import os
-from contextlib import asynccontextmanager
 from typing import Any, Optional, TYPE_CHECKING
 from dataclasses import dataclass
+from enum import Enum
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+import httpx
 
 if TYPE_CHECKING:
     from ..auth import OAuthManager
 
 logger = logging.getLogger("doc-agent.mcp.client")
+
+
+class MCPTransport(str, Enum):
+    """MCP transport types."""
+    SSE = "sse"
+    STDIO = "stdio"
 
 
 @dataclass
@@ -25,56 +30,58 @@ class MCPResponse:
     error: Optional[str] = None
 
 
+@dataclass
+class MCPOAuthConfig:
+    """OAuth configuration for MCP server."""
+    authorization_url: str
+    token_url: str
+    client_id: str
+    scopes: list[str] = None
+    
+    def __post_init__(self):
+        if self.scopes is None:
+            self.scopes = []
+
+
 class MCPClient:
     """
     Client for interacting with the Natterbox MCP server.
     
-    This client provides a programmatic interface to call MCP tools
-    and retrieve data from GitHub, Confluence, and Jira via the
-    Natterbox MCP server.
-    
-    Supports OAuth authentication with automatic token refresh.
+    Supports SSE transport with OAuth authentication, which is
+    how the Natterbox MCP server operates.
     """
     
     def __init__(
         self,
-        server_name: str = "natterbox",
-        server_command: Optional[str] = None,
-        server_args: Optional[list[str]] = None,
-        server_env: Optional[dict[str, str]] = None,
+        server_url: str = "https://avatar.natterbox-dev03.net/mcp/sse",
+        transport: MCPTransport = MCPTransport.SSE,
+        oauth_config: Optional[MCPOAuthConfig] = None,
         timeout: int = 60,
-        oauth_manager: Optional["OAuthManager"] = None,
     ):
         """
         Initialize the MCP client.
         
         Args:
-            server_name: Name of the MCP server (for logging)
-            server_command: Command to launch the MCP server (e.g., "npx")
-            server_args: Arguments for the server command
-            server_env: Additional environment variables for the server
+            server_url: URL of the MCP server (for SSE transport)
+            transport: Transport type (SSE or STDIO)
+            oauth_config: OAuth configuration for the MCP server
             timeout: Default timeout for operations in seconds
-            oauth_manager: OAuth manager for authentication
         """
-        self.server_name = server_name
+        self.server_url = server_url
+        self.transport = transport
         self.timeout = timeout
-        self.oauth_manager = oauth_manager
         
-        # Server launch configuration
-        # Default assumes the natterbox MCP server is an npm package
-        self.server_command = server_command or os.environ.get(
-            "MCP_SERVER_COMMAND", "npx"
+        # OAuth config for MCP server's built-in auth
+        self.oauth_config = oauth_config or MCPOAuthConfig(
+            authorization_url="https://avatar.natterbox-dev03.net/mcp/authorize",
+            token_url="https://avatar.natterbox-dev03.net/mcp/token",
+            client_id="doc-agent",
+            scopes=[],
         )
-        self.server_args = server_args or [
-            arg for arg in os.environ.get(
-                "MCP_SERVER_ARGS", "@natterbox/mcp-server"
-            ).split()
-        ]
-        self.server_env = server_env or {}
         
         # Session state
-        self._session: Optional[ClientSession] = None
-        self._client_context = None
+        self._http_client: Optional[httpx.AsyncClient] = None
+        self._access_token: Optional[str] = None
         self._connected = False
         self._available_tools: list[dict[str, Any]] = []
         
@@ -83,102 +90,247 @@ class MCPClient:
         if self._connected:
             return
             
-        logger.info(f"Connecting to MCP server: {self.server_name}")
-        logger.debug(f"Server command: {self.server_command} {' '.join(self.server_args)}")
+        logger.info(f"Connecting to MCP server: {self.server_url}")
         
-        # Merge environment
-        env = {**os.environ, **self.server_env}
+        # Create HTTP client
+        self._http_client = httpx.AsyncClient(timeout=self.timeout)
         
-        # Add OAuth tokens to environment if available
-        if self.oauth_manager:
-            await self._add_oauth_tokens_to_env(env)
+        # Authenticate with the MCP server
+        await self._authenticate()
         
-        # Create server parameters
-        server_params = StdioServerParameters(
-            command=self.server_command,
-            args=self.server_args,
-            env=env,
-        )
-        
-        # Create the client context
-        self._client_context = stdio_client(server_params)
-        read, write = await self._client_context.__aenter__()
-        
-        # Create and initialize session
-        self._session = ClientSession(read, write)
-        await self._session.__aenter__()
-        await self._session.initialize()
-        
-        # Cache available tools
-        tools_result = await self._session.list_tools()
-        self._available_tools = [
-            {
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": tool.inputSchema,
-            }
-            for tool in tools_result.tools
-        ]
+        # Get available tools
+        await self._fetch_tools()
         
         self._connected = True
         logger.info(f"Connected to MCP server with {len(self._available_tools)} tools available")
     
-    async def _add_oauth_tokens_to_env(self, env: dict[str, str]) -> None:
-        """Add OAuth tokens to environment for MCP server."""
-        if not self.oauth_manager:
+    async def _authenticate(self) -> None:
+        """Authenticate with the MCP server using OAuth."""
+        from ..auth import TokenCache
+        
+        # Check for cached token
+        cache = TokenCache()
+        cached = cache.get("mcp", "access_token", "natterbox")
+        
+        if cached and not cached.is_expired():
+            self._access_token = cached.token
+            logger.debug("Using cached MCP access token")
             return
         
-        # GitHub token
-        github_token = await self.oauth_manager.get_token("github")
-        if github_token:
-            env["GITHUB_TOKEN"] = github_token
-            logger.debug("Added GitHub token to MCP environment")
+        # Try refresh token first
+        if cached and cached.refresh_token:
+            try:
+                new_token = await self._refresh_token(cached.refresh_token)
+                if new_token:
+                    self._access_token = new_token
+                    return
+            except Exception as e:
+                logger.warning(f"Token refresh failed: {e}")
         
-        # Atlassian token (Confluence/Jira)
-        atlassian_token = await self.oauth_manager.get_token("atlassian")
-        if atlassian_token:
-            env["ATLASSIAN_TOKEN"] = atlassian_token
-            env["CONFLUENCE_TOKEN"] = atlassian_token
-            env["JIRA_TOKEN"] = atlassian_token
-            logger.debug("Added Atlassian token to MCP environment")
+        # Need to do OAuth flow
+        logger.info("MCP authentication required")
+        await self._do_oauth_flow()
     
-    async def refresh_auth(self) -> bool:
-        """
-        Refresh authentication tokens and reconnect if needed.
+    async def _do_oauth_flow(self) -> None:
+        """Perform OAuth authorization code flow."""
+        import secrets
+        import webbrowser
+        from aiohttp import web
         
-        Returns:
-            True if refresh was successful
-        """
-        if not self.oauth_manager:
-            return True
+        state = secrets.token_urlsafe(16)
+        auth_code = None
         
-        reconnect_needed = False
+        # Start local callback server
+        async def handle_callback(request):
+            nonlocal auth_code
+            auth_code = request.query.get("code")
+            error = request.query.get("error")
+            
+            if error:
+                return web.Response(
+                    text=f"<html><body><h1>Authentication Failed</h1><p>{error}</p></body></html>",
+                    content_type="text/html",
+                )
+            
+            return web.Response(
+                text="<html><body><h1>Authentication Successful</h1><p>You can close this window.</p></body></html>",
+                content_type="text/html",
+            )
         
-        # Check and refresh GitHub token
-        github_cached = self.oauth_manager.cache.get("github", "access_token")
-        if github_cached and github_cached.is_expired():
-            if github_cached.refresh_token:
-                new_token = await self.oauth_manager.refresh_token("github", github_cached.refresh_token)
-                if new_token:
-                    reconnect_needed = True
-                    logger.info("Refreshed GitHub token")
+        app = web.Application()
+        app.router.add_get("/callback", handle_callback)
         
-        # Check and refresh Atlassian token
-        atlassian_cached = self.oauth_manager.cache.get("atlassian", "access_token")
-        if atlassian_cached and atlassian_cached.is_expired():
-            if atlassian_cached.refresh_token:
-                new_token = await self.oauth_manager.refresh_token("atlassian", atlassian_cached.refresh_token)
-                if new_token:
-                    reconnect_needed = True
-                    logger.info("Refreshed Atlassian token")
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "localhost", 8085)
+        await site.start()
         
-        # Reconnect if tokens were refreshed
-        if reconnect_needed and self._connected:
-            logger.info("Reconnecting MCP client with refreshed tokens")
-            await self.disconnect()
-            await self.connect()
+        try:
+            # Build authorization URL
+            from urllib.parse import urlencode
+            params = {
+                "client_id": self.oauth_config.client_id,
+                "redirect_uri": "http://localhost:8085/callback",
+                "response_type": "code",
+                "state": state,
+            }
+            if self.oauth_config.scopes:
+                params["scope"] = " ".join(self.oauth_config.scopes)
+            
+            auth_url = f"{self.oauth_config.authorization_url}?{urlencode(params)}"
+            
+            # Open browser
+            print(f"\nPlease authenticate with the Natterbox MCP server.")
+            print(f"Opening browser... If it doesn't open, visit:\n{auth_url}\n")
+            webbrowser.open(auth_url)
+            
+            # Wait for callback
+            for _ in range(300):  # 5 minute timeout
+                if auth_code:
+                    break
+                await asyncio.sleep(1)
+            
+            if not auth_code:
+                raise RuntimeError("OAuth authentication timed out")
+            
+            # Exchange code for token
+            await self._exchange_code(auth_code)
+            
+        finally:
+            await site.stop()
+            await runner.cleanup()
+    
+    async def _exchange_code(self, code: str) -> None:
+        """Exchange authorization code for access token."""
+        data = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": "http://localhost:8085/callback",
+            "client_id": self.oauth_config.client_id,
+        }
         
-        return True
+        response = await self._http_client.post(
+            self.oauth_config.token_url,
+            data=data,
+            headers={"Accept": "application/json"},
+        )
+        response.raise_for_status()
+        
+        token_data = response.json()
+        self._access_token = token_data["access_token"]
+        
+        # Cache the token
+        from ..auth import TokenCache
+        cache = TokenCache()
+        cache.set(
+            service="mcp",
+            token=self._access_token,
+            token_type="access_token",
+            identifier="natterbox",
+            expires_in=token_data.get("expires_in"),
+            refresh_token=token_data.get("refresh_token"),
+        )
+        
+        logger.info("Successfully authenticated with MCP server")
+    
+    async def _refresh_token(self, refresh_token: str) -> Optional[str]:
+        """Refresh the access token."""
+        data = {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "client_id": self.oauth_config.client_id,
+        }
+        
+        response = await self._http_client.post(
+            self.oauth_config.token_url,
+            data=data,
+            headers={"Accept": "application/json"},
+        )
+        response.raise_for_status()
+        
+        token_data = response.json()
+        new_token = token_data["access_token"]
+        
+        # Update cache
+        from ..auth import TokenCache
+        cache = TokenCache()
+        cache.set(
+            service="mcp",
+            token=new_token,
+            token_type="access_token",
+            identifier="natterbox",
+            expires_in=token_data.get("expires_in"),
+            refresh_token=token_data.get("refresh_token", refresh_token),
+        )
+        
+        logger.info("Refreshed MCP access token")
+        return new_token
+    
+    async def _fetch_tools(self) -> None:
+        """Fetch available tools from the MCP server."""
+        # MCP tools/list endpoint
+        response = await self._make_request("tools/list", {})
+        
+        if response.success and response.data:
+            tools = response.data.get("tools", [])
+            self._available_tools = [
+                {
+                    "name": tool.get("name"),
+                    "description": tool.get("description"),
+                    "input_schema": tool.get("inputSchema"),
+                }
+                for tool in tools
+            ]
+    
+    async def _make_request(
+        self,
+        method: str,
+        params: dict[str, Any],
+    ) -> MCPResponse:
+        """Make a JSON-RPC request to the MCP server."""
+        if not self._http_client:
+            self._http_client = httpx.AsyncClient(timeout=self.timeout)
+        
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        
+        if self._access_token:
+            headers["Authorization"] = f"Bearer {self._access_token}"
+        
+        # JSON-RPC request
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": method,
+            "params": params,
+        }
+        
+        try:
+            # For SSE, we POST to the server URL
+            response = await self._http_client.post(
+                self.server_url,
+                json=payload,
+                headers=headers,
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if "error" in result:
+                return MCPResponse(
+                    success=False,
+                    data=None,
+                    error=result["error"].get("message", str(result["error"])),
+                )
+            
+            return MCPResponse(success=True, data=result.get("result"))
+            
+        except httpx.HTTPStatusError as e:
+            return MCPResponse(success=False, data=None, error=f"HTTP {e.response.status_code}: {e.response.text}")
+        except Exception as e:
+            return MCPResponse(success=False, data=None, error=str(e))
     
     async def disconnect(self) -> None:
         """Close the MCP connection."""
@@ -187,13 +339,9 @@ class MCPClient:
             
         logger.info("Disconnecting from MCP server")
         
-        if self._session:
-            await self._session.__aexit__(None, None, None)
-            self._session = None
-            
-        if self._client_context:
-            await self._client_context.__aexit__(None, None, None)
-            self._client_context = None
+        if self._http_client:
+            await self._http_client.aclose()
+            self._http_client = None
         
         self._connected = False
         self._available_tools = []
@@ -219,50 +367,37 @@ class MCPClient:
         if not self._connected:
             await self.connect()
         
-        effective_timeout = timeout or self.timeout
+        logger.debug(f"Calling MCP tool: {tool_name}")
         
-        try:
-            logger.debug(f"Calling MCP tool: {tool_name} with args: {json.dumps(arguments)[:200]}")
-            
-            # Call the tool with timeout
-            result = await asyncio.wait_for(
-                self._session.call_tool(tool_name, arguments),
-                timeout=effective_timeout,
-            )
-            
-            # Extract content from the result
-            if result.content:
-                # MCP tool results can have multiple content blocks
-                # Usually we want the text content
+        # MCP tools/call method
+        response = await self._make_request("tools/call", {
+            "name": tool_name,
+            "arguments": arguments,
+        })
+        
+        if response.success and response.data:
+            # Extract content from MCP response
+            content = response.data.get("content", [])
+            if content:
+                # Parse text content
                 data = []
-                for content_block in result.content:
-                    if hasattr(content_block, 'text'):
-                        # Try to parse as JSON
+                for item in content:
+                    if item.get("type") == "text":
+                        text = item.get("text", "")
                         try:
-                            parsed = json.loads(content_block.text)
-                            data.append(parsed)
+                            data.append(json.loads(text))
                         except json.JSONDecodeError:
-                            data.append(content_block.text)
-                    elif hasattr(content_block, 'data'):
-                        data.append(content_block.data)
+                            data.append(text)
+                    else:
+                        data.append(item)
                 
-                # If single result, unwrap
+                # Unwrap single results
                 if len(data) == 1:
                     data = data[0]
                 
                 return MCPResponse(success=True, data=data)
-            
-            return MCPResponse(success=True, data=None)
-            
-        except asyncio.TimeoutError:
-            error_msg = f"Tool call timed out after {effective_timeout}s"
-            logger.error(error_msg)
-            return MCPResponse(success=False, data=None, error=error_msg)
-            
-        except Exception as e:
-            error_msg = f"Tool call failed: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            return MCPResponse(success=False, data=None, error=error_msg)
+        
+        return response
     
     async def list_tools(self) -> list[dict[str, Any]]:
         """List available tools from the MCP server."""
@@ -295,8 +430,7 @@ class MockMCPClient(MCPClient):
     """
     
     def __init__(self, *args, **kwargs):
-        # Don't call parent __init__ to avoid setting up real server params
-        self.server_name = kwargs.get("server_name", "mock")
+        self.server_url = kwargs.get("server_url", "mock://localhost")
         self.timeout = kwargs.get("timeout", 30)
         self._connected = False
         self._mock_data: dict[str, Any] = {}
@@ -317,7 +451,7 @@ class MockMCPClient(MCPClient):
     async def connect(self) -> None:
         """Mock connect."""
         self._connected = True
-        logger.info(f"Mock connected to: {self.server_name}")
+        logger.info(f"Mock connected to: {self.server_url}")
     
     async def disconnect(self) -> None:
         """Mock disconnect."""
