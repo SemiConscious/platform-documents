@@ -1,0 +1,160 @@
+# Example Documentation Tasks
+# 
+# These are pre-configured tasks you can run with the documentation agent.
+# Use them as templates or run them directly.
+
+# =============================================================================
+# RUNBOOK TASKS
+# =============================================================================
+
+runbooks:
+  emergency_response:
+    description: "Create emergency response runbook"
+    task: |
+      Create a comprehensive emergency response runbook by:
+      1. Search Confluence for "Emergency Responses" and "Dealing with Emergencies" pages
+      2. Extract SDC failover procedures
+      3. Document GeoDNS outage handling
+      4. Include Heroku issue resolution steps
+      5. Add out-of-band data center access procedures
+      
+      Output to: /workspace/output/operations/runbooks/emergency-response.md
+
+  deployment_procedures:
+    description: "Create deployment procedures runbook"
+    task: |
+      Create a deployment procedures runbook by:
+      1. Search Confluence for "Release Types and Procedures"
+      2. Document product release timeline (bi-weekly)
+      3. Document platform release timeline (weekly)
+      4. Include emergency and CAI release procedures
+      5. Add failed handover actions and rollback steps
+      
+      Output to: /workspace/output/operations/runbooks/deployment-procedures.md
+
+  monitoring_alerting:
+    description: "Create monitoring and alerting runbook"
+    task: |
+      Create a monitoring and alerting runbook by:
+      1. Search Confluence for "Monitoring Tools"
+      2. List all monitoring tools with URLs
+      3. Document Slack alert channels
+      4. Include alert response workflow
+      5. Add access requirements
+      
+      Output to: /workspace/output/operations/runbooks/monitoring-alerting.md
+
+# =============================================================================
+# ONBOARDING TASKS
+# =============================================================================
+
+onboarding:
+  developer:
+    description: "Create developer onboarding guide"
+    task: |
+      Create a developer onboarding guide by:
+      1. Search GitHub for repository-inventory.md to understand the codebase
+      2. Search Confluence for any existing onboarding content
+      3. Document account and tool setup requirements
+      4. Create technology stack overview
+      5. Add repository navigation guidance
+      6. Include 30/60/90 day goals
+      
+      Output to: /workspace/output/onboarding/developer.md
+
+  platform_engineer:
+    description: "Create platform engineer onboarding guide"
+    task: |
+      Create a platform engineer onboarding guide by:
+      1. Search Confluence for "SRE Training Plan"
+      2. Structure training by weeks
+      3. Include monitoring tools training
+      4. Add emergency response procedures
+      5. Include deployment process training
+      
+      Output to: /workspace/output/onboarding/platform-engineer.md
+
+# =============================================================================
+# ARCHITECTURE TASKS
+# =============================================================================
+
+architecture:
+  global_overview:
+    description: "Create global architecture documentation"
+    task: |
+      Create global architecture documentation by:
+      1. Search Confluence Architecture space (space key: A)
+      2. Document environment types (RT, SDC, GDC, Hybrid)
+      3. Create technology stack overview
+      4. Include deployment regions
+      5. Add service topology
+      
+      Output to: /workspace/output/architecture/global-architecture.md
+
+  voice_routing:
+    description: "Create voice routing architecture documentation"
+    task: |
+      Create voice routing architecture documentation by:
+      1. Search Confluence for FreeSWITCH and voice routing content
+      2. Document inbound and outbound call flows
+      3. Include PBX components
+      4. Add SIP and OpenSIPS details
+      5. Document tts-gateway and transcription services
+      
+      Output to: /workspace/output/architecture/voice-routing/overview.md
+
+# =============================================================================
+# INVENTORY TASKS
+# =============================================================================
+
+inventory:
+  repositories:
+    description: "Create repository inventory"
+    task: |
+      Create a comprehensive repository inventory by:
+      1. Use GitHub tool to list all repositories in 'redmatter' organization
+      2. Categorize by functional domain (Voice, Omnichannel, AI, Infrastructure, etc.)
+      3. Document key technologies and languages
+      4. Identify active vs legacy repositories
+      
+      Output to: /workspace/output/services/repository-inventory.md
+
+  terraform_modules:
+    description: "Create Terraform module catalog"
+    task: |
+      Create a Terraform module catalog by:
+      1. Search GitHub for repositories starting with 'aws-terraform-'
+      2. Group by function (networking, compute, services, etc.)
+      3. Document dependencies between modules
+      4. Include usage examples
+      
+      Output to: /workspace/output/terraform-modules/catalog.md
+
+# =============================================================================
+# FULL DOCUMENTATION PROJECT
+# =============================================================================
+
+full_project:
+  description: "Complete documentation project"
+  task: |
+    Execute a full documentation project:
+    
+    Phase 1 - Research:
+    1. Search Confluence Architecture space for existing architecture docs
+    2. Search GitHub for repository structure and README files
+    3. Search Document360 for customer-facing documentation
+    
+    Phase 2 - Create Structure:
+    1. Create /workspace/output directory structure
+    2. Create index README files for each section
+    
+    Phase 3 - Generate Documentation:
+    1. Create global architecture overview
+    2. Create voice routing documentation
+    3. Create operations runbooks (emergency, deployment, monitoring)
+    4. Create onboarding guides (developer, platform engineer)
+    
+    Phase 4 - Finalize:
+    1. Create main README with table of contents
+    2. Update any cross-references between documents
+    3. List all created files

@@ -1,0 +1,41 @@
+# Natterbox Documentation Agent - Docker Compose Configuration
+# 
+# Usage:
+#   docker-compose up -d          # Start in background
+#   docker-compose run agent --task "Create runbooks"
+#   docker-compose exec agent bash # Shell into container
+
+version: '3.8'
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: natterbox-doc-agent
+    
+    # Mount AWS credentials for Bedrock access
+    volumes:
+      - ~/.aws:/home/agent/.aws:ro
+      - ./workspace:/workspace
+      - ./output:/workspace/output
+    
+    # Environment variables
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      # MCP Server URL
+      - NATTERBOX_MCP_URL=${NATTERBOX_MCP_URL:-https://avatar.natterbox-dev03.net/mcp/sse}
+    
+    # Keep container running for interactive use
+    stdin_open: true
+    tty: true
+    
+    # Network for external access
+    networks:
+      - agent-network
+
+networks:
+  agent-network:
+    driver: bridge

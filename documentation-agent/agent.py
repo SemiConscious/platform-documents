@@ -1,0 +1,724 @@
+#!/usr/bin/env python3
+"""
+Natterbox Platform Documentation Agent
+
+This script automates platform documentation generation using Claude on AWS Bedrock
+with MCP (Model Context Protocol) tools for accessing Natterbox services and
+shell execution capabilities.
+
+Requirements:
+- Python 3.11+
+- AWS credentials configured (for Bedrock access)
+- Docker (for isolated shell execution)
+
+Usage:
+    python agent.py --task "Create runbooks for emergency response"
+    python agent.py --interactive
+"""
+
+import argparse
+import asyncio
+import json
+import logging
+import os
+import re
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, Optional
+
+import boto3
+import httpx
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("documentation-agent")
+
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+@dataclass
+class Config:
+    """Agent configuration."""
+    
+    # AWS Bedrock settings
+    aws_region: str = "us-east-1"
+    bedrock_model_id: str = "anthropic.claude-sonnet-4-20250514-v1:0"
+    max_tokens: int = 8192
+    
+    # MCP Server settings
+    natterbox_mcp_url: str = "https://avatar.natterbox-dev03.net/mcp/sse"
+    
+    # Working directories
+    work_dir: Path = field(default_factory=lambda: Path("/workspace"))
+    output_dir: Path = field(default_factory=lambda: Path("/workspace/output"))
+    
+    # Tool settings
+    shell_timeout: int = 300  # seconds
+    
+    # Conversation settings
+    max_turns: int = 50
+    
+    def __post_init__(self):
+        self.work_dir = Path(self.work_dir)
+        self.output_dir = Path(self.output_dir)
+        self.work_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+
+# =============================================================================
+# Shell Tool
+# =============================================================================
+
+class ShellTool:
+    """
+    Provides shell command execution capabilities.
+    Designed to run in a Docker container for isolation.
+    """
+    
+    def __init__(self, work_dir: Path, timeout: int = 300):
+        self.work_dir = work_dir
+        self.timeout = timeout
+        self.work_dir.mkdir(parents=True, exist_ok=True)
+    
+    def execute(self, command: str, description: str = "") -> dict[str, Any]:
+        """
+        Execute a shell command and return the result.
+        
+        Args:
+            command: The bash command to execute
+            description: Human-readable description of why this command is being run
+            
+        Returns:
+            Dict with 'returncode', 'stdout', 'stderr', and 'success' keys
+        """
+        logger.info(f"Shell: {description or command[:100]}")
+        
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                cwd=self.work_dir,
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+                env={**os.environ, "HOME": str(self.work_dir)},
+            )
+            
+            return {
+                "success": result.returncode == 0,
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "returncode": -1,
+                "stdout": "",
+                "stderr": f"Command timed out after {self.timeout} seconds",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "returncode": -1,
+                "stdout": "",
+                "stderr": str(e),
+            }
+    
+    def read_file(self, path: str) -> dict[str, Any]:
+        """Read a file from the workspace."""
+        try:
+            file_path = self.work_dir / path if not path.startswith("/") else Path(path)
+            content = file_path.read_text()
+            return {"success": True, "content": content}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def write_file(self, path: str, content: str) -> dict[str, Any]:
+        """Write content to a file in the workspace."""
+        try:
+            file_path = self.work_dir / path if not path.startswith("/") else Path(path)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content)
+            return {"success": True, "path": str(file_path)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def list_directory(self, path: str = ".") -> dict[str, Any]:
+        """List contents of a directory."""
+        try:
+            dir_path = self.work_dir / path if not path.startswith("/") else Path(path)
+            items = []
+            for item in dir_path.iterdir():
+                items.append({
+                    "name": item.name,
+                    "type": "directory" if item.is_dir() else "file",
+                    "size": item.stat().st_size if item.is_file() else None,
+                })
+            return {"success": True, "items": items}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def get_tool_definitions(self) -> list[dict]:
+        """Return tool definitions for Claude."""
+        return [
+            {
+                "name": "bash",
+                "description": "Execute a bash command in the workspace. Use for running scripts, installing packages, git operations, file manipulation, etc.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "command": {
+                            "type": "string",
+                            "description": "The bash command to execute"
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Brief description of why this command is being run"
+                        }
+                    },
+                    "required": ["command"]
+                }
+            },
+            {
+                "name": "read_file",
+                "description": "Read the contents of a file from the workspace.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Path to the file (relative to workspace or absolute)"
+                        }
+                    },
+                    "required": ["path"]
+                }
+            },
+            {
+                "name": "write_file",
+                "description": "Write content to a file in the workspace. Creates parent directories if needed.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Path to the file (relative to workspace or absolute)"
+                        },
+                        "content": {
+                            "type": "string",
+                            "description": "Content to write to the file"
+                        }
+                    },
+                    "required": ["path", "content"]
+                }
+            },
+            {
+                "name": "list_directory",
+                "description": "List the contents of a directory in the workspace.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Path to the directory (relative to workspace or absolute)",
+                            "default": "."
+                        }
+                    }
+                }
+            }
+        ]
+
+
+# =============================================================================
+# MCP Client for Natterbox Tools
+# =============================================================================
+
+class MCPClient:
+    """
+    Client for connecting to the Natterbox MCP server via SSE.
+    Provides access to Confluence, GitHub, Salesforce, and other tools.
+    """
+    
+    def __init__(self, server_url: str):
+        self.server_url = server_url
+        self.tools: dict[str, dict] = {}
+        self._session_id: Optional[str] = None
+        
+    async def connect(self) -> bool:
+        """Connect to the MCP server and discover available tools."""
+        logger.info(f"Connecting to MCP server: {self.server_url}")
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Initialize connection
+                response = await client.post(
+                    self.server_url.replace("/sse", "/message"),
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "initialize",
+                        "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {},
+                            "clientInfo": {
+                                "name": "documentation-agent",
+                                "version": "1.0.0"
+                            }
+                        }
+                    }
+                )
+                
+                if response.status_code != 200:
+                    logger.error(f"Failed to initialize MCP connection: {response.status_code}")
+                    return False
+                
+                init_result = response.json()
+                logger.info(f"MCP server initialized: {init_result.get('result', {}).get('serverInfo', {})}")
+                
+                # List available tools
+                response = await client.post(
+                    self.server_url.replace("/sse", "/message"),
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 2,
+                        "method": "tools/list",
+                        "params": {}
+                    }
+                )
+                
+                if response.status_code == 200:
+                    tools_result = response.json()
+                    for tool in tools_result.get("result", {}).get("tools", []):
+                        self.tools[tool["name"]] = tool
+                    logger.info(f"Discovered {len(self.tools)} MCP tools")
+                
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to connect to MCP server: {e}")
+            return False
+    
+    async def call_tool(self, name: str, arguments: dict) -> dict[str, Any]:
+        """Call an MCP tool with the given arguments."""
+        logger.info(f"MCP tool call: {name}")
+        
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    self.server_url.replace("/sse", "/message"),
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 3,
+                        "method": "tools/call",
+                        "params": {
+                            "name": name,
+                            "arguments": arguments
+                        }
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return {
+                        "success": True,
+                        "result": result.get("result", {})
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"HTTP {response.status_code}: {response.text}"
+                    }
+                    
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def get_tool_definitions(self) -> list[dict]:
+        """Return tool definitions for Claude in Bedrock format."""
+        definitions = []
+        for name, tool in self.tools.items():
+            definitions.append({
+                "name": f"mcp_{name}",
+                "description": tool.get("description", f"MCP tool: {name}"),
+                "input_schema": tool.get("inputSchema", {"type": "object", "properties": {}})
+            })
+        return definitions
+
+
+# =============================================================================
+# Bedrock Client
+# =============================================================================
+
+class BedrockClient:
+    """Client for AWS Bedrock Claude API with tool use support."""
+    
+    def __init__(self, config: Config):
+        self.config = config
+        self.client = boto3.client(
+            "bedrock-runtime",
+            region_name=config.aws_region
+        )
+        
+    def create_message(
+        self,
+        messages: list[dict],
+        system: str,
+        tools: list[dict],
+    ) -> dict:
+        """
+        Send a message to Claude via Bedrock and get a response.
+        
+        Args:
+            messages: Conversation history
+            system: System prompt
+            tools: Available tools
+            
+        Returns:
+            Claude's response
+        """
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": self.config.max_tokens,
+            "system": system,
+            "messages": messages,
+            "tools": tools,
+        }
+        
+        response = self.client.invoke_model(
+            modelId=self.config.bedrock_model_id,
+            body=json.dumps(request_body),
+            contentType="application/json",
+            accept="application/json",
+        )
+        
+        response_body = json.loads(response["body"].read())
+        return response_body
+
+
+# =============================================================================
+# Documentation Agent
+# =============================================================================
+
+class DocumentationAgent:
+    """
+    Main agent that orchestrates documentation generation using Claude
+    with shell and MCP tools.
+    """
+    
+    SYSTEM_PROMPT = """You are an expert documentation engineer helping to create and maintain platform documentation for Natterbox.
+
+You have access to the following tool categories:
+
+1. **Shell Tools** (bash, read_file, write_file, list_directory):
+   - Execute commands in the workspace
+   - Create and edit documentation files
+   - Manage the file system
+
+2. **MCP Tools** (prefixed with mcp_):
+   - mcp_confluence: Search and read Confluence wiki pages
+   - mcp_github: Access GitHub repositories and files
+   - mcp_docs360_search: Search Document360 knowledge base
+   - mcp_salesforce: Query Salesforce data
+   - mcp_slack: Access Slack channels and messages
+   - And more...
+
+## Your Workflow
+
+1. **Research Phase**: Use MCP tools to gather information from:
+   - Confluence for architecture docs, runbooks, processes
+   - GitHub for repository structure and code
+   - Document360 for customer-facing documentation
+
+2. **Analysis Phase**: Synthesize information and plan documentation structure
+
+3. **Creation Phase**: Use shell tools to create markdown files in the workspace
+
+4. **Output Phase**: Organize final documentation in /workspace/output/
+
+## Documentation Standards
+
+- Use clear markdown formatting
+- Include source references (Confluence links, etc.)
+- Add "Last Updated" dates
+- Use tables for structured information
+- Include code examples where relevant
+
+## Current Date: {date}
+
+## Important Notes
+
+- Always verify information from multiple sources when possible
+- Keep documentation concise but comprehensive
+- Focus on actionable, practical content
+- Reference original sources for detailed information
+"""
+
+    def __init__(self, config: Config):
+        self.config = config
+        self.shell = ShellTool(config.work_dir, config.shell_timeout)
+        self.mcp = MCPClient(config.natterbox_mcp_url)
+        self.bedrock = BedrockClient(config)
+        self.messages: list[dict] = []
+        self.tools: list[dict] = []
+        
+    async def initialize(self) -> bool:
+        """Initialize the agent and connect to services."""
+        logger.info("Initializing documentation agent...")
+        
+        # Initialize shell tools
+        self.tools.extend(self.shell.get_tool_definitions())
+        logger.info(f"Loaded {len(self.shell.get_tool_definitions())} shell tools")
+        
+        # Connect to MCP server
+        if await self.mcp.connect():
+            self.tools.extend(self.mcp.get_tool_definitions())
+            logger.info(f"Loaded {len(self.mcp.get_tool_definitions())} MCP tools")
+        else:
+            logger.warning("MCP connection failed - continuing with shell tools only")
+        
+        logger.info(f"Agent initialized with {len(self.tools)} total tools")
+        return True
+    
+    def _get_system_prompt(self) -> str:
+        """Get the system prompt with current date."""
+        return self.SYSTEM_PROMPT.format(date=datetime.now().strftime("%Y-%m-%d"))
+    
+    async def _handle_tool_use(self, tool_use: dict) -> dict:
+        """Execute a tool and return the result."""
+        tool_name = tool_use["name"]
+        tool_input = tool_use.get("input", {})
+        
+        # Handle shell tools
+        if tool_name == "bash":
+            result = self.shell.execute(
+                tool_input.get("command", ""),
+                tool_input.get("description", "")
+            )
+        elif tool_name == "read_file":
+            result = self.shell.read_file(tool_input.get("path", ""))
+        elif tool_name == "write_file":
+            result = self.shell.write_file(
+                tool_input.get("path", ""),
+                tool_input.get("content", "")
+            )
+        elif tool_name == "list_directory":
+            result = self.shell.list_directory(tool_input.get("path", "."))
+        
+        # Handle MCP tools
+        elif tool_name.startswith("mcp_"):
+            mcp_tool_name = tool_name[4:]  # Remove "mcp_" prefix
+            result = await self.mcp.call_tool(mcp_tool_name, tool_input)
+        
+        else:
+            result = {"error": f"Unknown tool: {tool_name}"}
+        
+        return result
+    
+    async def run_task(self, task: str) -> str:
+        """
+        Run a documentation task.
+        
+        Args:
+            task: Description of the documentation task
+            
+        Returns:
+            Final response from the agent
+        """
+        logger.info(f"Starting task: {task[:100]}...")
+        
+        # Add user message
+        self.messages.append({
+            "role": "user",
+            "content": task
+        })
+        
+        turns = 0
+        while turns < self.config.max_turns:
+            turns += 1
+            logger.info(f"Turn {turns}/{self.config.max_turns}")
+            
+            # Get Claude's response
+            response = self.bedrock.create_message(
+                messages=self.messages,
+                system=self._get_system_prompt(),
+                tools=self.tools,
+            )
+            
+            # Check stop reason
+            stop_reason = response.get("stop_reason")
+            content = response.get("content", [])
+            
+            # Add assistant response to history
+            self.messages.append({
+                "role": "assistant",
+                "content": content
+            })
+            
+            # If no more tool use, we're done
+            if stop_reason == "end_turn":
+                # Extract final text response
+                final_text = ""
+                for block in content:
+                    if block.get("type") == "text":
+                        final_text += block.get("text", "")
+                return final_text
+            
+            # Handle tool use
+            if stop_reason == "tool_use":
+                tool_results = []
+                
+                for block in content:
+                    if block.get("type") == "tool_use":
+                        tool_id = block.get("id")
+                        result = await self._handle_tool_use(block)
+                        
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_id,
+                            "content": json.dumps(result)
+                        })
+                
+                # Add tool results to messages
+                self.messages.append({
+                    "role": "user",
+                    "content": tool_results
+                })
+            else:
+                logger.warning(f"Unexpected stop reason: {stop_reason}")
+                break
+        
+        logger.warning("Reached maximum turns")
+        return "Task incomplete - reached maximum turns"
+    
+    async def interactive_mode(self):
+        """Run the agent in interactive mode."""
+        print("\n" + "="*60)
+        print("Natterbox Documentation Agent - Interactive Mode")
+        print("="*60)
+        print("\nType your documentation requests or 'quit' to exit.\n")
+        
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+                
+                if user_input.lower() in ["quit", "exit", "q"]:
+                    print("\nGoodbye!")
+                    break
+                
+                if not user_input:
+                    continue
+                
+                print("\nAgent: Working on it...\n")
+                response = await self.run_task(user_input)
+                print(f"\nAgent: {response}")
+                
+                # Clear messages for next task (optional - remove to keep context)
+                self.messages = []
+                
+            except KeyboardInterrupt:
+                print("\n\nInterrupted. Goodbye!")
+                break
+            except Exception as e:
+                logger.exception("Error during interactive mode")
+                print(f"\nError: {e}")
+
+
+# =============================================================================
+# Main Entry Point
+# =============================================================================
+
+async def main():
+    parser = argparse.ArgumentParser(
+        description="Natterbox Platform Documentation Agent",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    # Run a specific task
+    python agent.py --task "Create emergency response runbook from Confluence"
+    
+    # Interactive mode
+    python agent.py --interactive
+    
+    # Custom configuration
+    python agent.py --task "..." --region us-west-2 --model anthropic.claude-3-opus-20240229-v1:0
+        """
+    )
+    
+    parser.add_argument(
+        "--task",
+        type=str,
+        help="Documentation task to perform"
+    )
+    parser.add_argument(
+        "--interactive", "-i",
+        action="store_true",
+        help="Run in interactive mode"
+    )
+    parser.add_argument(
+        "--region",
+        type=str,
+        default="us-east-1",
+        help="AWS region for Bedrock (default: us-east-1)"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="anthropic.claude-sonnet-4-20250514-v1:0",
+        help="Bedrock model ID"
+    )
+    parser.add_argument(
+        "--mcp-url",
+        type=str,
+        default="https://avatar.natterbox-dev03.net/mcp/sse",
+        help="Natterbox MCP server URL"
+    )
+    parser.add_argument(
+        "--work-dir",
+        type=str,
+        default="/workspace",
+        help="Working directory for the agent"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="/workspace/output",
+        help="Output directory for generated documentation"
+    )
+    
+    args = parser.parse_args()
+    
+    # Create configuration
+    config = Config(
+        aws_region=args.region,
+        bedrock_model_id=args.model,
+        natterbox_mcp_url=args.mcp_url,
+        work_dir=Path(args.work_dir),
+        output_dir=Path(args.output_dir),
+    )
+    
+    # Create and initialize agent
+    agent = DocumentationAgent(config)
+    await agent.initialize()
+    
+    # Run task or interactive mode
+    if args.interactive:
+        await agent.interactive_mode()
+    elif args.task:
+        result = await agent.run_task(args.task)
+        print(result)
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
