@@ -206,7 +206,7 @@ sources:
 
 # {{ service.name }}
 
-{{ service.description or 'No description available.' }}
+> {{ service.description or 'No description available.' }}
 
 ## Overview
 
@@ -221,11 +221,23 @@ This service is part of the Natterbox platform.
 | Property | Value |
 |----------|-------|
 | **Repository** | {% if service.repository %}{% if service.repository_doc_url %}[{{ service.repository }}]({{ service.repository_doc_url }}){% else %}{{ service.repository }}{% endif %}{% else %}N/A{% endif %} |
-| **GitHub** | {% if service.repository_url %}[View on GitHub]({{ service.repository_url }}){% else %}N/A{% endif %} |
 | **Language** | {{ service.language or 'N/A' }} |
 | **Framework** | {{ service.framework or 'N/A' }} |
 | **Team** | {{ service.team or 'N/A' }} |
-| **Status** | {{ service.status or 'Active' }} |
+| **Status** | {{ service.status or 'active' }} |
+
+## Documentation
+
+Detailed documentation for this service:
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](./architecture.md) | Internal architecture and components |
+| [Configuration](./configuration.md) | Environment variables and settings |
+| [Operations](./operations.md) | Monitoring, logging, and runbooks |
+| [Data Models](./data/models.md) | Data structures and schemas |
+| [Side Effects](./data/side-effects.md) | External system interactions |
+{% if service.apis %}| [API Reference](./api/overview.md) | API endpoints and usage |{% endif %}
 
 {% if service.repository_doc_url %}
 ## Source Code

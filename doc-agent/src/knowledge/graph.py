@@ -150,7 +150,9 @@ class KnowledgeGraph:
                 continue
                 
             edge_type = data.get("relation_type")
-            if relation_type and edge_type != relation_type.value:
+            # Handle relation_type being either enum or string
+            rel_type_str = relation_type.value if hasattr(relation_type, 'value') else str(relation_type) if relation_type else None
+            if rel_type_str and edge_type != rel_type_str:
                 continue
             
             metadata = {k: v for k, v in data.items() if k != "relation_type"}

@@ -1,6 +1,7 @@
 """Repository Documenter Agent - generates documentation for each repository."""
 
 import logging
+import os
 from pathlib import Path
 from typing import Any, Optional
 
@@ -26,13 +27,18 @@ class RepositoryDocumenterAgent(BaseAgent):
     
     name = "repo_documenter"
     description = "Generates repository-level documentation with drill-down capability"
-    version = "0.1.0"
+    version = "0.2.0"
     
     def __init__(self, context: AgentContext, repo_id: Optional[str] = None):
         super().__init__(context)
         self.output_dir = context.output_dir
         self.dry_run = context.dry_run
         self.repo_id = repo_id
+        
+        # Set up local repos path
+        workspace_root = Path(__file__).parent.parent.parent.parent
+        self.local_repos_path = workspace_root / "repos"
+        self.use_local_repos = self.local_repos_path.exists()
     
     async def run(self) -> AgentResult:
         """Execute the repository documentation process."""
@@ -176,7 +182,33 @@ This page provides a complete listing of all repositories in the platform with l
         return generated
     
     async def _generate_repo_readme(self, repo: Repository, repo_dir: Path) -> str:
-        """Generate the repository README document."""
+        """Generate the repository README document with actual repo content."""
+        # Get local repo path for enriched content
+        local_path = self._get_local_repo_path(repo)
+        
+        # Detect actual language
+        detected_lang = self._detect_language_from_repo(local_path) if local_path else None
+        actual_language = detected_lang or repo.language or "Unknown"
+        
+        # Read actual README for description
+        actual_readme = ""
+        description = repo.description or ""
+        if local_path:
+            readme_path = local_path / "README.md"
+            if readme_path.exists():
+                try:
+                    actual_readme = readme_path.read_text(errors='ignore')
+                    # Extract first paragraph as description if not set
+                    if not description:
+                        lines = actual_readme.split('\n')
+                        for line in lines:
+                            line = line.strip()
+                            if line and not line.startswith('#') and not line.startswith('['):
+                                description = line[:200]
+                                break
+                except Exception:
+                    pass
+        
         # Get linked services
         services = self._get_repo_services(repo)
         
@@ -186,19 +218,25 @@ This page provides a complete listing of all repositories in the platform with l
             service_apis = self.graph.get_service_apis(service.id)
             apis.extend(service_apis)
         
+        # Get components for Go projects
+        components = self._get_go_components(local_path) if local_path else []
+        
+        # Check for CI/CD
+        has_ci = repo.has_ci
+        if local_path and not has_ci:
+            has_ci = (local_path / ".github" / "workflows").exists()
+        
         # Build service links section
         service_section = ""
         if services:
             service_section = "## Related Services\n\n"
             service_section += "This repository is the source for the following services:\n\n"
-            service_section += "| Service | Description | API Type |\n"
-            service_section += "|---------|-------------|----------|\n"
+            service_section += "| Service | Description |\n"
+            service_section += "|---------|-------------|\n"
             for service in services:
                 service_slug = service.id.replace("service:", "")
-                service_apis = self.graph.get_service_apis(service.id)
-                api_types = ", ".join(set(a.api_type for a in service_apis)) or "N/A"
-                desc = (service.description or "No description")[:50]
-                service_section += f"| [{service.name}](../../services/{service_slug}/README.md) | {desc} | {api_types} |\n"
+                desc = (service.description or "No description")[:60]
+                service_section += f"| [{service.name}](../../services/{service_slug}/README.md) | {desc} |\n"
             service_section += "\n"
         
         # Build topics/tags section
@@ -208,89 +246,96 @@ This page provides a complete listing of all repositories in the platform with l
         
         content = f"""---
 title: {repo.name}
-description: Repository documentation for {repo.name}
+description: {description[:100] if description else 'Repository documentation'}
 generated: true
 repository_url: {repo.url}
 ---
 
 # {repo.name}
 
-{repo.description or "No description available."}
+{description or "No description available."}
 
 ## Overview
 
 | Property | Value |
 |----------|-------|
-| **URL** | [{repo.url}]({repo.url}) |
+| **GitHub** | [{repo.url}]({repo.url}) |
+| **Language** | {actual_language} |
 | **Default Branch** | `{repo.default_branch}` |
-| **Primary Language** | {repo.language or "N/A"} |
-| **Has CI/CD** | {"Yes" if repo.has_ci else "No"} |
-| **Has Documentation** | {"Yes" if repo.has_docs else "No"} |
+| **CI/CD** | {"Yes" if has_ci else "No"} |
 
 {topics_section}
-{service_section}
-## Repository Contents
+"""
 
-See [Structure](./structure.md) for detailed information about repository contents.
+        # Add components section for Go projects
+        if components:
+            content += "## Components\n\n"
+            content += "This repository contains the following executable components:\n\n"
+            content += "| Component | Description |\n"
+            content += "|-----------|-------------|\n"
+            for comp in components:
+                name = comp.get("name", "unknown")
+                desc = comp.get("description", "No description")[:60]
+                # Link to GitHub
+                github_link = f"{repo.url}/tree/{repo.default_branch}/cmd/{name}"
+                content += f"| [`{name}`]({github_link}) | {desc} |\n"
+            content += "\n"
+        
+        content += service_section
+        
+        content += """## Repository Contents
 
-### Key Files
-
-- `README.md` - Repository documentation
-- Configuration files and dependencies
-- Source code organization
-
-## Getting Started
-
-### Prerequisites
+See [Structure](./structure.md) for detailed directory layout and key files.
 
 """
+
+        # Getting Started section
+        content += "## Getting Started\n\n"
         
-        # Add language-specific prerequisites
-        if repo.language:
-            lang = repo.language.lower()
-            if lang in ("javascript", "typescript"):
-                content += "- Node.js (see `.nvmrc` or `package.json` for version)\n"
-                content += "- npm or yarn\n"
-            elif lang == "python":
-                content += "- Python 3.x (see `requirements.txt` or `pyproject.toml`)\n"
-                content += "- pip or poetry\n"
-            elif lang == "go":
-                content += "- Go (see `go.mod` for version)\n"
-            elif lang == "java":
-                content += "- Java JDK (see `pom.xml` or `build.gradle`)\n"
-                content += "- Maven or Gradle\n"
+        # Language-specific prerequisites
+        if actual_language.lower() in ("javascript", "typescript"):
+            content += "### Prerequisites\n\n"
+            content += f"- Node.js (see [`package.json`]({repo.url}/blob/{repo.default_branch}/package.json) for version)\n"
+            content += "- npm or yarn\n\n"
+        elif actual_language.lower() == "python":
+            content += "### Prerequisites\n\n"
+            content += "- Python 3.x\n"
+            content += "- pip or poetry\n\n"
+        elif actual_language.lower() == "go":
+            content += "### Prerequisites\n\n"
+            content += f"- Go (see [`go.mod`]({repo.url}/blob/{repo.default_branch}/go.mod) for version)\n\n"
         
-        content += f"""
-### Clone Repository
+        content += f"""### Clone and Build
 
 ```bash
 git clone {repo.url}
 cd {repo.name.split('/')[-1] if '/' in repo.name else repo.name}
-```
-
-## Documentation Links
-
 """
         
-        if services:
-            content += "### Service Documentation\n\n"
-            for service in services:
-                service_slug = service.id.replace("service:", "")
-                content += f"- [{service.name}](../../services/{service_slug}/README.md)\n"
+        # Add build command based on language
+        if actual_language.lower() == "go":
+            content += "make\n"
+        elif actual_language.lower() in ("javascript", "typescript"):
+            content += "npm install\nnpm run build\n"
+        elif actual_language.lower() == "python":
+            content += "pip install -r requirements.txt\n"
+        
+        content += "```\n\n"
+        
+        # Documentation Links
+        if services or apis:
+            content += "## Documentation\n\n"
+            
+            if services:
+                for service in services:
+                    service_slug = service.id.replace("service:", "")
+                    content += f"- [Service Documentation](../../services/{service_slug}/README.md)\n"
+            
             content += "\n"
         
-        if apis:
-            content += "### API Documentation\n\n"
-            for api in apis:
-                service_id = api.service_id.replace("service:", "")
-                content += f"- [{api.name}](../../services/{service_id}/api/overview.md)\n"
-            content += "\n"
-        
-        content += """
-## Related
+        content += """## Related
 
 - [Repository Index](../index.md)
-- [Architecture Overview](../../architecture/overview.md)
 """
         
         path = repo_dir / "README.md"
@@ -305,9 +350,16 @@ cd {repo.name.split('/')[-1] if '/' in repo.name else repo.name}
         return str(path)
     
     async def _generate_repo_structure(self, repo: Repository, repo_dir: Path) -> str:
-        """Generate repository structure document."""
+        """Generate repository structure document with actual directory contents."""
+        # Try to get actual structure from local repo
+        local_path = self._get_local_repo_path(repo)
+        
+        # Detect actual language
+        detected_lang = self._detect_language_from_repo(local_path) if local_path else None
+        actual_language = detected_lang or repo.language or "Unknown"
+        
         # Get language-specific structure expectations
-        structure_info = self._get_language_structure(repo.language)
+        structure_info = self._get_language_structure(actual_language)
         
         content = f"""---
 title: {repo.name} - Structure
@@ -315,24 +367,32 @@ description: Repository structure and organization for {repo.name}
 generated: true
 ---
 
+<!-- breadcrumb -->
+[Home](/../../../index.md) > [Repositories](../../../repositories/index.md) > Repos > {repo.name.split('/')[-1].replace('-', ' ').title()}
+
+
 # {repo.name} - Repository Structure
 
 ## Overview
 
 This document describes the structure and organization of the `{repo.name}` repository.
 
-## Language: {repo.language or "Unknown"}
+## Language: {actual_language}
 
 {structure_info}
 
-## Expected Directory Structure
+## Directory Structure
 
 """
         
-        # Add language-specific structure
-        if repo.language:
-            lang = repo.language.lower()
-            if lang in ("javascript", "typescript"):
+        # Try to get actual structure
+        actual_structure = self._read_actual_structure(local_path) if local_path else ""
+        
+        if actual_structure:
+            content += actual_structure + "\n"
+        else:
+            # Fallback to template structure based on language
+            if actual_language.lower() in ("javascript", "typescript"):
                 content += """```
 ├── src/                 # Source code
 │   ├── index.ts         # Entry point
@@ -348,7 +408,7 @@ This document describes the structure and organization of the `{repo.name}` repo
 └── README.md            # Repository docs
 ```
 """
-            elif lang == "python":
+            elif actual_language.lower() == "python":
                 content += """```
 ├── src/                 # Source code
 │   ├── __init__.py
@@ -364,7 +424,7 @@ This document describes the structure and organization of the `{repo.name}` repo
 └── README.md            # Repository docs
 ```
 """
-            elif lang == "go":
+            elif actual_language.lower() == "go":
                 content += """```
 ├── cmd/                 # Command entry points
 │   └── main.go
@@ -390,21 +450,64 @@ This document describes the structure and organization of the `{repo.name}` repo
 ```
 """
         
-        content += f"""
+        # Get GitHub URL base for linking
+        github_base = f"{repo.url}/blob/{repo.default_branch}"
+        github_tree = f"{repo.url}/tree/{repo.default_branch}"
+        
+        # For Go projects, document cmd/ components
+        if local_path and actual_language.lower() == "go":
+            components = self._get_go_components(local_path)
+            if components:
+                content += "\n## Components\n\n"
+                content += "This repository contains the following executable components:\n\n"
+                content += "| Component | Path | Description |\n"
+                content += "|-----------|------|-------------|\n"
+                for comp in components:
+                    desc = comp.get("description", "No description")[:60]
+                    github_link = f"{github_tree}/{comp['path']}"
+                    content += f"| `{comp['name']}` | [`{comp['path']}`]({github_link}) | {desc} |\n"
+                content += "\n"
+        
+        # Key files section
+        content += """
 ## Key Files
 
 ### Configuration
 
-Configuration files define project settings and dependencies.
-
+"""
+        # List actual config files if we have local repo
+        if local_path:
+            config_files = []
+            for cf in ["go.mod", "package.json", "requirements.txt", "pyproject.toml", 
+                       "Dockerfile", "Makefile", "docker-compose.yml", ".env.example"]:
+                if (local_path / cf).exists():
+                    config_files.append(cf)
+            
+            if config_files:
+                for cf in config_files:
+                    content += f"- [`{cf}`]({github_base}/{cf})\n"
+            else:
+                content += "Configuration files define project settings and dependencies.\n"
+        else:
+            content += "Configuration files define project settings and dependencies.\n"
+        
+        content += """
 ### Entry Points
 
-The main entry points for the application.
-
-### API Definitions
-
-API schemas and specifications (OpenAPI, GraphQL, etc.).
-
+"""
+        if local_path and actual_language.lower() == "go":
+            # List main.go files
+            main_files = list(local_path.glob("cmd/*/main.go"))
+            if main_files:
+                for mf in main_files[:10]:
+                    rel = mf.relative_to(local_path)
+                    content += f"- [`{rel}`]({github_base}/{rel})\n"
+            else:
+                content += "The main entry points for the application.\n"
+        else:
+            content += "The main entry points for the application.\n"
+        
+        content += """
 ## Related
 
 - [Repository Overview](./README.md)
@@ -427,8 +530,8 @@ API schemas and specifications (OpenAPI, GraphQL, etc.).
                 if repo.name in service.repository or (repo.url and repo.url in (service.sources or [])):
                     services.append(service)
         
-        # Also check relations
-        relations = self.graph.get_relations_for_entity(repo.id)
+        # Also check relations (using source_id filter)
+        relations = self.graph.get_relations(source_id=repo.id)
         for rel in relations:
             if rel.relation_type == RelationType.CONTAINS:
                 entity = self.graph.get_entity(rel.target_id)
@@ -456,6 +559,128 @@ API schemas and specifications (OpenAPI, GraphQL, etc.).
         }
         
         return descriptions.get(lang, f"{language} project with standard structure.")
+    
+    def _get_local_repo_path(self, repo: Repository) -> Optional[Path]:
+        """Get the local path for a repository if it exists."""
+        if not self.use_local_repos:
+            return None
+        
+        # Extract org and repo name
+        repo_name = repo.name
+        org = None
+        
+        if "/" in repo_name:
+            org, repo_name = repo_name.split("/", 1)
+        elif repo.url:
+            parts = repo.url.rstrip("/").split("/")
+            if len(parts) >= 2:
+                org = parts[-2]
+                repo_name = parts[-1].replace(".git", "")
+        
+        if not org:
+            org = "redmatter"  # Default
+        
+        # Try different paths
+        for try_org in [org, "redmatter", "natterbox", "SemiConscious"]:
+            path = self.local_repos_path / try_org / repo_name
+            if path.exists():
+                return path
+        
+        return None
+    
+    def _detect_language_from_repo(self, repo_path: Path) -> Optional[str]:
+        """Detect the primary language from local repo files."""
+        if not repo_path or not repo_path.exists():
+            return None
+        
+        # Language detection by file presence
+        if (repo_path / "go.mod").exists():
+            return "Go"
+        if (repo_path / "package.json").exists():
+            # Check if TypeScript
+            if (repo_path / "tsconfig.json").exists():
+                return "TypeScript"
+            return "JavaScript"
+        if (repo_path / "requirements.txt").exists() or (repo_path / "pyproject.toml").exists():
+            return "Python"
+        if (repo_path / "pom.xml").exists() or (repo_path / "build.gradle").exists():
+            return "Java"
+        if (repo_path / "Cargo.toml").exists():
+            return "Rust"
+        if any(repo_path.glob("*.csproj")):
+            return "C#"
+        
+        return None
+    
+    def _read_actual_structure(self, repo_path: Path, max_depth: int = 3) -> str:
+        """Read the actual directory structure from a local repo."""
+        if not repo_path or not repo_path.exists():
+            return ""
+        
+        def build_tree(path: Path, prefix: str = "", depth: int = 0) -> list[str]:
+            if depth > max_depth:
+                return []
+            
+            lines = []
+            items = []
+            
+            try:
+                for item in sorted(path.iterdir()):
+                    # Skip hidden files and common non-essential dirs
+                    if item.name.startswith(".") or item.name in ["node_modules", "__pycache__", "vendor", "build", "dist", ".git"]:
+                        continue
+                    items.append(item)
+            except PermissionError:
+                return []
+            
+            for i, item in enumerate(items):
+                is_last = i == len(items) - 1
+                connector = "└── " if is_last else "├── "
+                
+                if item.is_dir():
+                    lines.append(f"{prefix}{connector}{item.name}/")
+                    extension = "    " if is_last else "│   "
+                    lines.extend(build_tree(item, prefix + extension, depth + 1))
+                else:
+                    lines.append(f"{prefix}{connector}{item.name}")
+            
+            return lines
+        
+        tree_lines = build_tree(repo_path)
+        if tree_lines:
+            return "```\n" + "\n".join(tree_lines[:60]) + "\n```"
+        return ""
+    
+    def _get_go_components(self, repo_path: Path) -> list[dict]:
+        """Get components from Go cmd/ directory."""
+        components = []
+        cmd_dir = repo_path / "cmd"
+        
+        if not cmd_dir.exists():
+            return components
+        
+        for item in sorted(cmd_dir.iterdir()):
+            if item.is_dir():
+                component = {"name": item.name, "path": f"cmd/{item.name}"}
+                
+                # Check for README
+                readme_path = item / "README.md"
+                if readme_path.exists():
+                    try:
+                        content = readme_path.read_text()[:500]
+                        # Extract first line as description
+                        first_line = content.split("\n")[0].strip("#").strip()
+                        component["description"] = first_line
+                    except Exception:
+                        pass
+                
+                # Check for main.go
+                if (item / "main.go").exists():
+                    component["has_main"] = True
+                
+                components.append(component)
+        
+        return components
     
     async def _write_file(self, path: Path, content: str) -> None:
         """Write content to a file."""

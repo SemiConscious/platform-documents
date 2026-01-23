@@ -5,6 +5,7 @@ from .technical_writer import TechnicalWriterAgent
 from .api_documenter import APIDocumenterAgent
 from .schema_documenter import SchemaDocumenterAgent
 from .repo_documenter import RepositoryDocumenterAgent
+from .strategy_documenter import StrategyDocumenterAgent
 
 __all__ = [
     "OverviewWriterAgent",
@@ -12,4 +13,5 @@ __all__ = [
     "APIDocumenterAgent",
     "SchemaDocumenterAgent",
     "RepositoryDocumenterAgent",
+    "StrategyDocumenterAgent",
 ]

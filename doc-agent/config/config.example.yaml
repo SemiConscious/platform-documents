@@ -37,6 +37,7 @@ sources:
   github:
     priority: authoritative  # Gold standard for documentation
     trust_level: high        # Content is always current
+    skip_archived: true      # Skip repos marked as archived in GitHub
     organizations:
       - redmatter      # Main Natterbox GitHub org
       - natterbox      # Additional Natterbox org

@@ -30,7 +30,12 @@ env/
 store/
 docs/
 logs/
+repos/
+.agent-store/
 *.log
+
+# Cloned repository caches (IMPORTANT - do not index!)
+repos/
 
 # Config (keep example, ignore actual)
 config/config.yaml

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "doc-spawner"
+version = "0.1.0"
+description = "Recursive self-spawning AI agent system for documentation generation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+authors = [
+    { name = "Natterbox", email = "dev@natterbox.com" }
+]
+
+dependencies = [
+    "anthropic>=0.40.0",
+    "aiosqlite>=0.19.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "httpx>=0.25.0",
+    "aiohttp>=3.9.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+doc-spawner = "spawner.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/spawner"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

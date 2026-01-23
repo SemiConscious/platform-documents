@@ -19,6 +19,7 @@ class Repository:
     default_branch: str = "main"
     language: str = ""
     topics: list[str] = field(default_factory=list)
+    archived: bool = False
     
     @classmethod
     def from_dict(cls, data: dict) -> "Repository":
@@ -30,6 +31,7 @@ class Repository:
             default_branch=data.get("default_branch", "main"),
             language=data.get("language") or "",
             topics=data.get("topics", []),
+            archived=data.get("archived", False),
         )
 
 
@@ -67,7 +69,7 @@ class GitHubClient:
         self,
         org: Optional[str] = None,
         per_page: int = 100,
-        max_pages: int = 10,
+        max_pages: int = 20,
     ) -> list[Repository]:
         """
         List repositories for an organization or the authenticated user.
@@ -77,7 +79,7 @@ class GitHubClient:
         Args:
             org: Organization name (optional, lists user repos if not provided)
             per_page: Results per page (max 100)
-            max_pages: Maximum pages to fetch (default 10 = up to 1000 repos)
+            max_pages: Maximum pages to fetch (default 20 = up to 2000 repos)
             
         Returns:
             List of Repository objects
@@ -101,14 +103,31 @@ class GitHubClient:
                 break
             
             repos = []
-            data = response.data
+            raw_data = response.data
+            has_more = False
             
-            # Handle nested response format: {success, data: {repositories: [...]}}
-            if isinstance(data, dict):
-                if "data" in data and isinstance(data["data"], dict):
-                    data = data["data"].get("repositories", [])
-                elif "repositories" in data:
-                    data = data["repositories"]
+            # Handle nested response format with pagination info
+            if isinstance(raw_data, dict):
+                # Check for API error
+                if "error" in raw_data:
+                    logger.error(f"GitHub API error: {raw_data['error']}")
+                    break
+                
+                # Extract pagination info
+                pagination = raw_data.get("pagination", {})
+                has_more = pagination.get("hasMore", False)
+                
+                # Extract repositories
+                if "data" in raw_data and isinstance(raw_data["data"], dict):
+                    data = raw_data["data"].get("repositories", [])
+                elif "repositories" in raw_data:
+                    data = raw_data["repositories"]
+                else:
+                    data = []
+            elif isinstance(raw_data, list):
+                data = raw_data
+            else:
+                data = []
             
             if isinstance(data, list):
                 for repo_data in data:
@@ -122,10 +141,11 @@ class GitHubClient:
                 break
             
             all_repos.extend(repos)
-            logger.debug(f"Fetched page {page}: {len(repos)} repos (total: {len(all_repos)})")
+            logger.debug(f"Fetched page {page}: {len(repos)} repos (total: {len(all_repos)}), hasMore: {has_more}")
             
-            if len(repos) < per_page:
-                # Last page (partial results)
+            # Check if there are more pages
+            if not has_more and len(repos) < per_page:
+                # Last page
                 break
             
             page += 1

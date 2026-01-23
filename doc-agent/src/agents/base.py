@@ -54,6 +54,9 @@ class AgentContext:
     # Local tools registry
     tool_registry: Optional["ToolRegistry"] = None
     
+    # Token tracker for monitoring LLM usage
+    token_tracker: Optional[Any] = None
+    
     # Runtime state
     dry_run: bool = False
     verbose: bool = False

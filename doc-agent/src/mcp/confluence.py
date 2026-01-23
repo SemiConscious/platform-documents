@@ -44,11 +44,25 @@ class ConfluencePage:
             elif isinstance(body_data, str):
                 body = body_data
         
+        # Handle URL - may be relative or absolute
+        url = data.get("_links", {}).get("webui", data.get("url", ""))
+        if url and url.startswith("/"):
+            # Convert relative URL to absolute
+            url = f"https://natterbox.atlassian.net/wiki{url}"
+        
+        # Extract space key from URL if not directly available
+        space_key = data.get("spaceKey", data.get("space", {}).get("key", ""))
+        if not space_key and url:
+            import re
+            match = re.search(r'/spaces/([^/]+)/', url)
+            if match:
+                space_key = match.group(1)
+        
         return cls(
             id=str(data.get("id", "")),
             title=data.get("title", ""),
-            space_key=data.get("spaceKey", data.get("space", {}).get("key", "")),
-            url=data.get("_links", {}).get("webui", data.get("url", "")),
+            space_key=space_key,
+            url=url,
             body=body,
             labels=labels,
             parent_id=data.get("parentId"),
@@ -125,7 +139,8 @@ class ConfluenceClient:
         if isinstance(data, dict):
             if "data" in data:
                 data = data["data"]
-            results = data.get("results", data.get("pages", []))
+            # Try various keys: contents (search), results, pages
+            results = data.get("contents", data.get("results", data.get("pages", [])))
         elif isinstance(data, list):
             results = data
         else:
@@ -133,6 +148,9 @@ class ConfluenceClient:
         
         for page_data in results:
             try:
+                # Skip non-page types (folders, attachments)
+                if page_data.get("type") not in ("page", None):
+                    continue
                 pages.append(ConfluencePage.from_dict(page_data))
             except Exception as e:
                 logger.warning(f"Failed to parse page: {e}")
@@ -223,37 +241,64 @@ class ConfluenceClient:
     async def get_pages_in_space(
         self,
         space_key: str,
+        max_results: int = 50,
+        max_pages: int = 20,
     ) -> list[ConfluencePage]:
-        """Get all pages in a space."""
-        response = await self.mcp.call_tool(self.TOOL_NAME, {
-            "operation": "get_space_content",
-            "spaceKey": space_key,
-        })
+        """
+        Get all pages in a space with pagination support.
         
-        if not response.success:
-            logger.error(f"Get pages in space failed: {response.error}")
-            return []
+        Args:
+            space_key: Confluence space key
+            max_results: Results per page (default 50)
+            max_pages: Maximum number of API pages to fetch (default 20 = 1000 pages)
+            
+        Returns:
+            List of all pages in the space
+        """
+        all_pages = []
+        start = 0
+        page_num = 0
         
-        pages = []
-        data = response.data
+        while page_num < max_pages:
+            response = await self.mcp.call_tool(self.TOOL_NAME, {
+                "operation": "get_space_content",
+                "spaceKey": space_key,
+                "maxResults": max_results,
+                "startAt": start,
+            })
+            
+            if not response.success:
+                logger.error(f"Get pages in space failed: {response.error}")
+                break
+            
+            data = response.data
+            
+            # Handle nested response format
+            if isinstance(data, dict):
+                results = data.get("data", {}).get("pages", [])
+                pagination = data.get("pagination", {})
+                has_more = pagination.get("hasMore", False)
+            elif isinstance(data, list):
+                results = data
+                has_more = False
+            else:
+                results = []
+                has_more = False
+            
+            for page_data in results:
+                try:
+                    all_pages.append(ConfluencePage.from_dict(page_data))
+                except Exception as e:
+                    logger.warning(f"Failed to parse page: {e}")
+            
+            if not results or not has_more:
+                break
+            
+            start += len(results)
+            page_num += 1
         
-        # Handle nested response format
-        if isinstance(data, dict):
-            if "data" in data:
-                data = data["data"]
-            results = data.get("pages", data.get("results", []))
-        elif isinstance(data, list):
-            results = data
-        else:
-            results = []
-        
-        for page_data in results:
-            try:
-                pages.append(ConfluencePage.from_dict(page_data))
-            except Exception as e:
-                logger.warning(f"Failed to parse page: {e}")
-        
-        return pages
+        logger.info(f"Fetched {len(all_pages)} pages from space {space_key}")
+        return all_pages
     
     async def get_pages_by_label(
         self,

@@ -1,482 +1,363 @@
 # Platform Documentation Agent
 
-A multi-agent AI system that autonomously discovers, analyzes, and documents the entire Natterbox platform, producing a hierarchical, layered documentation library.
+An AI-powered documentation generation system that creates comprehensive, layered documentation for the Natterbox platform by analyzing source code repositories, Confluence spaces, Jira projects, and Docs360 articles.
 
 ## Overview
 
-The Platform Documentation Agent connects to Natterbox's internal systems (GitHub, Confluence, Jira) via the Natterbox MCP server, builds a comprehensive knowledge graph of the platform architecture, and generates beautiful, organized markdown documentation that can be browsed from high-level overviews down to detailed API specifications.
+The Documentation Agent uses a **multi-agent architecture** coordinated by an orchestrator to:
 
-## Features
-
-- **Multi-Agent Architecture**: Specialized agents for discovery, analysis, generation, and quality assurance
-- **Knowledge Graph**: NetworkX-based graph database storing services, APIs, domains, and relationships
-- **Layered Documentation**: Browse from platform overview → domain → service → API → schemas
-- **Incremental Updates**: Content hashing detects changes; only regenerates affected documents
-- **OAuth Authentication**: Secure token management for GitHub, Atlassian, and AWS SSO
-- **Context Management**: FileStore system keeps LLM context manageable for large codebases
-- **MCP Integration**: Native MCP protocol communication with the Natterbox server
+1. **Discover** services from GitHub repositories across multiple organizations
+2. **Enrich** service information with documentation from Confluence and Docs360
+3. **Analyze** code using multi-language AST parsers to extract models, endpoints, and side effects
+4. **Generate** hierarchical markdown documentation with cross-references
+5. **Validate** quality and ensure consistency across all generated documents
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Platform Documentation Agent                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                            CLI (main.py)                              │   │
-│  │  Commands: generate, discover, status, list-entities, auth           │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                         │
-│                                    ▼                                         │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                         Orchestrator                                  │   │
-│  │  • Manages pipeline phases (Discovery → Analysis → Generation → QA)  │   │
-│  │  • Coordinates agent execution                                        │   │
-│  │  • Handles authentication and MCP connection                         │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│           │              │                │                │                 │
-│           ▼              ▼                ▼                ▼                 │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │  Discovery  │ │  Analysis   │ │ Generation  │ │   Quality   │           │
-│  │   Agents    │ │   Agents    │ │   Agents    │ │   Agents    │           │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘           │
-│                                                                              │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                        Shared Components                              │   │
-│  ├──────────────────────────────────────────────────────────────────────┤   │
-│  │  Knowledge Graph    MCP Client      FileStore       Auth Manager     │   │
-│  │  (NetworkX)         (MCP SDK)       (Context)       (OAuth/SSO)      │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                    │                                         │
-└────────────────────────────────────┼─────────────────────────────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Natterbox MCP Server                                 │
-│  Tools: GitHub (repos, files, search) │ Confluence (pages, spaces)          │
-│         Jira (issues, projects, epics) │ ...                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+```mermaid
+graph TB
+    subgraph Orchestrator[Orchestrator]
+        direction TB
+        Pipeline[Pipeline Controller]
+        KG[Knowledge Graph]
+        Store[Knowledge Store]
+    end
 
-### Pipeline Phases
+    subgraph Discovery[Phase 1: Discovery]
+        RepoScanner[Repository Scanner]
+        LocalAnalyzer[Local Code Analyzer]
+    end
 
-The documentation generation follows a four-phase pipeline:
+    subgraph Enrichment[Phase 2: Enrichment]
+        ConfluenceEnricher[Confluence Enricher]
+        Docs360Enricher[Docs360 Enricher]
+    end
 
-#### Phase 1: Discovery
-Parallel agents scan all data sources to gather raw information:
+    subgraph Analysis[Phase 3: Analysis]
+        ArchInference[Architecture Inference]
+        DomainMapper[Domain Mapper]
+        MultiLangAnalyzers[Multi-Language Analyzers]
+    end
 
-| Agent | Source | Extracts |
-|-------|--------|----------|
-| `RepositoryScannerAgent` | GitHub | Services, dependencies, APIs, READMEs |
-| `ConfluenceHarvesterAgent` | Confluence | Architecture docs, runbooks, decision records |
-| `JiraAnalyzerAgent` | Jira | Features (epics), tech debt, bug patterns |
+    subgraph Generation[Phase 4: Generation]
+        TechWriter[Technical Writer]
+        SchemaDoc[Schema Documenter]
+        APIDoc[API Documenter]
+        RepoDoc[Repository Documenter]
+        OverviewWriter[Overview Writer]
+    end
 
-#### Phase 2: Analysis
-Sequential agents process discovered data to build understanding:
+    subgraph Quality[Phase 5: Quality]
+        CrossRef[Cross-Reference Builder]
+        IndexGen[Index Generator]
+        QualityCheck[Quality Checker]
+    end
 
-| Agent | Purpose |
-|-------|---------|
-| `ArchitectureInferenceAgent` | Classifies services, infers dependencies, detects patterns |
-| `DomainMapperAgent` | Clusters services into logical domains, identifies boundaries |
+    subgraph DataSources[Data Sources]
+        GitHub[GitHub Repos]
+        Confluence[Confluence]
+        Docs360[Docs360]
+        Jira[Jira]
+    end
 
-#### Phase 3: Generation
-Parallel agents generate documentation from the knowledge graph:
+    subgraph Analyzers[Language Analyzers]
+        Go[Go]
+        PHP[PHP]
+        TS[TypeScript/JS]
+        Python[Python]
+        Salesforce[Salesforce]
+        Terraform[Terraform]
+        Others[Lua/Rust/C++/Bash]
+    end
 
-| Agent | Output |
-|-------|--------|
-| `OverviewWriterAgent` | Platform index, architecture overview, domain summaries |
-| `TechnicalWriterAgent` | Service READMEs, architecture docs, configuration guides |
-| `APIDocumenterAgent` | API overviews, endpoint documentation, request/response schemas |
-| `SchemaDocumenterAgent` | Data models, database schemas, side-effect documentation |
-
-#### Phase 4: Quality
-Sequential agents validate and enhance the documentation:
-
-| Agent | Purpose |
-|-------|---------|
-| `CrossReferenceAgent` | Adds internal links, breadcrumbs, validates references |
-| `IndexGeneratorAgent` | Creates index files, glossary, search metadata |
-| `QualityCheckerAgent` | Completeness checks, coverage reports, quality metrics |
-
-### Core Components
-
-#### Knowledge Graph (`src/knowledge/`)
-
-A NetworkX-based graph database storing all discovered entities and relationships:
-
-```
-Entities:                    Relations:
-├── Service                  ├── DEPENDS_ON
-├── Domain                   ├── BELONGS_TO
-├── API                      ├── EXPOSES
-├── Endpoint                 ├── CALLS
-├── Schema                   ├── DOCUMENTS
-├── Document                 ├── OWNS
-├── Repository               ├── IMPLEMENTS
-├── Person                   └── RELATES_TO
-└── Integration
+    DataSources --> Discovery
+    Discovery --> KG
+    KG --> Enrichment
+    Enrichment --> KG
+    KG --> Analysis
+    Analyzers --> Analysis
+    Analysis --> KG
+    KG --> Generation
+    Generation --> Quality
+    Quality --> Output[(Markdown Docs)]
 ```
 
-The `KnowledgeStore` provides persistence with:
-- JSON serialization of graph state
-- Document registry with content hashing for change detection
-- Agent checkpoints for incremental runs
+## Multi-Language Code Analysis
 
-#### MCP Client (`src/mcp/`)
+The agent includes a sophisticated code analysis system supporting **12 programming languages**:
 
-Communicates with the Natterbox MCP server using the official MCP SDK:
+| Language | Extracts | Framework Support |
+|----------|----------|-------------------|
+| **Go** | Structs, interfaces, HTTP routes, AWS SDK calls | Chi, Gorilla, Echo, Gin |
+| **PHP** | Classes, controllers, services, REST endpoints | Kohana, Laravel |
+| **TypeScript/JavaScript** | Interfaces, types, routes, React components | Express, NestJS, Next.js, Fastify |
+| **Python** | Classes, dataclasses, routes, DB operations | Flask, FastAPI, Django, SQLAlchemy |
+| **Salesforce** | Apex classes, triggers, SOQL, @AuraEnabled | Apex, LWC, Visualforce |
+| **Terraform** | Resources, variables, outputs, modules | AWS, GCP, Azure providers |
+| **Rust** | Structs, enums, traits, HTTP routes | Actix, Axum, Rocket |
+| **Lua** | Functions, FreeSWITCH dialplans | FreeSWITCH |
+| **Bash** | Functions, env vars, external commands | Shell scripts |
+| **C/C++** | Structs, classes, enums | Standard C/C++ |
+| **ActionScript** | Classes, MXML components | Flex |
 
-```python
-# Launches MCP server as subprocess
-# Communicates via stdio using JSON-RPC protocol
-# Automatically injects OAuth tokens into environment
+### What Gets Extracted
 
-client = MCPClient(
-    server_command="npx",
-    server_args=["@natterbox/mcp-server"],
-    oauth_manager=oauth_manager,
-)
-await client.connect()
-response = await client.call_tool("github_list_repos", {"org": "natterbox"})
+- **Data Models**: Classes, structs, interfaces, types with fields and methods
+- **API Endpoints**: HTTP routes, GraphQL resolvers, RPC methods
+- **Side Effects**: Database queries, HTTP calls, file operations, cloud service calls
+- **Configuration**: Environment variables, config files, constants
+- **Dependencies**: Package dependencies with versions
+
+## Pipeline Phases
+
+### Phase 1: Discovery
+
+Scans GitHub repositories across configured organizations to discover services:
+
+- Clones repositories locally (avoids API rate limits)
+- Detects primary programming languages
+- Identifies service types (Lambda, ECS, API, library)
+- Extracts README content and repository metadata
+
+### Phase 2: Enrichment
+
+Queries external documentation sources for each discovered service:
+
+- **Confluence**: Searches for related documentation pages
+- **Docs360**: Fetches support articles and guides
+- Maps external docs to services using name matching and content analysis
+
+### Phase 3: Analysis
+
+Builds a comprehensive knowledge graph:
+
+- Runs multi-language code analyzers
+- Infers service architecture and dependencies
+- Maps services to business domains
+- Identifies integration points between services
+
+### Phase 4: Generation
+
+Generates layered markdown documentation:
+
+```
+docs/
+├── index.md                    # Platform overview
+├── architecture/
+│   ├── overview.md            # High-level architecture
+│   ├── data-flows.md          # Data flow diagrams
+│   └── domains/               # Business domain docs
+├── services/
+│   └── {service-name}/
+│       ├── README.md          # Service overview
+│       ├── architecture.md    # Service architecture
+│       ├── configuration.md   # Config reference
+│       ├── operations.md      # Runbook/operations
+│       └── data/
+│           ├── models.md      # Data models
+│           └── side-effects.md # External interactions
+├── repositories/
+│   └── repos/
+│       └── {repo-name}/
+│           ├── README.md      # Repository overview
+│           └── structure.md   # Code structure
+└── api/
+    └── overview.md            # API documentation
 ```
 
-Service-specific wrappers provide typed interfaces:
-- `GitHubClient`: Repositories, files, search, package.json, OpenAPI specs
-- `ConfluenceClient`: Spaces, pages, search, content extraction
-- `JiraClient`: Projects, issues, epics, components, releases
+### Phase 5: Quality
 
-#### FileStore (`src/context/`)
+Validates and enhances generated documentation:
 
-Manages LLM context size by storing large content externally:
-
-```
-┌────────────────────────────────────────────────────────────┐
-│                   Conversation History                      │
-├────────────────────────────────────────────────────────────┤
-│ Tool Result: [FileRef: abc123, 45KB]                       │
-│   Summary: "Contains 50 repositories with metadata..."     │
-│   Use file_store_read(ref_id='abc123') to retrieve         │
-└────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────┐
-│                      FileStore (Memory)                     │
-├────────────────────────────────────────────────────────────┤
-│ abc123: [Full 45KB content]                                │
-└────────────────────────────────────────────────────────────┘
-```
-
-Features:
-- **1KB threshold**: Content over 1KB is automatically stored
-- **AI summaries**: Claude generates summaries for stored content
-- **Byte-based chunks**: LLM can retrieve specific byte ranges
-- **Session-only**: Cleared on shutdown (not persisted)
-
-#### Authentication (`src/auth/`)
-
-Secure token management for all external services:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Token Flow                               │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  OAuth Services              AWS SSO                         │
-│  ├── GitHub ─────┐          ├── aws-vault ──┐               │
-│  └── Atlassian ──┼──▶ TokenCache ◀──────────┘               │
-│                  │     (encrypted)                           │
-│                  │          │                                │
-│                  │          ▼                                │
-│                  └──▶ MCP Client env vars                   │
-│                            │                                 │
-│                            ▼                                 │
-│                    Natterbox MCP Server                      │
-└─────────────────────────────────────────────────────────────┘
-```
-
-Components:
-- **TokenCache**: Encrypted storage in `~/.doc-agent/tokens/`
-- **OAuthManager**: OAuth 2.0 flow with PKCE, automatic refresh
-- **AWSSSOAuth**: AWS SSO integration via aws-vault or AWS CLI
-
-### Agent Architecture
-
-All agents inherit from `BaseAgent` which provides:
-
-```python
-class BaseAgent(ABC):
-    # Shared resources via AgentContext
-    @property
-    def graph(self) -> KnowledgeGraph: ...
-    @property
-    def mcp(self) -> MCPClient: ...
-    @property
-    def file_store(self) -> FileStore: ...
-    
-    # Claude API integration
-    async def call_claude(self, system_prompt, user_message) -> str: ...
-    
-    # Context management
-    def store_large_content(self, content) -> str | FileReference: ...
-    
-    # Checkpointing for incremental runs
-    async def save_checkpoint(self, data): ...
-    async def load_checkpoint(self) -> dict: ...
-    
-    # Main execution
-    @abstractmethod
-    async def run(self) -> AgentResult: ...
-```
-
-Agents can run in parallel (via `ParallelAgentRunner`) or sequentially depending on dependencies.
+- Cross-references between documents
+- Generates navigation indexes
+- Validates internal links
+- Checks for completeness
 
 ## Installation
 
 ```bash
-cd doc-agent
+# Clone the repository
+git clone https://github.com/SemiConscious/platform-documents.git
+cd platform-documents/doc-agent
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install with dependencies
+# Install dependencies
 pip install -e .
 
-# Or use the setup script
-./setup.sh
+# Or with development dependencies
+pip install -e ".[dev]"
+```
+
+### Optional: Tree-sitter for Enhanced Parsing
+
+For AST-based code analysis (more accurate than regex):
+
+```bash
+pip install tree-sitter-language-pack>=0.4.0
 ```
 
 ## Configuration
 
-### Basic Setup
-
-```bash
-cp config/config.example.yaml config/config.yaml
-```
-
-### API Keys
-
-```bash
-# Anthropic API (direct)
-export ANTHROPIC_API_KEY=your-api-key
-
-# Or use AWS Bedrock (configure in config.yaml)
-```
-
-### Authentication
-
-```bash
-# Authenticate with services
-doc-agent auth login github
-doc-agent auth login atlassian
-doc-agent auth login aws
-
-# Check authentication status
-doc-agent auth status
-```
-
-### Configuration File
+Create a configuration file at `config/config.yaml`:
 
 ```yaml
-# config/config.yaml
+# GitHub organizations to scan
+github:
+  organizations:
+    - redmatter
+    - natterbox
+    - SemiConscious
 
-llm:
-  provider: anthropic  # or 'bedrock' for AWS
-  model: claude-sonnet-4-20250514
-  max_tokens: 4096
-
+# MCP server for Natterbox data sources
 mcp:
-  server: natterbox
-  timeout: 60
-  command: npx
-  args: ["@natterbox/mcp-server"]
+  url: "https://avatar.natterbox-dev03.net/mcp/sse"
+  oauth:
+    authorization_url: "https://avatar.natterbox-dev03.net/mcp/authorize"
+    token_url: "https://avatar.natterbox-dev03.net/mcp/token"
+    client_id: "doc-agent"
 
+# AWS authentication (for Bedrock LLM)
 auth:
-  github:
-    enabled: true
-    client_id: "your-github-oauth-client-id"
-  atlassian:
-    enabled: true
-    client_id: "your-atlassian-oauth-client-id"
-    client_secret: "your-atlassian-oauth-client-secret"
   aws:
-    enabled: true
-    profile: "your-sso-profile"
-    region: us-east-1
+    profile: "ssh-dev03-admin"
+    region: "us-east-1"
 
-sources:
-  github:
-    organizations: [natterbox]
-    exclude_repos: [".*-deprecated", ".*-archive"]
-  confluence:
-    spaces: [ARCH, ENG, OPS, PLAT]
-  jira:
-    projects: [PLAT, VOICE, INT, INFRA]
-
-output:
-  directory: ./docs
-
-agents:
-  discovery:
-    parallelism: 5
-  generation:
-    parallelism: 10
+# Logging
+logging:
+  level: INFO
+  file: "logs/doc-agent.log"
 ```
 
 ## Usage
 
-### Generate Documentation
+### Full Documentation Generation
 
 ```bash
-# Full generation from scratch
+# Generate all documentation
+doc-agent generate --output ./docs --store ./store
+
+# Full regeneration (ignore cached state)
 doc-agent generate --full
 
-# Incremental update (default - only changed content)
-doc-agent generate
+# Verbose output
+doc-agent generate -v
+```
+
+### Selective Generation
+
+```bash
+# Generate docs for specific service(s)
+doc-agent generate --service archiving-purge --service platform-api
 
 # Skip specific phases
-doc-agent generate --skip-discovery --skip-analysis
+doc-agent generate --skip-enrichment --skip-quality
 
-# Generate for specific services
-doc-agent generate --service voice-routing --service call-manager
-
-# Dry run (no file writes)
+# Dry run (no files written)
 doc-agent generate --dry-run
+```
+
+### Repository Management
+
+```bash
+# Clone all repositories locally
+doc-agent clone-repos --output ./repos
+
+# Update existing clones
+doc-agent clone-repos --update
 ```
 
 ### Other Commands
 
 ```bash
-# Discovery only (populate knowledge graph)
-doc-agent discover
+# List discovered services
+doc-agent list-services
 
-# Show system status
-doc-agent status
+# Show knowledge graph statistics
+doc-agent stats
 
-# List discovered entities
-doc-agent list-entities --type service
-doc-agent list-entities --type domain
-doc-agent list-entities --type api
+# Export knowledge graph
+doc-agent export-graph --format json --output graph.json
 ```
 
-### Authentication Commands
-
-```bash
-# Login to services
-doc-agent auth login github
-doc-agent auth login atlassian
-doc-agent auth login aws
-
-# Check token status
-doc-agent auth status
-
-# Logout / clear tokens
-doc-agent auth logout github
-doc-agent auth logout all
-
-# Manual token refresh
-doc-agent auth refresh atlassian
-```
-
-## Output Structure
-
-```
-docs/
-├── index.md                           # Platform overview & navigation
-├── architecture/
-│   ├── index.md                       # Architecture section index
-│   ├── overview.md                    # System architecture summary
-│   ├── system-landscape.md            # Service map with Mermaid diagrams
-│   ├── technology-stack.md            # Languages, frameworks, infrastructure
-│   ├── data-flows.md                  # How data moves through the system
-│   └── domains/
-│       └── {domain}/
-│           ├── overview.md            # Domain purpose and scope
-│           ├── services.md            # Services in this domain
-│           └── integrations.md        # External integrations
-├── services/
-│   └── {service}/
-│       ├── README.md                  # Service overview
-│       ├── architecture.md            # Internal architecture
-│       ├── configuration.md           # Environment, settings
-│       ├── operations.md              # Deployment, monitoring
-│       ├── api/
-│       │   ├── overview.md            # API summary
-│       │   ├── endpoints.md           # Endpoint reference
-│       │   └── schemas.md             # Request/response schemas
-│       └── data/
-│           ├── models.md              # Data models
-│           └── side-effects.md        # Database operations
-├── integrations/
-│   └── {integration}/                 # Third-party service docs
-├── reference/
-│   ├── index.md                       # Reference section index
-│   ├── glossary.md                    # Platform terminology
-│   └── database-schemas/
-│       └── data-dictionary.md         # Cross-service data dictionary
-└── _meta/
-    ├── quality-report.md              # Documentation quality metrics
-    └── coverage-report.md             # What's documented vs. discovered
-```
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 doc-agent/
 ├── src/
-│   ├── main.py                 # CLI entry point
-│   ├── orchestrator.py         # Pipeline coordinator
-│   ├── agents/
-│   │   ├── base.py             # BaseAgent class
-│   │   ├── discovery/          # Discovery phase agents
-│   │   ├── analysis/           # Analysis phase agents
-│   │   ├── generation/         # Generation phase agents
-│   │   └── quality/            # Quality phase agents
-│   ├── knowledge/
-│   │   ├── models.py           # Entity/relation models
-│   │   ├── graph.py            # NetworkX graph wrapper
-│   │   └── store.py            # Persistence layer
-│   ├── mcp/
-│   │   ├── client.py           # MCP protocol client
-│   │   ├── github.py           # GitHub operations
-│   │   ├── confluence.py       # Confluence operations
-│   │   └── jira.py             # Jira operations
-│   ├── context/
-│   │   └── file_store.py       # Large content management
-│   ├── auth/
-│   │   ├── oauth.py            # OAuth 2.0 manager
-│   │   ├── token_cache.py      # Encrypted token storage
-│   │   └── aws_sso.py          # AWS SSO integration
-│   ├── templates/
-│   │   └── renderer.py         # Jinja2 template engine
-│   └── utils/
-│       ├── logging.py          # Structured logging
-│       └── markdown.py         # Markdown utilities
-├── config/
-│   ├── config.example.yaml     # Example configuration
-│   └── prompts/
-│       └── system-prompts.yaml # Agent system prompts
+│   ├── agents/                 # Agent implementations
+│   │   ├── discovery/          # Service discovery agents
+│   │   ├── enrichment/         # Documentation enrichment
+│   │   ├── analysis/           # Architecture analysis
+│   │   ├── generation/         # Documentation generation
+│   │   └── quality/            # Quality assurance
+│   ├── analyzers/              # Multi-language code analyzers
+│   │   ├── base.py             # Base analyzer class
+│   │   ├── factory.py          # Analyzer factory
+│   │   ├── models.py           # Data models
+│   │   └── languages/          # Language-specific analyzers
+│   ├── knowledge/              # Knowledge graph
+│   │   ├── graph.py            # NetworkX-based graph
+│   │   ├── models.py           # Entity models
+│   │   └── store.py            # Persistent storage
+│   ├── mcp/                    # MCP client for data sources
+│   ├── auth/                   # Authentication (AWS SSO, OAuth)
+│   ├── parsers/                # API schema parsers
+│   ├── templates/              # Jinja2 template renderer
+│   ├── orchestrator.py         # Pipeline orchestrator
+│   └── main.py                 # CLI entry point
+├── config/                     # Configuration files
 ├── templates/                  # Jinja2 document templates
-├── pyproject.toml              # Python project config
-└── setup.sh                    # Environment setup script
+└── repos/                      # Cloned repositories (gitignored)
 ```
 
-### Running Tests
+## Knowledge Graph
+
+The system maintains a knowledge graph with the following entity types:
+
+- **Service**: Platform services (Lambda, ECS, API)
+- **Repository**: GitHub repositories
+- **Schema**: Data schemas (GraphQL, OpenAPI, Database)
+- **Document**: External documentation (Confluence, Docs360)
+- **Team**: Owning teams
+- **Domain**: Business domains
+
+Relationships tracked:
+- `service → owns → repository`
+- `service → depends_on → service`
+- `service → has_schema → schema`
+- `service → documented_in → document`
+- `service → belongs_to → domain`
+
+## LLM Integration
+
+The agent uses Claude (via AWS Bedrock) for:
+
+- Architecture inference from code patterns
+- Documentation summarization
+- Generating Mermaid diagrams
+- Natural language descriptions
+
+Configure your AWS profile with Bedrock access:
 
 ```bash
-pip install -e ".[dev]"
-pytest
+aws-vault exec ssh-dev03-admin -- doc-agent generate
 ```
 
-### Adding a New Agent
+## Development
 
-1. Create agent class inheriting from `BaseAgent`
-2. Implement `run()` method returning `AgentResult`
-3. Add to appropriate phase in `orchestrator.py`
-4. Add system prompt to `config/prompts/system-prompts.yaml`
+```bash
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=src
+
+# Lint
+ruff check src/
+
+# Format
+ruff format src/
+```
 
 ## License
 

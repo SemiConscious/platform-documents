@@ -31,7 +31,20 @@ This service is part of the Natterbox platform.
 | **Language** | {{ service.language or 'N/A' }} |
 | **Framework** | {{ service.framework or 'N/A' }} |
 | **Team** | {{ service.team or 'N/A' }} |
-| **Status** | {{ service.status or 'Active' }} |
+| **Status** | {{ service.status or 'active' }} |
+
+## Documentation
+
+Explore detailed documentation for this service:
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](./architecture.md) | Internal architecture and components |
+| [Configuration](./configuration.md) | Environment variables and settings |
+| [Operations](./operations.md) | Monitoring, logging, and runbooks |
+| [Data Models](./data/models.md) | Data structures and schemas |
+| [Side Effects](./data/side-effects.md) | External system interactions |
+{% if service.apis %}| [API Reference](./api/overview.md) | API endpoints and usage |{% endif %}
 
 {% if service.dependencies %}
 ## Dependencies

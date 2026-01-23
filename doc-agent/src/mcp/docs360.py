@@ -15,6 +15,7 @@ class Docs360Article:
     id: str
     title: str
     content: Optional[str] = None
+    snippet: Optional[str] = None  # Brief preview/summary
     url: Optional[str] = None
     category: Optional[str] = None
     score: float = 0.0
@@ -23,10 +24,18 @@ class Docs360Article:
     def from_dict(cls, data: dict[str, Any]) -> "Docs360Article":
         """Create from dictionary response."""
         # Handle various response formats
+        content = data.get("content", data.get("body", data.get("description", "")))
+        snippet = data.get("snippet", data.get("summary", data.get("preview", "")))
+        
+        # Use content as snippet if no snippet provided
+        if not snippet and content:
+            snippet = content[:300] + "..." if len(content) > 300 else content
+        
         return cls(
             id=str(data.get("id", data.get("articleId", data.get("slug", "")))),
             title=data.get("title", data.get("name", "")),
-            content=data.get("content", data.get("body", data.get("snippet", data.get("description", "")))),
+            content=content,
+            snippet=snippet,
             url=data.get("url", data.get("link", data.get("public_url", ""))),
             category=data.get("category", data.get("categoryName", data.get("category_name", ""))),
             score=float(data.get("score", data.get("relevance", 0.0))),

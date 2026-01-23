@@ -18,6 +18,7 @@ dependencies = [
     "httpx>=0.26",
     "aiohttp>=3.9",
     "cryptography>=41.0",
+    "tree-sitter-language-pack>=0.4.0",  # Multi-language AST parsing
 ]
 
 [project.optional-dependencies]

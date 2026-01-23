@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any, Optional
 
@@ -10,6 +11,11 @@ import aiofiles
 from ..base import BaseAgent, AgentResult, AgentContext
 from ...knowledge import Service, Schema, EntityType
 from ...knowledge.store import compute_entity_hash
+from ...analyzers.integration import (
+    analyze_service_repository,
+    get_models_for_documentation,
+    get_side_effects_for_documentation,
+)
 
 logger = logging.getLogger("doc-agent.agents.generation.schema_documenter")
 
@@ -24,17 +30,23 @@ class SchemaDocumenterAgent(BaseAgent):
     - OpenAPI schema documentation
     - Event schema documentation
     - Data dictionary entries
+    - Side effects documentation with actual code analysis
     """
     
     name = "schema_documenter"
     description = "Generates data model and schema documentation"
-    version = "0.2.0"
+    version = "0.3.0"
     
     def __init__(self, context: AgentContext, service_id: Optional[str] = None):
         super().__init__(context)
         self.output_dir = context.output_dir
         self.dry_run = context.dry_run
         self.service_id = service_id
+        
+        # Set up local repos path
+        workspace_root = Path(__file__).parent.parent.parent.parent
+        self.local_repos_path = workspace_root / "repos"
+        self.use_local_repos = self.local_repos_path.exists()
     
     async def run(self) -> AgentResult:
         """Execute the schema documentation process."""
@@ -112,6 +124,103 @@ class SchemaDocumenterAgent(BaseAgent):
         
         return generated
     
+    def _extract_code_types(self, service: Service) -> list[dict]:
+        """Extract types from code using multi-language analyzers."""
+        types = []
+        
+        # Get local repos path
+        repos_dir = self.output_dir.parent / "repos"
+        if not repos_dir.exists():
+            # Fall back to legacy Go extraction
+            repo_path = self._get_local_repo_path(service)
+            return self._extract_go_types_legacy(repo_path) if repo_path else []
+        
+        # Use new multi-language analyzer
+        repo_name = getattr(service, 'repository', None) or service.name
+        org = service.metadata.get("organization", "redmatter") if service.metadata else "redmatter"
+        
+        analysis = analyze_service_repository(
+            repos_dir=repos_dir,
+            service_name=service.name,
+            repository=repo_name,
+            organizations=[org, "redmatter", "natterbox"],
+        )
+        
+        if not analysis:
+            return types
+        
+        # Convert analyzer models to legacy format for compatibility
+        for model in analysis.models:
+            types.append({
+                "name": model.name,
+                "file": model.file,
+                "fields": [
+                    {
+                        "name": f.name,
+                        "type": f.type,
+                        "tags": f.tags or "",
+                        "description": f.description,
+                    }
+                    for f in model.fields
+                ],
+                "is_config": "config" in model.name.lower() or "config" in model.decorators,
+                "github_url": model.github_url,
+                "type_kind": model.model_type.value,
+            })
+        
+        return types
+    
+    def _extract_go_types_legacy(self, repo_path: Path) -> list[dict]:
+        """Legacy Go struct extraction (fallback when analyzers not available)."""
+        types = []
+        if not repo_path or not repo_path.exists():
+            return types
+        
+        go_files = self._find_code_files(repo_path, ["**/*.go"], max_files=30)
+        
+        for file_path, content in go_files:
+            # Skip test files
+            if "_test.go" in file_path:
+                continue
+            
+            # Find struct definitions
+            struct_pattern = r"type\s+(\w+)\s+struct\s*\{([^}]+)\}"
+            for match in re.finditer(struct_pattern, content, re.MULTILINE):
+                name = match.group(1)
+                body = match.group(2)
+                
+                # Extract fields
+                fields = []
+                field_pattern = r"(\w+)\s+([^\s`]+)(?:\s+`([^`]+)`)?"
+                for field_match in re.finditer(field_pattern, body):
+                    field_name = field_match.group(1)
+                    field_type = field_match.group(2)
+                    tags = field_match.group(3) or ""
+                    
+                    # Skip embedded types (start with capital, no explicit type)
+                    if field_name[0].isupper() and not field_type:
+                        continue
+                    
+                    fields.append({
+                        "name": field_name,
+                        "type": field_type,
+                        "tags": tags,
+                    })
+                
+                if fields:
+                    types.append({
+                        "name": name,
+                        "file": file_path,
+                        "fields": fields,
+                        "is_config": "config" in name.lower(),
+                    })
+        
+        return types
+    
+    def _extract_go_types(self, repo_path: Path) -> list[dict]:
+        """Extract Go struct types from code (legacy method, kept for compatibility)."""
+        return self._extract_go_types_legacy(repo_path)
+    
     async def _generate_models_doc(
         self,
         service: Service,
@@ -121,15 +230,29 @@ class SchemaDocumenterAgent(BaseAgent):
         event_schemas: list[Schema],
         data_dir: Path,
     ) -> str:
-        """Generate the data models document."""
+        """Generate the data models document with actual code analysis."""
+        service_slug = service.id.replace("service:", "")
+        
+        # Extract types using multi-language analyzers
+        code_types = self._extract_code_types(service)
+        
+        # Separate config types from other types
+        config_types = [t for t in code_types if t.get("is_config")]
+        data_types = [t for t in code_types if not t.get("is_config")]
+        
         total_schemas = len(graphql_schemas) + len(openapi_schemas) + len(database_schemas) + len(event_schemas)
+        total_types = total_schemas + len(code_types)
         
         content = f"""---
 title: {service.name} Data Models
 description: Data types, schemas, and models for {service.name}
 generated: true
-schema_count: {total_schemas}
+schema_count: {total_types}
 ---
+
+<!-- breadcrumb -->
+[Home](/../../../index.md) > [Services](../../../services/index.md) > {service.name.replace('-', ' ').title()} > Data
+
 
 # {service.name} Data Models
 
@@ -143,6 +266,8 @@ This document describes the data models and structures used by {service.name}.
 | API Schemas | {len(openapi_schemas)} |
 | Database Models | {len(database_schemas)} |
 | Event Schemas | {len(event_schemas)} |
+| Config Types | {len(config_types)} |
+| Data Structures | {len(data_types)} |
 
 """
         
@@ -186,10 +311,8 @@ This document describes the data models and structures used by {service.name}.
             
             for schema in database_schemas:
                 content += self._format_schema_section(schema)
-        else:
-            content += "## Database Models\n\n"
-            content += "*Database models are typically defined in migrations. "
-            content += "Check the repository's migration files for the latest schema.*\n\n"
+        # Only show Database Models section if we have actual schemas
+        # Skip the boilerplate placeholder text
         
         # Event Schemas section
         if event_schemas:
@@ -199,11 +322,99 @@ This document describes the data models and structures used by {service.name}.
             for schema in event_schemas:
                 content += self._format_schema_section(schema)
         
+        # Config Types section (from Go code)
+        if config_types:
+            content += "## Configuration Types\n\n"
+            content += "These types define configuration structures for each component.\n\n"
+            
+            # Get repo URL for linking
+            repo_url = f"https://github.com/{service.repository}" if service.repository else None
+            
+            for go_type in config_types[:15]:
+                # Extract component name from file path (e.g., cmd/monitor/main.go -> Monitor)
+                file_path = go_type.get('file', '')
+                component_name = ""
+                if "cmd/" in file_path:
+                    parts = file_path.split("/")
+                    for i, part in enumerate(parts):
+                        if part == "cmd" and i + 1 < len(parts):
+                            component_name = parts[i + 1].replace("-", " ").title()
+                            break
+                
+                # Better title for generic "config" types
+                type_name = go_type['name']
+                if type_name.lower() == "config" and component_name:
+                    display_name = f"{component_name} Configuration"
+                else:
+                    display_name = type_name
+                
+                content += f"### {display_name}\n\n"
+                if component_name and type_name.lower() == "config":
+                    content += f"Main configuration structure for the **{component_name}** component.\n\n"
+                
+                # Link to GitHub source
+                if repo_url and file_path:
+                    github_link = f"{repo_url}/blob/main/{file_path}"
+                    content += f"*Defined in: [`{file_path}`]({github_link})*\n\n"
+                else:
+                    content += f"*Defined in: `{file_path}`*\n\n"
+                
+                if go_type.get("fields"):
+                    content += "| Field | Type | Tags |\n"
+                    content += "|-------|------|------|\n"
+                    for field in go_type["fields"][:20]:
+                        name = field.get("name", "")
+                        ftype = field.get("type", "unknown")
+                        tags = field.get("tags", "")[:50]
+                        content += f"| `{name}` | `{ftype}` | `{tags}` |\n"
+                    content += "\n"
+                
+                content += "---\n\n"
+        
+        # Data Structures section (from Go code)
+        if data_types:
+            content += "## Data Structures\n\n"
+            content += "Key data structures used by the service components.\n\n"
+            
+            for go_type in data_types[:20]:
+                file_path = go_type.get('file', '')
+                # Extract component context
+                component_context = ""
+                if "cmd/" in file_path:
+                    parts = file_path.split("/")
+                    for i, part in enumerate(parts):
+                        if part == "cmd" and i + 1 < len(parts):
+                            component_context = parts[i + 1].replace("-", " ").title()
+                            break
+                
+                content += f"### {go_type['name']}\n\n"
+                if component_context:
+                    content += f"Used by the **{component_context}** component.\n\n"
+                
+                # Link to GitHub source
+                if repo_url and file_path:
+                    github_link = f"{repo_url}/blob/main/{file_path}"
+                    content += f"*Defined in: [`{file_path}`]({github_link})*\n\n"
+                else:
+                    content += f"*Defined in: `{file_path}`*\n\n"
+                
+                if go_type.get("fields"):
+                    content += "| Field | Type | Tags |\n"
+                    content += "|-------|------|------|\n"
+                    for field in go_type["fields"][:15]:
+                        name = field.get("name", "")
+                        ftype = field.get("type", "unknown")
+                        tags = field.get("tags", "")[:50]
+                        content += f"| `{name}` | `{ftype}` | `{tags}` |\n"
+                    content += "\n"
+                
+                content += "---\n\n"
+        
+        # Only include relevant related docs links (not boilerplate)
         content += """
 ## Related Documents
 
 - [Service Overview](../README.md)
-- [API Documentation](../api/overview.md)
 - [Side Effects](./side-effects.md)
 """
         
@@ -271,12 +482,215 @@ This document describes the data models and structures used by {service.name}.
         section += "---\n\n"
         return section
     
+    def _get_local_repo_path(self, service: Service) -> Optional[Path]:
+        """Get the local path for a service's repository if it exists."""
+        if not self.use_local_repos:
+            return None
+        
+        # Extract repo name from service
+        repo_name = getattr(service, 'repository', None) or service.name
+        org = service.metadata.get("organization", "redmatter") if service.metadata else "redmatter"
+        
+        if "/" in repo_name:
+            org, repo_name = repo_name.split("/", 1)
+        
+        # Clean up repo name
+        repo_name = repo_name.replace("service:", "")
+        
+        # Try different paths
+        for try_org in [org, "redmatter", "natterbox", "SemiConscious"]:
+            path = self.local_repos_path / try_org / repo_name
+            if path.exists():
+                return path
+        
+        return None
+    
+    def _read_local_file(self, repo_path: Path, file_path: str) -> Optional[str]:
+        """Read a file from a local repo."""
+        if not repo_path:
+            return None
+        full_path = repo_path / file_path
+        if full_path.exists():
+            try:
+                return full_path.read_text(errors='ignore')
+            except Exception:
+                return None
+        return None
+    
+    def _find_code_files(self, repo_path: Path, patterns: list[str], max_files: int = 20) -> list[tuple[str, str]]:
+        """Find code files matching patterns and return their content."""
+        files = []
+        if not repo_path or not repo_path.exists():
+            return files
+        
+        for pattern in patterns:
+            for file_path in repo_path.glob(pattern):
+                if len(files) >= max_files:
+                    break
+                try:
+                    content = file_path.read_text(errors='ignore')
+                    rel_path = str(file_path.relative_to(repo_path))
+                    files.append((rel_path, content[:8000]))  # Limit per file
+                except Exception:
+                    continue
+        
+        return files
+    
+    def _extract_side_effects_from_code(self, repo_path: Path) -> dict:
+        """Extract side effects by analyzing code patterns."""
+        effects = {
+            "s3_operations": [],
+            "database_operations": [],
+            "api_calls": [],
+            "events": [],
+            "custom_types": [],
+        }
+        
+        if not repo_path or not repo_path.exists():
+            return effects
+        
+        # Get Go files
+        go_files = self._find_code_files(repo_path, ["**/*.go"], max_files=30)
+        
+        for file_path, content in go_files:
+            # S3 operations
+            if "s3" in content.lower() or "S3" in content:
+                s3_patterns = [
+                    (r"S3PutObjectTagging|PutObjectTagging", "S3 Object Tagging"),
+                    (r"CreateJob|s3control\.CreateJobInput", "S3 Batch Operations"),
+                    (r"\.Upload\(|Upload\s*\(|s3\.Upload", "S3 Upload"),
+                    (r"\.Download|GetObject", "S3 Download"),
+                    (r"DeleteObject", "S3 Delete"),
+                    (r"ListObjects", "S3 List"),
+                ]
+                for pattern, operation in s3_patterns:
+                    if re.search(pattern, content):
+                        if operation not in effects["s3_operations"]:
+                            effects["s3_operations"].append({
+                                "operation": operation,
+                                "file": file_path,
+                            })
+            
+            # Database operations
+            db_patterns = [
+                (r"sql\.Open|\.Query|\.Exec|mysql\.|\.QueryRow", "MySQL/SQL Database"),
+                (r"dynamodb\.|DynamoDB|PutItem|GetItem|UpdateItem", "DynamoDB"),
+                (r"mongo\.|MongoDB|Collection\(", "MongoDB"),
+            ]
+            for pattern, db_type in db_patterns:
+                if re.search(pattern, content):
+                    if not any(d["type"] == db_type for d in effects["database_operations"]):
+                        effects["database_operations"].append({
+                            "type": db_type,
+                            "file": file_path,
+                        })
+            
+            # API calls
+            api_patterns = [
+                (r"http\.Client|httpClient\.|\.Do\(|\.Get\(|\.Post\(", "HTTP API Calls"),
+                (r"sqs\.|SQS|SendMessage|ReceiveMessage", "SQS Queue Operations"),
+                (r"sns\.|SNS|Publish", "SNS Notifications"),
+                (r"lambda\.|Lambda|Invoke", "Lambda Invocations"),
+            ]
+            for pattern, api_type in api_patterns:
+                if re.search(pattern, content):
+                    if not any(a["type"] == api_type for a in effects["api_calls"]):
+                        effects["api_calls"].append({
+                            "type": api_type,
+                            "file": file_path,
+                        })
+            
+            # Custom types (Go structs for config)
+            type_matches = re.findall(r"type\s+(\w+)\s+struct\s*\{([^}]+)\}", content, re.MULTILINE)
+            for name, body in type_matches:
+                if "config" in name.lower() or "Config" in name:
+                    effects["custom_types"].append({
+                        "name": name,
+                        "file": file_path,
+                    })
+        
+        return effects
+    
+    async def _analyze_side_effects_with_llm(self, service: Service, repo_path: Path) -> dict:
+        """Use Claude to analyze side effects from code."""
+        # Read key files for analysis
+        readme_content = self._read_local_file(repo_path, "README.md") or ""
+        
+        # Get handler/main files
+        code_files = self._find_code_files(repo_path, [
+            "cmd/**/handler.go",
+            "cmd/**/main.go",
+            "**/handler.go",
+            "**/service.go",
+        ], max_files=10)
+        
+        code_context = "\n\n".join([
+            f"### {path}\n```go\n{content[:3000]}\n```"
+            for path, content in code_files[:5]
+        ])
+        
+        prompt = f"""Analyze the following code from the {service.name} service and identify ALL side effects.
+
+README:
+{readme_content[:2000]}
+
+Key source files:
+{code_context}
+
+Identify:
+1. **External System Interactions**: S3, databases, APIs, message queues
+2. **Data Modifications**: What data is created, updated, or deleted
+3. **Event Publishing**: Events sent to queues or topics
+4. **Infrastructure Operations**: IAM role assumptions, resource creation
+
+Return JSON with:
+{{
+  "s3_operations": [
+    {{"operation": "Object Tagging", "description": "Tags S3 objects with purge-v2-delete=true", "target": "Cross-account S3 buckets"}}
+  ],
+  "database_operations": [
+    {{"type": "MySQL", "operation": "Read/Update", "description": "Reads/updates retention records in Big DB"}}
+  ],
+  "message_queue": [
+    {{"type": "SQS/SNS", "operation": "Publish/Consume", "description": "..."}}
+  ],
+  "api_calls": [
+    {{"target": "Core API", "operation": "GET/POST", "description": "..."}}
+  ],
+  "iam_operations": [
+    {{"operation": "AssumeRole", "description": "Assumes cross-account roles for S3 batch operations"}}
+  ],
+  "data_flow_description": "Brief description of the data flow through the service"
+}}
+
+Focus on ACTUAL operations found in the code, not generic patterns."""
+
+        try:
+            response = await self.call_claude(
+                system_prompt="You are analyzing code to identify side effects. Return ONLY valid JSON with the requested fields. Focus on actual operations found in the code.",
+                user_message=prompt,
+            )
+            
+            # Clean up response
+            response = response.strip()
+            if response.startswith("```"):
+                response = response.split("```")[1]
+                if response.startswith("json"):
+                    response = response[4:]
+            
+            return json.loads(response)
+        except Exception as e:
+            self.logger.warning(f"LLM analysis failed: {e}")
+            return {}
+    
     async def _generate_side_effects_doc(
         self,
         service: Service,
         data_dir: Path,
     ) -> str:
-        """Generate the side effects document."""
+        """Generate the side effects document with actual code analysis."""
+        service_slug = service.id.replace("service:", "")
+        
         # Get service dependencies
         deps = self.graph.get_service_dependencies(service.id)
         dep_names = [d.name for d in deps] if deps else []
@@ -285,80 +699,155 @@ This document describes the data models and structures used by {service.name}.
         schemas = self._get_service_schemas(service)
         schema_names = [s.name for s in schemas]
         
+        # Try to get actual side effects from code using multi-language analyzers
+        repos_dir = self.output_dir.parent / "repos"
+        code_effects = {}
+        repo_path = None  # Initialize to avoid unbound variable
+        
+        if repos_dir.exists():
+            # Use new multi-language analyzer
+            repo_name = getattr(service, 'repository', None) or service.name
+            org = service.metadata.get("organization", "redmatter") if service.metadata else "redmatter"
+            
+            # Also set repo_path for LLM analysis
+            for org_name in [org, "redmatter", "natterbox"]:
+                potential_path = repos_dir / org_name / repo_name
+                if potential_path.exists():
+                    repo_path = potential_path
+                    break
+            
+            analysis = analyze_service_repository(
+                repos_dir=repos_dir,
+                service_name=service.name,
+                repository=repo_name,
+                organizations=[org, "redmatter", "natterbox"],
+            )
+            
+            if analysis:
+                # Convert analyzer side effects to legacy format
+                code_effects = get_side_effects_for_documentation(analysis)
+        else:
+            # Fall back to legacy extraction
+            repo_path = self._get_local_repo_path(service)
+            code_effects = self._extract_side_effects_from_code(repo_path) if repo_path else {}
+        
+        # Use LLM for deeper analysis if we have code
+        llm_analysis = {}
+        if repo_path:
+            try:
+                llm_analysis = await self._analyze_side_effects_with_llm(service, repo_path)
+            except Exception as e:
+                self.logger.warning(f"LLM side effects analysis failed: {e}")
+        
         content = f"""---
 title: {service.name} Side Effects
 description: Data operations and side effects for {service.name}
 generated: true
 ---
 
+<!-- breadcrumb -->
+[Home](/../../../index.md) > [Services](../../../services/index.md) > {service.name.replace('-', ' ').title()} > Data
+
+
 # {service.name} Side Effects
 
 This document describes the data operations performed by {service.name} and their effects on the system.
 
-## Database Operations
-
-This service performs operations on the following data models:
-
 """
         
-        if schema_names:
+        # S3 Operations section
+        s3_ops = llm_analysis.get("s3_operations", []) or code_effects.get("s3_operations", [])
+        if s3_ops:
+            content += "## S3 Operations\n\n"
+            content += "| Operation | Description | Target |\n"
+            content += "|-----------|-------------|--------|\n"
+            for op in s3_ops:
+                if isinstance(op, dict):
+                    operation = op.get("operation", "Unknown")
+                    desc = op.get("description", "N/A")
+                    target = op.get("target", op.get("file", "N/A"))
+                    content += f"| {operation} | {desc} | {target} |\n"
+            content += "\n"
+        
+        # Database Operations section
+        db_ops = llm_analysis.get("database_operations", []) or code_effects.get("database_operations", [])
+        if db_ops:
+            content += "## Database Operations\n\n"
+            content += "| Database | Operation | Description |\n"
+            content += "|----------|-----------|-------------|\n"
+            for op in db_ops:
+                if isinstance(op, dict):
+                    db_type = op.get("type", "Unknown")
+                    operation = op.get("operation", "CRUD")
+                    desc = op.get("description", "Data persistence")
+                    content += f"| {db_type} | {operation} | {desc} |\n"
+            content += "\n"
+        elif schema_names:
+            content += "## Database Operations\n\n"
+            content += "This service performs operations on the following data models:\n\n"
             for name in schema_names[:10]:
                 content += f"- **{name}**: CRUD operations\n"
+            content += "\n"
         else:
-            content += "*No specific data models documented. Check migration files for database operations.*\n"
+            content += "## Database Operations\n\n"
+            content += "*No specific database operations documented. Check source code for details.*\n\n"
         
-        content += f"""
-## Service Dependencies
-
-This service depends on the following services:
-
-"""
+        # Message Queue section
+        mq_ops = llm_analysis.get("message_queue", [])
+        if mq_ops:
+            content += "## Message Queue Operations\n\n"
+            content += "| Type | Operation | Description |\n"
+            content += "|------|-----------|-------------|\n"
+            for op in mq_ops:
+                if isinstance(op, dict):
+                    mq_type = op.get("type", "Unknown")
+                    operation = op.get("operation", "Publish/Consume")
+                    desc = op.get("description", "Message processing")
+                    content += f"| {mq_type} | {operation} | {desc} |\n"
+            content += "\n"
         
+        # API Calls section
+        api_ops = llm_analysis.get("api_calls", []) or code_effects.get("api_calls", [])
+        if api_ops:
+            content += "## External API Calls\n\n"
+            content += "| Target | Operation | Description |\n"
+            content += "|--------|-----------|-------------|\n"
+            for op in api_ops:
+                if isinstance(op, dict):
+                    target = op.get("target", op.get("type", "Unknown"))
+                    operation = op.get("operation", "HTTP")
+                    desc = op.get("description", "API call")
+                    content += f"| {target} | {operation} | {desc} |\n"
+            content += "\n"
+        
+        # IAM Operations section
+        iam_ops = llm_analysis.get("iam_operations", [])
+        if iam_ops:
+            content += "## IAM/Security Operations\n\n"
+            for op in iam_ops:
+                if isinstance(op, dict):
+                    operation = op.get("operation", "Unknown")
+                    desc = op.get("description", "IAM operation")
+                    content += f"- **{operation}**: {desc}\n"
+            content += "\n"
+        
+        # Service Dependencies
+        content += "## Service Dependencies\n\n"
         if dep_names:
+            content += "This service depends on the following services:\n\n"
             for name in dep_names:
                 content += f"- `{name}`\n"
         else:
             content += "*No direct service dependencies identified.*\n"
+        content += "\n"
+        
+        # Data Flow
+        data_flow = llm_analysis.get("data_flow_description", "")
+        if data_flow:
+            content += f"## Data Flow\n\n{data_flow}\n"
+        # Skip the generic Mermaid diagram - it doesn't add value
         
         content += f"""
-## Event Publishing
-
-*Event schemas should be extracted from the service's event definitions.*
-
-Common patterns:
-- Entity created events
-- Entity updated events
-- Entity deleted events
-
-## Event Consumption
-
-*Events consumed by this service should be identified from message queue configurations.*
-
-## Side Effect Summary
-
-| Operation | Target | Type | Description |
-|-----------|--------|------|-------------|
-| API Call | External Service | Synchronous | Service-to-service communication |
-| Database Write | Primary DB | Persistent | Data persistence operations |
-| Event Publish | Message Queue | Async | Event-driven communication |
-
-## Data Flow
-
-```mermaid
-flowchart LR
-    subgraph {service.name.replace('-', '_')}
-        API[API Layer]
-        BL[Business Logic]
-        DAL[Data Access]
-    end
-    
-    Client --> API
-    API --> BL
-    BL --> DAL
-    DAL --> DB[(Database)]
-    BL --> MQ{{Message Queue}}
-```
-
 ## Related Documents
 
 - [Data Models](./models.md)

@@ -1,0 +1,38 @@
+# Test configuration for doc-spawner
+# Uses the 20 repos in doc-agent/repo-cache
+
+# Output directory for generated documentation
+output_dir: ./test-docs
+
+# Directory containing cloned repositories (the repo-cache from doc-agent)
+repos_dir: ../doc-agent/repo-cache
+
+# Agent settings - limited for testing
+max_depth: 3           # Lower depth for initial testing
+max_turns: 30          # Fewer turns for testing
+max_tokens: 8192       # Smaller responses for testing
+
+# Worker settings - single worker for testing
+num_workers: 1
+
+# LLM settings
+llm:
+  # Use Sonnet 3.5 for testing (cheaper/faster than Opus)
+  model: us.anthropic.claude-3-5-sonnet-20241022-v2:0
+  # For production with Opus 4.5:
+  # model: us.anthropic.claude-opus-4-5-20251101-v1:0
+  temperature: 0.3
+
+# AWS settings - using SSO via aws-vault
+aws:
+  region: us-east-1
+  profile: sso-dev03-admin
+
+# MCP server settings (for GitHub, Confluence, Jira tools)
+mcp:
+  url: https://avatar.natterbox-dev03.net/mcp/sse
+  timeout: 60
+  oauth:
+    authorization_url: https://avatar.natterbox-dev03.net/mcp/authorize
+    token_url: https://avatar.natterbox-dev03.net/mcp/token
+    client_id: doc-spawner

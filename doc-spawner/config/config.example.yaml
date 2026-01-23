@@ -1,0 +1,48 @@
+# Doc-Spawner Configuration
+# Copy this to config.yaml and adjust as needed
+
+# Output directory for generated documentation
+output_dir: ./docs
+
+# Directory containing cloned repositories
+# Structure: repos/{org}/{repo}/
+repos_dir: ./repos
+
+# Agent settings
+max_depth: 5          # Maximum spawn depth (0 = master only)
+max_turns: 50         # Max conversation turns per agent
+max_tokens: 16384     # Max tokens per response
+
+# Worker settings
+num_workers: 3        # Concurrent agent workers
+
+# LLM settings
+llm:
+  # AWS Bedrock model ID (Opus 4.5)
+  model: us.anthropic.claude-opus-4-5-20251101-v1:0
+  temperature: 0.3
+  
+  # Alternative models (uncomment to use):
+  # Sonnet 3.5 (faster, cheaper):
+  # model: us.anthropic.claude-3-5-sonnet-20241022-v2:0
+  # Haiku 3.5 (fastest, cheapest):
+  # model: us.anthropic.claude-3-5-haiku-20241022-v1:0
+
+# AWS settings
+aws:
+  region: us-east-1
+  # profile: default  # Optional: AWS profile to use
+
+# MCP server settings (for GitHub, Confluence, Jira tools)
+mcp:
+  url: https://avatar.natterbox-dev03.net/mcp/sse
+  timeout: 60
+  oauth:
+    authorization_url: https://avatar.natterbox-dev03.net/mcp/authorize
+    token_url: https://avatar.natterbox-dev03.net/mcp/token
+    client_id: doc-spawner
+
+# Logging
+logging:
+  level: INFO
+  file: logs/doc-spawner.log

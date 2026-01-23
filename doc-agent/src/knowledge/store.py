@@ -51,6 +51,7 @@ class KnowledgeStore:
     - Document registry for tracking generated documents
     - Change detection via content hashing
     - Incremental update support
+    - GitHub repository cache for rate limit resilience
     """
     
     def __init__(self, store_dir: Path):
@@ -65,16 +66,19 @@ class KnowledgeStore:
         
         self.graph_path = self.store_dir / "knowledge-graph.json"
         self.registry_path = self.store_dir / "document-registry.json"
+        self.github_cache_path = self.store_dir / "github-cache.json"
         self.checkpoints_dir = self.store_dir / "agent-checkpoints"
         self.checkpoints_dir.mkdir(exist_ok=True)
         
         self._graph: Optional[KnowledgeGraph] = None
         self._registry: dict[str, DocumentRecord] = {}
+        self._github_cache: dict[str, Any] = {}
         
     async def load(self) -> None:
-        """Load the knowledge graph and document registry from disk."""
+        """Load the knowledge graph, document registry, and caches from disk."""
         await self._load_graph()
         await self._load_registry()
+        await self._load_github_cache()
         logger.info(f"Loaded store: {self._graph.node_count} entities, {len(self._registry)} documents")
     
     async def _load_graph(self) -> None:
@@ -108,10 +112,27 @@ class KnowledgeStore:
         else:
             self._registry = {}
     
+    async def _load_github_cache(self) -> None:
+        """Load the GitHub cache from disk."""
+        if self.github_cache_path.exists():
+            try:
+                async with aiofiles.open(self.github_cache_path, "r") as f:
+                    self._github_cache = json.loads(await f.read())
+                repo_count = sum(
+                    len(repos) for repos in self._github_cache.get("repositories", {}).values()
+                )
+                logger.info(f"Loaded GitHub cache with {repo_count} cached repositories")
+            except Exception as e:
+                logger.warning(f"Failed to load GitHub cache: {e}")
+                self._github_cache = {}
+        else:
+            self._github_cache = {}
+    
     async def save(self) -> None:
-        """Save the knowledge graph and document registry to disk."""
+        """Save the knowledge graph, document registry, and caches to disk."""
         await self._save_graph()
         await self._save_registry()
+        await self._save_github_cache()
         logger.info("Saved knowledge store")
     
     async def _save_graph(self) -> None:
@@ -125,6 +146,12 @@ class KnowledgeStore:
         """Save the document registry to disk."""
         async with aiofiles.open(self.registry_path, "w") as f:
             await f.write(json.dumps(self._registry, indent=2, default=str))
+    
+    async def _save_github_cache(self) -> None:
+        """Save the GitHub cache to disk."""
+        if self._github_cache:
+            async with aiofiles.open(self.github_cache_path, "w") as f:
+                await f.write(json.dumps(self._github_cache, indent=2, default=str))
     
     @property
     def graph(self) -> KnowledgeGraph:
@@ -187,6 +214,51 @@ class KnowledgeStore:
             path for path, record in self._registry.items()
             if entity_id in record.entity_ids
         ]
+    
+    # GitHub cache methods
+    
+    def cache_repositories(self, org: str, repos: list[dict[str, Any]]) -> None:
+        """
+        Cache repository data for an organization.
+        
+        Args:
+            org: Organization name
+            repos: List of repository dictionaries
+        """
+        if "repositories" not in self._github_cache:
+            self._github_cache["repositories"] = {}
+        
+        self._github_cache["repositories"][org] = repos
+        self._github_cache["cached_at"] = datetime.utcnow().isoformat()
+        logger.info(f"Cached {len(repos)} repositories for {org}")
+    
+    def get_cached_repositories(self, org: str) -> Optional[list[dict[str, Any]]]:
+        """
+        Get cached repository data for an organization.
+        
+        Args:
+            org: Organization name
+            
+        Returns:
+            List of repository dictionaries or None if not cached
+        """
+        return self._github_cache.get("repositories", {}).get(org)
+    
+    def get_all_cached_repositories(self) -> dict[str, list[dict[str, Any]]]:
+        """Get all cached repositories by organization."""
+        return self._github_cache.get("repositories", {})
+    
+    def get_github_cache_age(self) -> Optional[datetime]:
+        """Get the age of the GitHub cache."""
+        cached_at = self._github_cache.get("cached_at")
+        if cached_at:
+            return datetime.fromisoformat(cached_at)
+        return None
+    
+    def clear_github_cache(self) -> None:
+        """Clear the GitHub cache."""
+        self._github_cache = {}
+        logger.info("Cleared GitHub cache")
     
     async def save_checkpoint(self, agent_name: str, data: dict[str, Any]) -> None:
         """

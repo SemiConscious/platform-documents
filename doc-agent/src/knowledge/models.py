@@ -31,6 +31,7 @@ class RelationType(str, Enum):
     CONTAINS = "contains"
     IMPLEMENTS = "implements"
     USES = "uses"
+    DEFINES = "defines"  # Service/repo defines an endpoint/schema
 
 
 class BaseEntity(BaseModel):

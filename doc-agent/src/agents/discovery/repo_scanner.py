@@ -31,6 +31,8 @@ class RepositoryScannerAgent(BaseAgent):
     - Database migrations and schemas
     - Dependencies (package.json, requirements.txt, etc.)
     - CI/CD configurations for deployment info
+    
+    Uses local clones when available to avoid GitHub API rate limits.
     """
     
     name = "repository_scanner"
@@ -46,6 +48,43 @@ class RepositoryScannerAgent(BaseAgent):
         self.organizations = source_config.get("organizations", [])
         self.exclude_patterns = source_config.get("exclude_repos", [])
         self.include_patterns = source_config.get("include_patterns", [])
+        self.skip_archived = source_config.get("skip_archived", True)  # Skip archived by default
+        
+        # Local repos directory (for avoiding API rate limits)
+        from pathlib import Path
+        self.repos_dir = context.store.store_dir.parent / "repos"
+        self.use_local = self.repos_dir.exists()
+        if self.use_local:
+            self.logger.info(f"Using local repo clones from {self.repos_dir}")
+    
+    def _get_local_repo_path(self, org: str, repo_name: str) -> Optional["Path"]:
+        """Get the local path for a repository if it exists."""
+        from pathlib import Path
+        if not self.use_local:
+            return None
+        
+        repo_path = self.repos_dir / org / repo_name
+        if repo_path.exists() and (repo_path / ".git").exists():
+            return repo_path
+        return None
+    
+    def _read_local_file(self, repo_path: "Path", filename: str) -> Optional[str]:
+        """Read a file from a local repository."""
+        file_path = repo_path / filename
+        if file_path.exists() and file_path.is_file():
+            try:
+                return file_path.read_text(errors='ignore')
+            except Exception:
+                pass
+        return None
+    
+    def _find_readme(self, repo_path: "Path") -> Optional[str]:
+        """Find and read README from local repo."""
+        for name in ["README.md", "README", "readme.md", "Readme.md"]:
+            content = self._read_local_file(repo_path, name)
+            if content:
+                return content
+        return None
     
     async def run(self) -> AgentResult:
         """Execute the repository scanning process."""
@@ -58,6 +97,7 @@ class RepositoryScannerAgent(BaseAgent):
         discovered_services = 0
         discovered_apis = 0
         errors = []
+        used_cache = False
         
         # Parallelism for repo analysis (configurable)
         max_concurrent = self.context.config.get("agents", {}).get("discovery", {}).get("repo_parallelism", 10)
@@ -65,15 +105,37 @@ class RepositoryScannerAgent(BaseAgent):
         
         for org in self.organizations:
             try:
-                all_repos = await self.github.list_repositories(org=org)
+                result = await self._get_repositories_with_cache(org)
                 
-                # Filter out excluded repositories
+                if result is None:
+                    # Rate limited and no cache available
+                    self.logger.warning(f"Cannot list repos for {org}: rate limited with no cache")
+                    errors.append(f"org/{org}: Rate limited, no cache available")
+                    continue
+                
+                if isinstance(result, tuple):
+                    # Used cache
+                    all_repos, from_cache = result
+                    if from_cache:
+                        used_cache = True
+                        self.logger.info(f"Using cached repository list for {org}")
+                else:
+                    all_repos = result
+                
+                # Filter out archived and excluded repositories
+                archived_count = sum(1 for r in all_repos if r.archived)
+                excluded_count = sum(1 for r in all_repos if self._should_exclude(r.name))
+                
                 repos = [
                     r for r in all_repos 
-                    if not self._should_exclude(r.name)
+                    if (not self.skip_archived or not r.archived) and not self._should_exclude(r.name)
                 ]
                 
-                self.logger.info(f"Found {len(repos)} repositories in {org} (filtered from {len(all_repos)})")
+                if archived_count > 0 and self.skip_archived:
+                    self.logger.info(f"Skipping {archived_count} archived repositories in {org}")
+                if excluded_count > 0:
+                    self.logger.debug(f"Excluded {excluded_count} repos by pattern in {org}")
+                self.logger.info(f"Found {len(repos)} active repositories in {org} (filtered from {len(all_repos)})")
                 
                 # Filter to repos not yet processed
                 repos_to_process = [
@@ -137,9 +199,10 @@ class RepositoryScannerAgent(BaseAgent):
                 "discovered_services": discovered_services,
                 "discovered_apis": discovered_apis,
                 "processed_repos": len(processed_repos),
+                "used_cache": used_cache,
             },
             error="; ".join(errors) if errors else None,
-            metadata={"organizations": self.organizations},
+            metadata={"organizations": self.organizations, "used_cache": used_cache},
         )
     
     async def _process_single_repo(
@@ -158,6 +221,70 @@ class RepositoryScannerAgent(BaseAgent):
             return (service, apis)
         except Exception as e:
             raise e
+    
+    async def _get_repositories_with_cache(
+        self,
+        org: str,
+    ) -> Optional[list[GHRepo] | tuple[list[GHRepo], bool]]:
+        """
+        Get repositories with cache fallback.
+        
+        Tries GitHub API first. If rate limited, falls back to cache.
+        On success, updates the cache.
+        
+        Args:
+            org: Organization name
+            
+        Returns:
+            - list of repos if successful from API
+            - tuple of (repos, True) if from cache
+            - None if rate limited and no cache available
+        """
+        try:
+            # Try API first
+            repos = await self.github.list_repositories(org=org)
+            
+            # Check if we got an empty list due to rate limiting
+            # The error would have been logged inside list_repositories
+            if not repos:
+                # Check cache
+                cached = self.context.store.get_cached_repositories(org)
+                if cached:
+                    self.logger.info(f"API returned empty for {org}, using {len(cached)} cached repos")
+                    return ([GHRepo.from_dict(r) for r in cached], True)
+                return None
+            
+            # Success - cache the results (include archived status)
+            repo_dicts = [
+                {
+                    "name": r.name,
+                    "full_name": r.full_name,
+                    "description": r.description,
+                    "html_url": r.url,
+                    "default_branch": r.default_branch,
+                    "language": r.language,
+                    "topics": r.topics,
+                    "archived": r.archived,
+                }
+                for r in repos
+            ]
+            self.context.store.cache_repositories(org, repo_dicts)
+            
+            return repos
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            
+            # Check for rate limit error
+            if "rate limit" in error_msg or "403" in error_msg:
+                cached = self.context.store.get_cached_repositories(org)
+                if cached:
+                    self.logger.info(f"Rate limited for {org}, using {len(cached)} cached repos")
+                    return ([GHRepo.from_dict(r) for r in cached], True)
+                self.logger.warning(f"Rate limited for {org} with no cache available")
+                return None
+            
+            raise
     
     def _should_exclude(self, repo_name: str) -> bool:
         """Check if a repository should be excluded based on patterns."""
@@ -189,11 +316,15 @@ class RepositoryScannerAgent(BaseAgent):
         )
         self.graph.add_entity(repo_entity)
         
-        # Get README for description
-        readme = await self.github.get_readme(org, repo.name)
+        # Get README for description (prefer local clone)
+        local_path = self._get_local_repo_path(org, repo.name)
+        if local_path:
+            readme = self._find_readme(local_path)
+        else:
+            readme = await self.github.get_readme(org, repo.name)
         
         # Determine if this is a service
-        is_service = await self._is_service_repo(repo, readme)
+        is_service = await self._is_service_repo(repo, readme, local_path)
         
         if not is_service:
             self.logger.debug(f"Repository {repo.name} does not appear to be a service")
@@ -243,7 +374,7 @@ class RepositoryScannerAgent(BaseAgent):
         
         return service
     
-    async def _is_service_repo(self, repo: GHRepo, readme: Optional[str]) -> bool:
+    async def _is_service_repo(self, repo: GHRepo, readme: Optional[str], local_path: Optional["Path"] = None) -> bool:
         """
         Determine if a repository represents a deployable service.
         
@@ -261,6 +392,13 @@ class RepositoryScannerAgent(BaseAgent):
         non_service_topics = {"library", "sdk", "cli", "tool", "config", "docs"}
         if any(topic in repo.topics for topic in non_service_topics):
             return False
+        
+        # Check for service indicator files (prefer local if available)
+        service_files = ["Dockerfile", "docker-compose.yml", "serverless.yml", "app.yaml", "main.go", "main.py", "index.ts", "package.json"]
+        if local_path:
+            for sf in service_files:
+                if (local_path / sf).exists():
+                    return True
         
         # Most repos with certain languages are likely services
         service_languages = {"go", "java", "python", "typescript", "javascript", "c#", "rust"}
@@ -342,11 +480,27 @@ Return ONLY valid JSON, no additional text."""
     ) -> list[API]:
         """
         Extract API definitions from the repository.
+        Uses local clones when available.
         """
+        import yaml
         apis = []
         
+        # Check for local repo first
+        local_path = self._get_local_repo_path(org, repo.name)
+        
         # Try to get OpenAPI spec
-        openapi_spec = await self.github.get_openapi_spec(org, repo.name)
+        openapi_spec = None
+        if local_path:
+            for spec_file in ["openapi.yaml", "openapi.yml", "swagger.yaml", "swagger.yml"]:
+                spec_content = self._read_local_file(local_path, spec_file)
+                if spec_content:
+                    try:
+                        openapi_spec = yaml.safe_load(spec_content)
+                        break
+                    except Exception:
+                        pass
+        else:
+            openapi_spec = await self.github.get_openapi_spec(org, repo.name)
         
         if openapi_spec:
             api_info = openapi_spec.get("info", {})
@@ -367,7 +521,22 @@ Return ONLY valid JSON, no additional text."""
             apis.append(api)
         
         # Check for GraphQL schema
-        graphql_content = await self.github.get_file_content(org, repo.name, "schema.graphql")
+        graphql_content = None
+        if local_path:
+            for gql_file in ["schema.graphql", "schema.gql", "*.graphql"]:
+                if gql_file.startswith("*"):
+                    # Find any graphql file
+                    for f in local_path.rglob("*.graphql"):
+                        graphql_content = f.read_text(errors='ignore')
+                        break
+                else:
+                    graphql_content = self._read_local_file(local_path, gql_file)
+                if graphql_content:
+                    break
+        else:
+            gql_result = await self.github.get_file_content(org, repo.name, "schema.graphql")
+            graphql_content = gql_result.content if gql_result else None
+        
         if graphql_content:
             api = API(
                 id=f"api:{repo.name}:graphql",
@@ -388,11 +557,26 @@ Return ONLY valid JSON, no additional text."""
     ) -> dict[str, dict[str, Any]]:
         """
         Extract dependencies from package management files.
+        Uses local clones when available.
         """
+        import json as json_module
         dependencies = {}
         
+        # Check for local repo first
+        local_path = self._get_local_repo_path(org, repo.name)
+        
         # Check package.json for Node.js projects
-        package_json = await self.github.get_package_json(org, repo.name)
+        package_json = None
+        if local_path:
+            pkg_content = self._read_local_file(local_path, "package.json")
+            if pkg_content:
+                try:
+                    package_json = json_module.loads(pkg_content)
+                except Exception:
+                    pass
+        else:
+            package_json = await self.github.get_package_json(org, repo.name)
+        
         if package_json:
             deps = package_json.get("dependencies", {})
             for name, version in deps.items():
@@ -404,9 +588,15 @@ Return ONLY valid JSON, no additional text."""
                     }
         
         # Check requirements.txt for Python projects
-        requirements = await self.github.get_file_content(org, repo.name, "requirements.txt")
-        if requirements:
-            for line in requirements.content.split("\n"):
+        requirements_content = None
+        if local_path:
+            requirements_content = self._read_local_file(local_path, "requirements.txt")
+        else:
+            requirements = await self.github.get_file_content(org, repo.name, "requirements.txt")
+            requirements_content = requirements.content if requirements else None
+        
+        if requirements_content:
+            for line in requirements_content.split("\n"):
                 line = line.strip()
                 if line and not line.startswith("#"):
                     # Parse requirement line
