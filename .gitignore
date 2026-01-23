@@ -1,1 +1,38 @@
 .vscode/
+
+# Cursor IDE
+.cursorignore
+.cursor/
+
+# Doc-agent caches and cloned repos
+doc-agent/repos/
+doc-agent/store/
+doc-agent/docs/
+doc-agent/logs/
+doc-agent/.agent-store/
+
+# Doc-spawner test documentation outputs
+doc-spawner/test-docs*/
+
+# General caches
+.cache/
+*.cache
+__pycache__/
+*.pyc
+node_modules/
+.npm/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db
